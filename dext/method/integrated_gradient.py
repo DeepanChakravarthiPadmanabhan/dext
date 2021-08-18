@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 
@@ -31,7 +32,9 @@ class IntegratedGradients:
         if self.visualize_idx:
             igModel = Model(
                 inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output[:, self.visualize_idx - 1], self.model.output],
+                outputs=[self.model.get_layer(self.layer_name).output[
+                             self.visualize_idx[0]][0, self.visualize_idx[1], self.visualize_idx[2], self.visualize_idx[3]],
+                         self.model.output],
             )
         else:
             igModel = Model(
@@ -45,7 +48,7 @@ class IntegratedGradients:
     def interpolate_images(self,
                            image,
                            alphas):
-        alphas_x = alphas[:, tf.newaxis, tf.newaxis, tf.newaxis]
+        alphas_x = alphas[:, np.newaxis, np.newaxis, np.newaxis]
         baseline_x = self.baseline
         input_x = image
         delta = input_x - baseline_x
@@ -58,7 +61,6 @@ class IntegratedGradients:
             tape.watch(inputs)
             conv_outs, preds = self.igModel(inputs)
 
-        print('Conv outs shape: ', conv_outs.shape)
         grads = tape.gradient(conv_outs, inputs)
         return grads
 
@@ -68,8 +70,7 @@ class IntegratedGradients:
         return integrated_gradients
 
     def get_normalized_interpolated_images(self, interpolated_images):
-        image_size = (interpolated_images[0].shape[0], self.model.image_size,
-                      self.model.image_size, interpolated_images[0].shape[-1])
+        image_size = self.baseline.shape[1]
         new_interpolated_image = []
         for i in interpolated_images:
             normimage, _ = efficientdet_preprocess(i, image_size)
@@ -80,7 +81,7 @@ class IntegratedGradients:
 
     def integrated_gradients(self, image, m_steps, batch_size):
         # 1. Generate alphas.
-        alphas = tf.linspace(start=0.0, stop=1.0, num=m_steps + 1)
+        alphas = np.linspace(start=0.0, stop=1.0, num=m_steps + 1)
 
         # Initialize TensorArray outside loop to collect gradients.
         gradient_batches = tf.TensorArray(tf.float32, size=m_steps + 1)
@@ -94,7 +95,6 @@ class IntegratedGradients:
             # 2. Generate interpolated inputs between baseline and input.
             interpolated_path_input_batch = self.interpolate_images(
                 image=image, alphas=alpha_batch)
-
 
             interpolated_path_input_batch = self.get_normalized_interpolated_images(interpolated_path_input_batch)
             # 3. Compute gradients between model outputs and interpolated inputs.
@@ -122,11 +122,11 @@ class IntegratedGradients:
         fig, axs = plt.subplots(nrows=2, ncols=2, squeeze=False, figsize=(12, 12))
 
         axs[0, 0].set_title('Baseline image')
-        axs[0, 0].imshow(self.baseline[0].numpy().astype('uint8'))
+        axs[0, 0].imshow(self.baseline[0].astype('uint8'))
         axs[0, 0].axis('off')
 
         axs[0, 1].set_title('Original image')
-        axs[0, 1].imshow(image[0].astype('uint8'))
+        axs[0, 1].imshow(image.astype('uint8'))
         axs[0, 1].axis('off')
 
         axs[1, 0].set_title('Attribution mask')
@@ -135,7 +135,7 @@ class IntegratedGradients:
 
         axs[1, 1].set_title('Overlay')
         axs[1, 1].imshow(attribution_mask[0].numpy(), cmap=plt.cm.inferno)
-        axs[1, 1].imshow(image[0].astype('uint8'), alpha=0.4)
+        axs[1, 1].imshow(image.astype('uint8'), alpha=0.4)
         axs[1, 1].axis('off')
 
         plt.tight_layout()

@@ -61,6 +61,7 @@ def process_outputs(class_outputs, box_outputs, num_levels, num_classes):
     box_outputs = box_outputs[np.newaxis]
     class_outputs = 1 / (1 + np.exp(-class_outputs))
     outputs = np.concatenate([box_outputs, class_outputs], axis=2)
+    print("OUTPUTS: ", outputs.shape)
     return outputs
 
 
