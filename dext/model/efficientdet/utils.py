@@ -6,7 +6,7 @@ from paz.processors.image import RGB_IMAGENET_MEAN, RGB_IMAGENET_STDEV
 
 
 # Mock input image.
-file_name = 'images/surfboard.jpg'
+file_name = 'images/traffic.png'
 loader = LoadImage()
 raw_images = loader(file_name)
 

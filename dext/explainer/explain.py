@@ -8,31 +8,69 @@ from dext.model.efficientdet.efficientdet import EFFICIENTDETD0
 from dext.model.efficientdet.utils import raw_images, efficientdet_preprocess
 from dext.model.efficientdet.efficientdet_postprocess import efficientdet_postprocess
 from dext.method.integrated_gradient import IntegratedGradients
-
 from dext.postprocessing.visualization import visualize_saliency_grayscale, plot_all
 
+def get_interest_idx(idx):
+
+    interest_neuron_index = idx[0][0]
+    interest_category_index = idx[0][1]
+
+    return interest_neuron_index, interest_category_index
 
 def get_visualize_idx(idx, class_outputs, box_outputs):
-    class_1 = class_outputs[0].numpy()
-    class_1_re = class_1.reshape(1, -1, 90)
-    print(class_1.shape, class_1_re.shape)
-    ge = np.unravel_index(np.ravel_multi_index((0, 290, 38), class_1_re.shape), class_1.shape)
 
-    # box_1 = box_outputs[0].numpy()
-    # box_1_re = box_1.reshape(-1, 4)
-    # print(box_1_re.shape, box_1.shape)
-    # ge = np.unravel_index(np.ravel_multi_index((289, 0), box_1_re.shape), box_1.shape)
-    # l = 0
-    # h = ge[0]
-    # w = ge[1]
-    # idx = ge[2]
+    interest_neuron_index, interest_category_index = get_interest_idx(idx)
+    level_num_boxes = []
+    for level in box_outputs:
+        level_num_boxes.append(level.shape[0] * level.shape[1] * level.shape[2] * 9)
 
-    l = 0
-    h = 56
-    w = 56
-    idx = 221
+    sum_all = []
+    for n, i in enumerate(level_num_boxes):
+        sum_all.append(sum(level_num_boxes[:n + 1]))
 
-    return (l, h, w, idx)
+    bp_level = 0
+    remaining_idx = interest_neuron_index
+    for n, i in enumerate(sum_all):
+        if i < interest_neuron_index:
+            bp_level = n + 1
+            remaining_idx = interest_neuron_index - i
+
+    print("selections: ", bp_level, remaining_idx, sum_all, interest_category_index, interest_neuron_index)
+    selected_class_level = class_outputs[bp_level].numpy()
+    selected_class_level = np.ones((1, selected_class_level.shape[1],
+                                    selected_class_level.shape[2], 9, 90))
+    selected_class_level_reshaped = selected_class_level.reshape((1, -1, 90))
+
+    print('BOX SHAPES CLASS: ', selected_class_level.shape, selected_class_level_reshaped.shape)
+
+    interest_neuron_class = np.unravel_index(
+        np.ravel_multi_index((0, int(remaining_idx), interest_category_index),
+                             selected_class_level_reshaped.shape), selected_class_level.shape)
+
+    selected_box_level = box_outputs[bp_level].numpy()
+    selected_box_level = np.ones((1, selected_box_level.shape[1],
+                                    selected_box_level.shape[2], 9, 4))
+    selected_box_level_reshaped = selected_box_level.reshape((1, -1, 4))
+    print('BOX SHAPES BOX: ', selected_box_level.shape, selected_box_level_reshaped.shape)
+
+    interest_neuron_box = np.unravel_index(
+        np.ravel_multi_index((0, int(remaining_idx), 1),
+                             selected_box_level_reshaped.shape), selected_box_level.shape)
+
+
+    bp_class_h = interest_neuron_class[1]
+    bp_class_w = interest_neuron_class[2]
+    bp_class_index = interest_neuron_class[4] + (interest_neuron_class[3] * 90)
+
+    bp_box_h = interest_neuron_box[1]
+    bp_box_w = interest_neuron_box[2]
+    bp_box_index = interest_neuron_box[4] + (interest_neuron_box[3] * 4)
+
+    print("PREDICTED BOX - CLASS: ", (bp_level, bp_class_h, bp_class_w, bp_class_index))
+    print("PREDICTED BOX - BOX: ", (bp_level, bp_box_h, bp_box_w, bp_box_index))
+
+
+    return (bp_level, bp_class_h, bp_class_w, bp_class_index)
 
 def efficientdet_ig_explainer():
 
@@ -75,8 +113,7 @@ def efficientdet_ig_explainer():
 
     f = plot_all(image, resized_raw_image, saliency[0])
     f.savefig('explanation.jpg')
-
-    print(l, h, w, idx)
+    l, h, w, idx = get_visualize_idx(class_map_idx, class_outputs, box_outputs)
     write_image('images/results/paz_postprocess.jpg', image)
     print(detections)
     print('To match class idx: ', class_map_idx)

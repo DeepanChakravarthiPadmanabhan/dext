@@ -61,7 +61,6 @@ def process_outputs(class_outputs, box_outputs, num_levels, num_classes):
     box_outputs = box_outputs[np.newaxis]
     class_outputs = 1 / (1 + np.exp(-class_outputs))
     outputs = np.concatenate([box_outputs, class_outputs], axis=2)
-    print("OUTPUTS: ", outputs.shape)
     return outputs
 
 
@@ -140,18 +139,20 @@ def nms_per_class(box_data, nms_thresh=0.45, conf_thresh=0.01, top_k=200):
     num_classes = class_predictions.shape[1]
     output = np.zeros((num_classes, top_k, 6))
     # skip the background class (start counter in 1)
-    for class_arg in range(1, num_classes):
+    for class_arg in range(0, num_classes):
         conf_mask = class_predictions[:, class_arg] >= conf_thresh
         scores = class_predictions[:, class_arg][conf_mask]
         if len(scores) == 0:
             continue
         boxes = decoded_boxes[conf_mask]
+        boxes_raw_index = np.where(conf_mask == True)[0]
         indices, count = apply_non_max_suppression(
             boxes, scores, nms_thresh, top_k)
         scores = np.expand_dims(scores, -1)
         selected_indices = indices[:count]
+        select_boxes_raw = boxes_raw_index[indices[:count]]
         selections = np.concatenate(
-            (boxes[selected_indices], scores[selected_indices], np.expand_dims(selected_indices, 1)), axis=1)
+            (boxes[selected_indices], scores[selected_indices], np.expand_dims(select_boxes_raw, 1)), axis=1)
         output[class_arg, :count, :] = selections
     return output
 
@@ -161,7 +162,7 @@ def filterboxes(boxes, class_names, conf_thresh=0.5):
     num_classes = boxes.shape[0]
     boxes2D = []
     class_map_idx = []
-    for class_arg in range(1, num_classes):
+    for class_arg in range(0, num_classes):
         class_detections = boxes[class_arg, :]
         confidence_mask = np.squeeze(class_detections[:, -2] >= conf_thresh)
         confident_class_detections = class_detections[confidence_mask]

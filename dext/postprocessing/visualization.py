@@ -59,7 +59,7 @@ def plot_all(detection_image, image, saliency, overlay="matplotlib"):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes
     ax1.imshow(detection_image)
-    ax1.axis('off')
+    ax1.axis('on')
     ax1.set_title('Detections')
 
     if overlay == "opencv":
@@ -78,6 +78,9 @@ def plot_saliency(saliency, ax=None):
     if ax is None:
         f = plt.figure(figsize=(5, 5))
         ax = f.add_subplot()
+    # flip = saliency[::-1, :]
+    # flip = flip[:, ::-1]
+    # saliency = flip
     im = ax.imshow(saliency, cmap='inferno')
     divider = make_axes_locatable(ax)
     caz = divider.append_axes("right", size="5%", pad=0.1)
