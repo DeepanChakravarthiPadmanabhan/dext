@@ -4,23 +4,38 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from dext.model.efficientdet.utils import efficientdet_preprocess
+from dext.abstract.explanation import Explainer
 
 
-class IntegratedGradients:
-    def __init__(self, model, baseline, layer_name=-1, visualize_idx=None):
+class IntegratedGradients(Explainer):
+    def __init__(self, model, image,
+                 explainer="IntegreatedGradients",
+                 layer_name=None, visualize_index=None,
+                 steps=5, batch_size=1):
         """
         Model: pre-softmax layer (logit layer)
         :param model:
         :param layer_name:
         """
+        super().__init__(model, image, explainer)
         self.model = model
-        self.baseline = baseline
+        self.image = image
+        self.image_size = image.shape[1]
+        self.explainer = explainer
         self.layer_name = layer_name
-        self.visualize_idx = visualize_idx
+        self.steps = steps
+        self.batch_size = batch_size
+        self.visualize_index = visualize_index
+
+        self.generate_baseline()
 
         if self.layer_name == None:
             self.layer_name = self.find_target_layer()
-        self.igModel = self.build_ig_model()
+
+        self.custom_model = self.build_custom_model()
+
+    def generate_baseline(self):
+        self.baseline = np.zeros(shape=(1, self.image.shape[0], self.image.shape[1], 3))
 
     def find_target_layer(self):
         for layer in reversed(self.model.layers):
@@ -28,23 +43,24 @@ class IntegratedGradients:
                 return layer.name
         raise ValueError("Could not find 4D layer. Cannot apply Integrated Gradients.")
 
-    def build_ig_model(self):
-        if self.visualize_idx:
-            igModel = Model(
+    def build_custom_model(self):
+
+        if self.visualize_index:
+            custom_model = Model(
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output[
-                             self.visualize_idx[0]][
-                             0, self.visualize_idx[1],
-                             self.visualize_idx[2],
-                             self.visualize_idx[3]], self.model.output])
+                             self.visualize_index[0]][
+                             0, self.visualize_index[1],
+                             self.visualize_index[2],
+                             self.visualize_index[3]], self.model.output])
         else:
-            igModel = Model(
+            custom_model = Model(
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output, self.model.output],
             )
         if 'class' in self.layer_name:
-            igModel.get_layer(self.layer_name).activation = None
-        return igModel
+            custom_model.get_layer(self.layer_name).activation = None
+        return custom_model
 
     def interpolate_images(self, image, alphas):
         alphas_x = alphas[:, np.newaxis, np.newaxis, np.newaxis]
@@ -58,7 +74,7 @@ class IntegratedGradients:
         with tf.GradientTape() as tape:
             inputs = tf.cast(image, tf.float32)
             tape.watch(inputs)
-            conv_outs, preds = self.igModel(inputs)
+            conv_outs, preds = self.custom_model(inputs)
 
         grads = tape.gradient(conv_outs, inputs)
         return grads
@@ -77,22 +93,22 @@ class IntegratedGradients:
         new_interpolated_image = tf.concat(new_interpolated_image, axis=0)
         return new_interpolated_image
 
-    def integrated_gradients(self, image, m_steps, batch_size):
+    def get_saliency_map(self):
         # 1. Generate alphas.
-        alphas = np.linspace(start=0.0, stop=1.0, num=m_steps + 1)
+        alphas = np.linspace(start=0.0, stop=1.0, num=self.steps + 1)
 
         # Initialize TensorArray outside loop to collect gradients.
-        gradient_batches = tf.TensorArray(tf.float32, size=m_steps + 1)
+        gradient_batches = tf.TensorArray(tf.float32, size=self.steps + 1)
 
         # Iterate alphas range and batch computation for speed, memory efficient, and scaling to larger m_steps
-        for alpha in tf.range(0, len(alphas), batch_size):
+        for alpha in tf.range(0, len(alphas), self.batch_size):
             from_ = alpha
-            to = tf.minimum(from_ + batch_size, len(alphas))
+            to = tf.minimum(from_ + self.batch_size, len(alphas))
             alpha_batch = alphas[from_: to]
 
             # 2. Generate interpolated inputs between baseline and input.
             interpolated_path_input_batch = self.interpolate_images(
-                image=image, alphas=alpha_batch)
+                image=self.image, alphas=alpha_batch)
 
             interpolated_path_input_batch = self.get_normalized_interpolated_images(interpolated_path_input_batch)
             # 3. Compute gradients between model outputs and interpolated inputs.
@@ -108,7 +124,7 @@ class IntegratedGradients:
         avg_gradients = self.integral_approximation(gradients=total_gradients)
 
         # Scale integrated gradients with respect to input.
-        integrated_gradients = (image - self.baseline) * avg_gradients
+        integrated_gradients = (self.image - self.baseline) * avg_gradients
 
         return integrated_gradients
 
@@ -140,12 +156,7 @@ class IntegratedGradients:
         plt.savefig(save_path)
 
 def IntegratedGradientExplainer(model, image, layer_name, visualize_index):
-    image_size = image.shape[1]
-    baseline = np.zeros(shape=(1, image_size, image_size, image.shape[-1]))
-    m_steps = 2
-    ig = IntegratedGradients(model, baseline, layer_name=layer_name,
-                             visualize_idx=visualize_index)
-    ig_attributions = ig.integrated_gradients(
-        image=image, m_steps=m_steps, batch_size=1)
-    return ig_attributions
+    ig = IntegratedGradients(model, image, "IG", layer_name, visualize_index)
+    saliency = ig.get_saliency_map()
+    return saliency
 

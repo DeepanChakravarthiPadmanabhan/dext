@@ -557,6 +557,7 @@ class ClassNet(Layer):
         class_outputs = []
         for level_id in range(0, self.max_level - self.min_level + 1):
             image = features[level_id]
+            print("ClassNet at level %s input block shape: %s" % (level_id, image.shape))
             for repeat_args in range(self.num_repeats):
                 image = self._conv_batchnorm_activation(
                     image, repeat_args, level_id, training)
@@ -564,6 +565,7 @@ class ClassNet(Layer):
                 class_outputs.append(image)
             else:
                 class_outputs.append(self.classes(image))
+            print("ClassNet at level %s output block shape: %s" % (level_id, class_outputs[-1].shape))
         return class_outputs
 
     @classmethod

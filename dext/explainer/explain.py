@@ -8,13 +8,13 @@ from dext.model.efficientdet.efficientdet import EFFICIENTDETD0
 from dext.model.efficientdet.functional_efficientdet import get_functional_efficientdet
 from dext.model.efficientdet.utils import raw_images, efficientdet_preprocess
 from dext.model.efficientdet.efficientdet_postprocess import efficientdet_postprocess
-from dext.method.integrated_gradient import IntegratedGradientExplainer
+from dext.method.explainer_factory import ExplainerFactory
 from dext.postprocessing.visualization import visualize_saliency_grayscale, plot_all
 
-def get_interest_index(idx):
+def get_interest_index(index):
 
-    interest_neuron_index = int(idx[0][0])
-    interest_category_index = int(idx[0][1])
+    interest_neuron_index = int(index[0][0])
+    interest_category_index = int(index[0][1])
 
     return interest_neuron_index, interest_category_index
 
@@ -69,16 +69,12 @@ def get_visualize_index(idx, class_outputs, box_outputs):
     bp_box_w = interest_neuron_box[2]
     bp_box_index = interest_neuron_box[4] + (interest_neuron_box[3] * 4)
 
-    # bp_class_h = 25
-    # bp_class_w = 37
-    # bp_class_index = 180
-
     print("PREDICTED BOX - CLASS: ", (bp_level, bp_class_h, bp_class_w, bp_class_index))
     print("PREDICTED BOX - BOX: ", (bp_level, bp_box_h, bp_box_w, bp_box_index))
     return (bp_level, bp_class_h, bp_class_w, bp_class_index)
 
 
-def efficientdet_ig_explainer():
+def efficientdet_ig_explainer(explanation_method):
     # assemble - get all preprocesses and model
     model = EFFICIENTDETD0()
     image_size = model.image_size
@@ -96,7 +92,10 @@ def efficientdet_ig_explainer():
     visualize_index = get_visualize_index(class_map_idx, class_outputs, box_outputs)
 
     # interpret - apply interpretation method
-    saliency = IntegratedGradientExplainer(efficientdet_model, resized_raw_image, 'class_net', visualize_index)
+    explainer = ExplainerFactory(explanation_method).factory()
+    saliency = explainer(efficientdet_model, resized_raw_image, 'class_net', visualize_index)
+
+    # saliency = GuidedBackpropagationExplainer(efficientdet_model, input_image, 'class_net', visualize_index)
 
     # visualize - visualize the interpretation result
     saliency = visualize_saliency_grayscale(saliency)
@@ -108,4 +107,4 @@ def efficientdet_ig_explainer():
     print(detections)
     print('To match class idx: ', class_map_idx)
 
-efficientdet_ig_explainer()
+efficientdet_ig_explainer("IntegratedGradients")
