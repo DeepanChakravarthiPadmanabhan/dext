@@ -33,9 +33,10 @@ class IntegratedGradients:
             igModel = Model(
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output[
-                             self.visualize_idx[0]][0, self.visualize_idx[1], self.visualize_idx[2], self.visualize_idx[3]],
-                         self.model.output],
-            )
+                             self.visualize_idx[0]][
+                             0, self.visualize_idx[1],
+                             self.visualize_idx[2],
+                             self.visualize_idx[3]], self.model.output])
         else:
             igModel = Model(
                 inputs=[self.model.inputs],
@@ -45,9 +46,7 @@ class IntegratedGradients:
             igModel.get_layer(self.layer_name).activation = None
         return igModel
 
-    def interpolate_images(self,
-                           image,
-                           alphas):
+    def interpolate_images(self, image, alphas):
         alphas_x = alphas[:, np.newaxis, np.newaxis, np.newaxis]
         baseline_x = self.baseline
         input_x = image
@@ -76,7 +75,6 @@ class IntegratedGradients:
             normimage, _ = efficientdet_preprocess(i, image_size)
             new_interpolated_image.append(normimage)
         new_interpolated_image = tf.concat(new_interpolated_image, axis=0)
-        print("interpolated size: ", new_interpolated_image.shape)
         return new_interpolated_image
 
     def integrated_gradients(self, image, m_steps, batch_size):
@@ -140,3 +138,14 @@ class IntegratedGradients:
 
         plt.tight_layout()
         plt.savefig(save_path)
+
+def IntegratedGradientExplainer(model, image, layer_name, visualize_index):
+    image_size = image.shape[1]
+    baseline = np.zeros(shape=(1, image_size, image_size, image.shape[-1]))
+    m_steps = 2
+    ig = IntegratedGradients(model, baseline, layer_name=layer_name,
+                             visualize_idx=visualize_index)
+    ig_attributions = ig.integrated_gradients(
+        image=image, m_steps=m_steps, batch_size=1)
+    return ig_attributions
+

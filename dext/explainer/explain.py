@@ -5,21 +5,22 @@ from paz.backend.image.opencv_image import write_image
 from paz.backend.image import resize_image
 
 from dext.model.efficientdet.efficientdet import EFFICIENTDETD0
+from dext.model.efficientdet.functional_efficientdet import get_functional_efficientdet
 from dext.model.efficientdet.utils import raw_images, efficientdet_preprocess
 from dext.model.efficientdet.efficientdet_postprocess import efficientdet_postprocess
-from dext.method.integrated_gradient import IntegratedGradients
+from dext.method.integrated_gradient import IntegratedGradientExplainer
 from dext.postprocessing.visualization import visualize_saliency_grayscale, plot_all
 
-def get_interest_idx(idx):
+def get_interest_index(idx):
 
-    interest_neuron_index = idx[0][0]
-    interest_category_index = idx[0][1]
+    interest_neuron_index = int(idx[0][0])
+    interest_category_index = int(idx[0][1])
 
     return interest_neuron_index, interest_category_index
 
-def get_visualize_idx(idx, class_outputs, box_outputs):
+def get_visualize_index(idx, class_outputs, box_outputs):
 
-    interest_neuron_index, interest_category_index = get_interest_idx(idx)
+    interest_neuron_index, interest_category_index = get_interest_index(idx)
     level_num_boxes = []
     for level in box_outputs:
         level_num_boxes.append(level.shape[0] * level.shape[1] * level.shape[2] * 9)
@@ -57,6 +58,8 @@ def get_visualize_idx(idx, class_outputs, box_outputs):
         np.ravel_multi_index((0, int(remaining_idx), 1),
                              selected_box_level_reshaped.shape), selected_box_level.shape)
 
+    print("INTEREST NEURON CLASS: ", interest_neuron_class)
+    print("INTEREST NEURON BOX: ", interest_neuron_box)
 
     bp_class_h = interest_neuron_class[1]
     bp_class_w = interest_neuron_class[2]
@@ -66,54 +69,41 @@ def get_visualize_idx(idx, class_outputs, box_outputs):
     bp_box_w = interest_neuron_box[2]
     bp_box_index = interest_neuron_box[4] + (interest_neuron_box[3] * 4)
 
+    # bp_class_h = 25
+    # bp_class_w = 37
+    # bp_class_index = 180
+
     print("PREDICTED BOX - CLASS: ", (bp_level, bp_class_h, bp_class_w, bp_class_index))
     print("PREDICTED BOX - BOX: ", (bp_level, bp_box_h, bp_box_w, bp_box_index))
-
-
     return (bp_level, bp_class_h, bp_class_w, bp_class_index)
 
-def efficientdet_ig_explainer():
 
+def efficientdet_ig_explainer():
+    # assemble - get all preprocesses and model
     model = EFFICIENTDETD0()
     image_size = model.image_size
     input_image, image_scales = efficientdet_preprocess(raw_images, image_size)
     resized_raw_image = resize_image(raw_images, (image_size, image_size))
 
-    # Functional API calling only provides access to intermediate tensors
-    original_dim = (image_size, image_size, 3)
-    original_inputs = tf.keras.Input(shape=(original_dim), name="input")
-    branch_tensors = model.backbone(original_inputs, False, True)
-    feature_levels = branch_tensors[model.min_level:model.max_level + 1]
-    # Build additional input features that are not from backbone.
-    for resample_layer in model.resample_layers:
-        feature_levels.append(resample_layer(
-            feature_levels[-1], False, None))
-    # BiFPN layers
-    fpn_features = model.fpn_cells(feature_levels, False)
-    # Classification head
-    class_outputs = model.class_net(fpn_features, False)
-    # Box regression head
-    box_outputs = model.box_net(fpn_features, False)
-    efdt = tf.keras.Model(inputs=original_inputs, outputs=[class_outputs, box_outputs])
-    class_outputs, box_outputs = efdt(input_image)
-    efdt.summary()
-
+    # forward pass - get model outputs for input image
+    efficientdet_model = get_functional_efficientdet(model)
+    class_outputs, box_outputs = efficientdet_model(input_image)
+    efficientdet_model.summary()
     image, detections, class_map_idx = efficientdet_postprocess(
         model, class_outputs, box_outputs, image_scales, raw_images)
 
-    l, h, w, idx = get_visualize_idx(class_map_idx, class_outputs, box_outputs)
-    baseline = np.zeros(shape=(1, model.image_size, model.image_size, raw_images.shape[-1]))
-    m_steps = 2
-    ig = IntegratedGradients(efdt, baseline, layer_name='class_net',
-                             visualize_idx=(l, h, w, idx))
-    ig_attributions = ig.integrated_gradients(
-        image=resized_raw_image, m_steps=m_steps, batch_size=1)
+    # select - get index to visualize saliency input image
+    visualize_index = get_visualize_index(class_map_idx, class_outputs, box_outputs)
 
-    saliency = visualize_saliency_grayscale(ig_attributions)
+    # interpret - apply interpretation method
+    saliency = IntegratedGradientExplainer(efficientdet_model, resized_raw_image, 'class_net', visualize_index)
 
+    # visualize - visualize the interpretation result
+    saliency = visualize_saliency_grayscale(saliency)
     f = plot_all(image, resized_raw_image, saliency[0])
     f.savefig('explanation.jpg')
-    l, h, w, idx = get_visualize_idx(class_map_idx, class_outputs, box_outputs)
+
+    visualize_index = get_visualize_index(class_map_idx, class_outputs, box_outputs)
     write_image('images/results/paz_postprocess.jpg', image)
     print(detections)
     print('To match class idx: ', class_map_idx)
