@@ -1,7 +1,7 @@
 import numpy as np
 import paz.processors as pr
 from paz.abstract import SequentialProcessor, Box2D
-from dext.model.efficientdet.utils import get_class_name_efficientdet
+from dext.utils.class_names import get_class_name_efficientdet
 
 def merge_level_outputs(class_outputs, box_outputs, num_levels, num_classes):
     """

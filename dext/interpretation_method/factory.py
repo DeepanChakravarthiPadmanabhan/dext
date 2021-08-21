@@ -1,5 +1,5 @@
-from dext.method.integrated_gradient import IntegratedGradientExplainer
-from dext.method.guided_backpropagation import GuidedBackpropagationExplainer
+from dext.interpretation_method.integrated_gradient import IntegratedGradientExplainer
+from dext.interpretation_method.guided_backpropagation import GuidedBackpropagationExplainer
 
 class ExplainerFactory:
     def __init__(self, explainer):
