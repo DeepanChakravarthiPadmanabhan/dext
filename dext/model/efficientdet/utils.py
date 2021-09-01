@@ -6,7 +6,7 @@ from paz.processors.image import RGB_IMAGENET_MEAN, RGB_IMAGENET_STDEV
 
 
 # Mock input image.
-file_name = 'images/000000309391.jpg'
+file_name = '/media/deepan/externaldrive1/project_repos/DEXT_versions/DEXT/images/000000309391.jpg'
 loader = LoadImage()
 raw_images = loader(file_name)
 

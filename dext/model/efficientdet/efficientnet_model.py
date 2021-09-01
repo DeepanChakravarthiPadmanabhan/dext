@@ -150,7 +150,6 @@ class SE(Layer):
             self._se_reduce(se_tensor),
             self._activation)
         )
-        print('Built SE %s : %s' % (self.name, se_tensor.shape))
         return tf.sigmoid(se_tensor) * tensor
 
 
@@ -336,19 +335,16 @@ class MBConvBlock(Layer):
             A output tensor.
         """
         def _call(tensor):
-            print('Block %s input shape: %s' % (self.name, tensor.shape))
             x = tensor
 
             # creates conv 2x2 kernel
             if self.super_pixel:
                 x = self.super_pixel(x, training)
-                print('SuperPixel %s: %s' % (self.name, x.shape))
 
             if self._block_args.fused_conv:
                 # If use fused mbconv, skip expansion and use regular conv.
                 x = self._batch_norm1(self._fused_conv(x), training=training)
                 x = get_activation(x, self._activation)
-                print('Conv2D shape: %s' % (x.shape))
             else:
                 # Otherwise, first apply expansion
                 # and then apply depthwise conv.
@@ -356,12 +352,10 @@ class MBConvBlock(Layer):
                     x = self._batch_norm0(self._expand_conv(x),
                                           training=training)
                     x = get_activation(x, self._activation)
-                    print('Expand shape: %s' % (x.shape))
 
                 x = self._batch_norm1(self._depthwise_conv(x),
                                       training=training)
                 x = get_activation(x, self._activation)
-                print('DWConv shape: %s' % (x.shape))
 
             if self._se:
                 x = self._se(x)
@@ -385,7 +379,6 @@ class MBConvBlock(Layer):
                     if survival_rate:
                         x = get_drop_connect(x, training, survival_rate)
                     x = tf.add(x, tensor)
-            print('Project shape: %s' % (x.shape))
             return x
 
         return _call(tensor)
@@ -675,7 +668,6 @@ class Model(tf.keras.Model):
 
         # Calls Stem layers
         outputs = self._stem(tensor, training)
-        print('Built stem %s : %s' % (self._stem.name, outputs.shape))
         self.endpoints['stem'] = outputs
 
         # Call blocks

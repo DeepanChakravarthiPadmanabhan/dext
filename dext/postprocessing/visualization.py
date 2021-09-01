@@ -55,11 +55,11 @@ def plot_saliency_image_overlay(image, saliency, ax):
     cbar.set_ticklabels([0, 1])
 
 
-def plot_all(detection_image, image, saliency, overlay="matplotlib"):
+def plot_all(detection_image, image, saliency, interpretation_method, overlay="matplotlib"):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes
     ax1.imshow(detection_image)
-    ax1.axis('on')
+    ax1.axis('off')
     ax1.set_title('Detections')
 
     if overlay == "opencv":
@@ -69,7 +69,7 @@ def plot_all(detection_image, image, saliency, overlay="matplotlib"):
         ax2.imshow(image, alpha=0.4)
         ax2.axis('off')
         ax2.set_title('Saliency map')
-    fig.suptitle('Detector explanation')
+    fig.suptitle('Detector explanation using ' + interpretation_method)
     fig.subplots_adjust(left=0.125, right=0.9, bottom=0.11, top=0.88, wspace=0.2, hspace=0.2)
     return fig
 
