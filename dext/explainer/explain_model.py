@@ -4,8 +4,8 @@ from paz.processors.image import LoadImage
 
 from dext.model.model_factory import ModelFactory
 from dext.model.preprocess_factory import PreprocessorFactory
+from dext.model.postprocess_factory import PostprocessorFactory
 from dext.model.efficientdet.functional_efficientdet import get_functional_efficientdet
-from dext.model.efficientdet.efficientdet_postprocess import efficientdet_postprocess
 from dext.interpretation_method.factory import ExplainerFactory
 from dext.postprocessing.visualization import visualize_saliency_grayscale, plot_all
 from dext.explainer.utils import get_visualize_index
@@ -26,11 +26,13 @@ def explain_model(model_name=None, raw_image=None,
     input_image, image_scales = preprocessor_fn(raw_image, image_size)
     resized_raw_image = resize_image(raw_image, (image_size, image_size))
 
+    postprocessor_fn = PostprocessorFactory(model_name).factory()
+
     # forward pass - get model outputs for input image
     efficientdet_model = get_functional_efficientdet(model)
     class_outputs, box_outputs = efficientdet_model(input_image)
     efficientdet_model.summary()
-    image, detections, class_map_idx = efficientdet_postprocess(
+    image, detections, class_map_idx = postprocessor_fn(
         model, class_outputs, box_outputs, image_scales, raw_image)
 
     # select - get index to visualize saliency input image
