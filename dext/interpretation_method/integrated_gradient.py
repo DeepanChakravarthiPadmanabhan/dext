@@ -52,11 +52,11 @@ class IntegratedGradients(Explainer):
                              self.visualize_index[0]][
                              0, self.visualize_index[1],
                              self.visualize_index[2],
-                             self.visualize_index[3]], self.model.output])
+                             self.visualize_index[3]]])
         else:
             custom_model = Model(
                 inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output, self.model.output],
+                outputs=[self.model.get_layer(self.layer_name).output],
             )
         if 'class' in self.layer_name:
             custom_model.get_layer(self.layer_name).activation = None
@@ -74,8 +74,7 @@ class IntegratedGradients(Explainer):
         with tf.GradientTape() as tape:
             inputs = tf.cast(image, tf.float32)
             tape.watch(inputs)
-            conv_outs, preds = self.custom_model(inputs)
-
+            conv_outs = self.custom_model(inputs)
         grads = tape.gradient(conv_outs, inputs)
         return grads
 

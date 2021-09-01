@@ -8,7 +8,7 @@ LOGGER = logging.getLogger(__name__)
 @click.command()
 @click.option("--model_name", "-m", help="Model name to explain.",
               default="EFFICIENTDETD0")
-@click.option("--input_image_path", default="/media/deepan/externaldrive1/project_repos/DEXT_versions/DEXT/images/000000309391.jpg")
+@click.option("--input_image_path", default="/media/deepan/externaldrive1/project_repos/DEXT_versions/dext/images/000000309391.jpg")
 @click.option("--interpretation_method", default="IntegratedGradients")
 @click.option("--layer_name", default=None)
 @click.option("--visualize_object", default=None)

@@ -1,6 +1,3 @@
-import os
-import argparse
-import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
@@ -41,11 +38,11 @@ class GuidedBackpropagation:
                              self.visualize_idx[0]][
                              0, self.visualize_idx[1],
                              self.visualize_idx[2],
-                             self.visualize_idx[3]], self.model.output])
+                             self.visualize_idx[3]]])
         else:
             gbModel = Model(
                 inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output, self.model.output],
+                outputs=[self.model.get_layer(self.layer_name).output],
             )
 
         base_model_layers = [act_layer for act_layer in gbModel.layers[1].layers if hasattr(act_layer, 'activation')]
@@ -66,9 +63,7 @@ class GuidedBackpropagation:
         with tf.GradientTape() as tape:
             inputs = tf.cast(self.image, tf.float32)
             tape.watch(inputs)
-            conv_outs, preds = self.custom_model(inputs)
-
-        print('Conv outs shape: ', conv_outs.shape)
+            conv_outs = self.custom_model(inputs)
         grads = tape.gradient(conv_outs, inputs)
         saliency = np.asarray(grads)
         return saliency
