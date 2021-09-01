@@ -2,9 +2,9 @@ from paz.backend.image.opencv_image import write_image
 from paz.backend.image import resize_image
 from paz.processors.image import LoadImage
 
-from dext.model.efficientdet.efficientdet import EFFICIENTDETD0
+from dext.model.model_factory import ModelFactory
+from dext.model.preprocess_factory import PreprocessorFactory
 from dext.model.efficientdet.functional_efficientdet import get_functional_efficientdet
-from dext.model.efficientdet.utils import efficientdet_preprocess
 from dext.model.efficientdet.efficientdet_postprocess import efficientdet_postprocess
 from dext.interpretation_method.factory import ExplainerFactory
 from dext.postprocessing.visualization import visualize_saliency_grayscale, plot_all
@@ -18,9 +18,12 @@ def explain_model(model_name=None, raw_image=None,
     loader = LoadImage()
     raw_image = loader(raw_image)
 
-    model = EFFICIENTDETD0()
+    model_fn = ModelFactory(model_name).factory()
+    model = model_fn()
     image_size = model.image_size
-    input_image, image_scales = efficientdet_preprocess(raw_image, image_size)
+
+    preprocessor_fn = PreprocessorFactory(model_name).factory()
+    input_image, image_scales = preprocessor_fn(raw_image, image_size)
     resized_raw_image = resize_image(raw_image, (image_size, image_size))
 
     # forward pass - get model outputs for input image
