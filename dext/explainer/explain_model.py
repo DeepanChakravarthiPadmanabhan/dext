@@ -5,22 +5,27 @@ from paz.processors.image import LoadImage
 from dext.model.model_factory import ModelFactory
 from dext.model.preprocess_factory import PreprocessorFactory
 from dext.model.postprocess_factory import PostprocessorFactory
-from dext.model.efficientdet.functional_efficientdet import get_functional_efficientdet
+from dext.model.functional_models import get_functional_model
 from dext.interpretation_method.factory import ExplainerFactory
 from dext.postprocessing.visualization import visualize_saliency_grayscale, plot_all
 from dext.explainer.utils import get_visualize_index
 
 
-def explain_model(model_name=None, raw_image=None,
+def explain_model(model_name, raw_image_path,
                   interpretation_method="IntegratedGradients",
-                  layer_name=None, visualize_index=None):
+                  layer_name=None, visualize_object=None,
+                  generate_functional_model=True):
     # assemble - get all preprocesses and model
     loader = LoadImage()
-    raw_image = loader(raw_image)
+    raw_image = loader(raw_image_path)
 
     model_fn = ModelFactory(model_name).factory()
     model = model_fn()
     image_size = model.image_size
+    if generate_functional_model:
+        functional_model = get_functional_model(model_name, model)
+    else:
+        functional_model = model
 
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     input_image, image_scales = preprocessor_fn(raw_image, image_size)
@@ -28,19 +33,23 @@ def explain_model(model_name=None, raw_image=None,
 
     postprocessor_fn = PostprocessorFactory(model_name).factory()
 
+    if interpretation_method == "IntegratedGradients":
+        input_image_interpretation = resized_raw_image
+    else:
+        input_image_interpretation = input_image
+
     # forward pass - get model outputs for input image
-    efficientdet_model = get_functional_efficientdet(model)
-    class_outputs, box_outputs = efficientdet_model(input_image)
-    efficientdet_model.summary()
+    class_outputs, box_outputs = functional_model(input_image)
+    functional_model.summary()
     image, detections, class_map_idx = postprocessor_fn(
         model, class_outputs, box_outputs, image_scales, raw_image)
 
     # select - get index to visualize saliency input image
-    visualize_index = get_visualize_index(class_map_idx, class_outputs, box_outputs)
+    visualize_index = get_visualize_index(class_map_idx, class_outputs, box_outputs, visualize_object)
 
     # interpret - apply interpretation method
     interpretation_method_fn = ExplainerFactory(interpretation_method).factory()
-    saliency = interpretation_method_fn(efficientdet_model, resized_raw_image, 'class_net', visualize_index)
+    saliency = interpretation_method_fn(functional_model, input_image_interpretation, layer_name, visualize_index)
 
     # visualize - visualize the interpretation result
     saliency = visualize_saliency_grayscale(saliency)
@@ -48,7 +57,7 @@ def explain_model(model_name=None, raw_image=None,
     f.savefig('explanation.jpg')
 
     # misc savings and debugging
-    visualize_index = get_visualize_index(class_map_idx, class_outputs, box_outputs)
+    visualize_index = get_visualize_index(class_map_idx, class_outputs, box_outputs, visualize_object)
     write_image('images/results/paz_postprocess.jpg', image)
     print(detections)
     print('To match class idx: ', class_map_idx)

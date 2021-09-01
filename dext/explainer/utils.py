@@ -1,15 +1,16 @@
 import numpy as np
 
-def get_interest_index(index):
-
-    interest_neuron_index = int(index[0][0])
-    interest_category_index = int(index[0][1])
+def get_interest_index(index, visualize_object):
+    if not visualize_object:
+        visualize_object = 0
+    interest_neuron_index = int(index[visualize_object][0])
+    interest_category_index = int(index[visualize_object][1])
 
     return interest_neuron_index, interest_category_index
 
-def get_visualize_index(idx, class_outputs, box_outputs):
+def get_visualize_index(idx, class_outputs, box_outputs, visualize_object):
 
-    interest_neuron_index, interest_category_index = get_interest_index(idx)
+    interest_neuron_index, interest_category_index = get_interest_index(idx, visualize_object)
     level_num_boxes = []
     for level in box_outputs:
         level_num_boxes.append(level.shape[0] * level.shape[1] * level.shape[2] * 9)

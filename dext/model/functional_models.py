@@ -18,6 +18,10 @@ def get_functional_efficientdet(model):
     class_outputs = model.class_net(fpn_features, False)
     # Box regression head
     box_outputs = model.box_net(fpn_features, False)
-    efdt = tf.keras.Model(inputs=original_inputs, outputs=[class_outputs, box_outputs])
+    functional_efficientdet = tf.keras.Model(inputs=original_inputs, outputs=[class_outputs, box_outputs])
+    return functional_efficientdet
 
-    return efdt
+
+def get_functional_model(model_name, model):
+    if "EFFICIENTDET" in model_name:
+        return get_functional_efficientdet(model)
