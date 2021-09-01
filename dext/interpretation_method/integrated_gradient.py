@@ -158,4 +158,3 @@ def IntegratedGradientExplainer(model, image, layer_name, visualize_index):
     ig = IntegratedGradients(model, image, "IG", layer_name, visualize_index)
     saliency = ig.get_saliency_map()
     return saliency
-

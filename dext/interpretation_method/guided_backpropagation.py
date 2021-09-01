@@ -32,7 +32,7 @@ class GuidedBackpropagation:
 
     def build_custom_model(self):
         if self.visualize_idx:
-            gbModel = Model(
+            custom_model = Model(
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output[
                              self.visualize_idx[0]][
@@ -40,14 +40,14 @@ class GuidedBackpropagation:
                              self.visualize_idx[2],
                              self.visualize_idx[3]]])
         else:
-            gbModel = Model(
+            custom_model = Model(
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output],
             )
 
-        base_model_layers = [act_layer for act_layer in gbModel.layers[1].layers if hasattr(act_layer, 'activation')]
+        base_model_layers = [act_layer for act_layer in custom_model.layers[1].layers if hasattr(act_layer, 'activation')]
         head_layers = [
-            layer for layer in gbModel.layers[1:] if hasattr(layer, "activation")
+            layer for layer in custom_model.layers[1:] if hasattr(layer, "activation")
         ]
         all_layers = base_model_layers + head_layers
         for layer in all_layers:
@@ -55,8 +55,8 @@ class GuidedBackpropagation:
                 layer.activation = guided_relu
 
         if 'class' in self.layer_name:
-            gbModel.get_layer(self.layer_name).activation = None
-        return gbModel
+            custom_model.get_layer(self.layer_name).activation = None
+        return custom_model
 
     def get_saliency_map(self):
         """Guided backpropagation method for visualizing input saliency."""

@@ -6,7 +6,7 @@ from dext.model.model_factory import ModelFactory
 from dext.model.preprocess_factory import PreprocessorFactory
 from dext.model.postprocess_factory import PostprocessorFactory
 from dext.model.functional_models import get_functional_model
-from dext.interpretation_method.factory import ExplainerFactory
+from dext.interpretation_method.interpretation_method_factory import ExplainerFactory
 from dext.postprocessing.visualization import visualize_saliency_grayscale, plot_all
 from dext.explainer.utils import get_visualize_index
 
