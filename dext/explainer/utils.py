@@ -2,17 +2,13 @@ import numpy as np
 
 
 def get_interest_index(index, visualize_object):
-    if not visualize_object:
-        visualize_object = 0
     interest_neuron_index = int(index[visualize_object][0])
     interest_category_index = int(index[visualize_object][1])
-
     return interest_neuron_index, interest_category_index
 
 
 def get_box_feature_index(box_index, class_outputs,
                           box_outputs, visualize_object):
-
     interest_neuron_index, interest_category_index = get_interest_index(
         box_index, visualize_object)
     level_num_boxes = []

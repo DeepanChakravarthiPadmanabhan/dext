@@ -7,7 +7,8 @@ from dext.model.preprocess_factory import PreprocessorFactory
 from dext.model.postprocess_factory import PostprocessorFactory
 from dext.interpretation_method.interpretation_method_factory import \
     ExplainerFactory
-from dext.postprocessing.saliency_visualization import visualize_saliency_grayscale
+from dext.postprocessing.saliency_visualization import \
+    visualize_saliency_grayscale
 from dext.postprocessing.saliency_visualization import plot_all
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.check_saliency_maps import manipulate_raw_image_by_saliency
@@ -40,7 +41,9 @@ def check_saliency(model, model_name, raw_image, preprocessor_fn,
         outputs = process_outputs(class_outputs, box_outputs,
                                   model.num_levels, model.num_classes)
         for n, i in enumerate(box_index):
-            print("Confidences of the box for object in modified image: ", outputs[0][int(i[0])][int(i[1] + 4)])
+            print("Confidences of the box for object in modified image: ",
+                  outputs[0][int(i[0])][int(i[1] + 4)])
+
 
 def explain_model(model_name, raw_image_path,
                   interpretation_method="IntegratedGradients",
@@ -72,27 +75,35 @@ def explain_model(model_name, raw_image_path,
         outputs = process_outputs(class_outputs, box_outputs,
                                   model.num_levels, model.num_classes)
         for n, i in enumerate(box_index):
-            print("Confidences of the box for object in raw image: ", outputs[0][int(i[0])][int(i[1] + 4)])
+            print("Confidences of the box for object in raw image: ",
+                  outputs[0][int(i[0])][int(i[1] + 4)])
 
-    # select - get index to visualize saliency input image
-    box_features = get_box_feature_index(box_index, class_outputs,
-                                         box_outputs, visualize_object)
+    if type(visualize_object) == int:
+        # select - get index to visualize saliency input image
+        box_features = get_box_feature_index(
+            box_index, class_outputs, box_outputs, visualize_object)
 
-    # interpret - apply interpretation method
-    saliency = interpretation_method_fn(
-        model, model_name, raw_image, layer_name,
-        box_features, preprocessor_fn, image_size)
+        # interpret - apply interpretation method
+        print("Box features out: ", box_features)
+        saliency = interpretation_method_fn(
+            model, model_name, raw_image, layer_name,
+            box_features, preprocessor_fn, image_size)
 
-    # visualize - visualize the interpretation result
-    saliency = visualize_saliency_grayscale(saliency)
-    f = plot_all(detection_image, resized_raw_image,
-                 saliency[0], interpretation_method)
-    f.savefig('explanation.jpg')
+        # visualize - visualize the interpretation result
+        saliency = visualize_saliency_grayscale(saliency)
+        f = plot_all(detection_image, resized_raw_image,
+                     saliency[0], interpretation_method)
+        f.savefig('explanation.jpg')
+    else:
+        # collect saliency for all objects
+        # visualize a few saliency together
+        pass
 
     # saving results
     write_image('images/results/paz_postprocess.jpg', detection_image)
     print(detections)
-    print('Box indices and class labels filtered by post-processing: ', box_index)
+    print('Box indices and class labels filtered by post-processing: ',
+          box_index)
 
     # Saliency check
     check_saliency(model, model_name, raw_image, preprocessor_fn,

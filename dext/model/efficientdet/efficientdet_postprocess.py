@@ -193,5 +193,6 @@ def efficientdet_postprocess(model, class_outputs, box_outputs,
     outputs = nms_per_class(outputs, 0.4)
     outputs, class_map_idx = filterboxes(
         outputs, get_class_name_efficientdet('COCO'), 0.4)
-    image = draw_bounding_boxes(raw_images.astype('uint8'), outputs, get_class_name_efficientdet('COCO'))
+    image = draw_bounding_boxes(raw_images.astype('uint8'),
+                                outputs, get_class_name_efficientdet('COCO'))
     return image, outputs, class_map_idx

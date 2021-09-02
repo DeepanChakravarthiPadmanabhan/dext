@@ -84,9 +84,6 @@ def plot_saliency(saliency, ax=None):
     if ax is None:
         f = plt.figure(figsize=(5, 5))
         ax = f.add_subplot()
-    # flip = saliency[::-1, :]
-    # flip = flip[:, ::-1]
-    # saliency = flip
     im = ax.imshow(saliency, cmap='inferno')
     divider = make_axes_locatable(ax)
     caz = divider.append_axes("right", size="5%", pad=0.1)

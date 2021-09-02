@@ -93,7 +93,9 @@ def draw_bounding_boxes(image, boxes2D, class_names=None, colors=None,
             text = '{:0.2f}, {}'.format(box2D.score, class_name)
         if not with_score:
             text = '{}'.format(class_name)
-        x_text, y_text = get_text_origin(image, text, scale, x_min, y_min, x_max, y_max)
-        cv2.putText(image, text, (x_text, y_text), cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2)
+        x_text, y_text = get_text_origin(image, text, scale,
+                                         x_min, y_min, x_max, y_max)
+        cv2.putText(image, text, (x_text, y_text),
+                    cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2)
         cv2.rectangle(image, (x_min, y_min), (x_max, y_max), color, 2)
     return image
