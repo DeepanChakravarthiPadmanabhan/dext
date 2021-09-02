@@ -6,14 +6,17 @@ from dext.abstract.generator import Generator
 
 """https://github.com/fizyr/keras-retinanet"""
 
+
 def read_image_bgr(path):
     """ Read an image in BGR format.
     Args
         path: Path to the image.
     """
-    # We deliberately don't use cv2.imread here, since it gives no feedback on errors while reading the image.
+    # We deliberately don't use cv2.imread here,
+    # since it gives no feedback on errors while reading the image.
     image = np.ascontiguousarray(Image.open(path).convert('RGB'))
     return image[:, :, ::-1]
+
 
 class COCOGenerator(Generator):
     """Generate data from COCO dataset."""
@@ -23,7 +26,8 @@ class COCOGenerator(Generator):
 
         self.data_dir = data_dir
         self.set_name = set_name
-        self.annotation_file = os.path.join(data_dir, 'annotations', 'instances_' + set_name + '.json')
+        self.annotation_file = os.path.join(
+            data_dir, 'annotations', 'instances_' + set_name + '.json')
         self.coco = COCO(self.annotation_file)
         self.image_ids = self.coco.getImgIds()
         self.image_ids = [114540, 117156, 128224, 130733]
@@ -89,7 +93,8 @@ class COCOGenerator(Generator):
     def image_path(self, image_index):
         """Returns the image path for image index."""
         image_info = self.coco.loadImgs(self.image_ids[image_index])[0]
-        path = os.path.join(self.data_dir, self.set_name, image_info['file_name'])
+        path = os.path.join(
+            self.data_dir, self.set_name, image_info['file_name'])
         return path
 
     def image_aspect_ratio(self, image_index):
@@ -105,7 +110,8 @@ class COCOGenerator(Generator):
     def load_annotations(self, image_index):
         """Load annotations for an image_index."""
         # get ground truth annotations.
-        annotations_ids = self.coco.getAnnIds(imgIds=self.image_ids[image_index], iscrowd=False)
+        annotations_ids = self.coco.getAnnIds(
+            imgIds=self.image_ids[image_index], iscrowd=False)
         annotations = {'labels': np.empty((0,)), 'bboxes': np.empty((0, 4))}
 
         # some images apprear to miss annotations (like image with id 257034)
@@ -119,7 +125,8 @@ class COCOGenerator(Generator):
             if a['bbox'][2] < 1 or a['bbox'][3] < 1:
                 continue
             annotations['labels'] = np.concatenate(
-                [annotations['labels'], [self.coco_label_to_label(a['category_id'])]], axis=0)
+                [annotations['labels'],
+                 [self.coco_label_to_label(a['category_id'])]], axis=0)
             annotations['bboxes'] = np.concatenate([annotations['bboxes'], [[
                 a['bbox'][0],
                 a['bbox'][1],

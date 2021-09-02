@@ -13,7 +13,9 @@ def guided_relu(x):
 
 
 class GuidedBackpropagation:
-    def __init__(self, model, image, explainer, layer_name=None, visualize_idx=None, preprocessor_fn=None, image_size=512):
+    def __init__(self, model, image, explainer,
+                 layer_name=None, visualize_idx=None,
+                 preprocessor_fn=None, image_size=512):
         self.model = model
         self.image = image
         self.explainer = explainer
@@ -23,9 +25,8 @@ class GuidedBackpropagation:
         self.image_size = image_size
         self.image = self.check_image_size(self.image, self.image_size)
         self.image = self.preprocess_image(self.image, self.image_size)
-        if self.layer_name == None:
+        if self.layer_name is None:
             self.layer_name = self.find_target_layer()
-
         self.custom_model = self.build_custom_model()
 
     def check_image_size(self, image, image_size):
@@ -62,10 +63,12 @@ class GuidedBackpropagation:
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output])
 
-        base_model_layers = [act_layer for act_layer in custom_model.layers[1].layers if hasattr(act_layer, 'activation')]
-        head_layers = [
-            layer for layer in custom_model.layers[1:] if hasattr(layer, "activation")
-        ]
+        base_model_layers = [act_layer
+                             for act_layer in custom_model.layers[1].layers
+                             if hasattr(act_layer, 'activation')]
+        head_layers = [layer
+                       for layer in custom_model.layers[1:]
+                       if hasattr(layer, "activation")]
         all_layers = base_model_layers + head_layers
         for layer in all_layers:
             if layer.activation == tf.keras.activations.relu:
@@ -85,7 +88,12 @@ class GuidedBackpropagation:
         saliency = np.asarray(grads)
         return saliency
 
-def GuidedBackpropagationExplainer(model, image, layer_name, visualize_index, preprocessor_fn, image_size):
-    explainer = GuidedBackpropagation(model, image, "GBP", layer_name, visualize_index, preprocessor_fn, image_size)
+
+def GuidedBackpropagationExplainer(model, image,
+                                   layer_name, visualize_index,
+                                   preprocessor_fn, image_size):
+    explainer = GuidedBackpropagation(model, image, "GBP",
+                                      layer_name, visualize_index,
+                                      preprocessor_fn, image_size)
     saliency = explainer.get_saliency_map()
     return saliency

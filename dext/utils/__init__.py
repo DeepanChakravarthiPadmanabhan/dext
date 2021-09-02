@@ -31,6 +31,7 @@ def setup_logging(log_level, log_dir):
         if not os.path.isdir(log_dir):
             os.makedirs(log_dir)
         log_filename = datetime.datetime.now().strftime("%Y-%m-%d") + ".log"
-        filehandler = logging.FileHandler(filename=os.path.join(log_dir, log_filename))
+        filehandler = logging.FileHandler(
+            filename=os.path.join(log_dir, log_filename))
         filehandler.setFormatter(formatter)
         root_logger.addHandler(filehandler)

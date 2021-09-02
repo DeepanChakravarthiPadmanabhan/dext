@@ -1,5 +1,8 @@
-from dext.interpretation_method.integrated_gradient import IntegratedGradientExplainer
-from dext.interpretation_method.guided_backpropagation import GuidedBackpropagationExplainer
+from dext.interpretation_method.integrated_gradient import \
+    IntegratedGradientExplainer
+from dext.interpretation_method.guided_backpropagation import \
+    GuidedBackpropagationExplainer
+
 
 class ExplainerFactory:
     def __init__(self, explainer):
@@ -11,4 +14,5 @@ class ExplainerFactory:
         elif self.explainer == "GuidedBackpropagation":
             return GuidedBackpropagationExplainer
         else:
-            raise ValueError("Architecture name not implemented %s" % (self.explainer))
+            raise ValueError(
+                "Architecture name not implemented %s" % (self.explainer))

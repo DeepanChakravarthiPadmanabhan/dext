@@ -4,6 +4,7 @@ from dext.model.efficientdet.efficientdet import EFFICIENTDETD4, EFFICIENTDETD5
 from dext.model.efficientdet.efficientdet import EFFICIENTDETD6, EFFICIENTDETD7
 from dext.model.efficientdet.efficientdet import EFFICIENTDETD7x
 
+
 class ModelFactory:
     def __init__(self, model_name):
         self.model_name = model_name

@@ -3,6 +3,7 @@ import paz.processors as pr
 from paz.abstract import SequentialProcessor, Box2D
 from dext.utils.class_names import get_class_name_efficientdet
 
+
 def merge_level_outputs(class_outputs, box_outputs, num_levels, num_classes):
     """
     Merges all feature levels into single tensor.
@@ -145,14 +146,15 @@ def nms_per_class(box_data, nms_thresh=0.45, conf_thresh=0.01, top_k=200):
         if len(scores) == 0:
             continue
         boxes = decoded_boxes[conf_mask]
-        boxes_raw_index = np.where(conf_mask == True)[0]
+        boxes_raw_index = np.where(conf_mask)[0]
         indices, count = apply_non_max_suppression(
             boxes, scores, nms_thresh, top_k)
         scores = np.expand_dims(scores, -1)
         selected_indices = indices[:count]
         select_boxes_raw = boxes_raw_index[indices[:count]]
         selections = np.concatenate(
-            (boxes[selected_indices], scores[selected_indices], np.expand_dims(select_boxes_raw, 1)), axis=1)
+            (boxes[selected_indices], scores[selected_indices],
+             np.expand_dims(select_boxes_raw, 1)), axis=1)
         output[class_arg, :count, :] = selections
     return output
 
@@ -180,16 +182,16 @@ def filterboxes(boxes, class_names, conf_thresh=0.5):
 
 def efficientdet_postprocess(model, class_outputs, box_outputs,
                              image_scales, raw_images=None):
-    outputs = process_outputs(class_outputs, box_outputs, model.num_levels, model.num_classes)
+    outputs = process_outputs(class_outputs, box_outputs,
+                              model.num_levels, model.num_classes)
     postprocessing = SequentialProcessor([
         pr.Squeeze(axis=None),
         pr.DecodeBoxes(model.prior_boxes, variances=[1, 1, 1, 1]),
         pr.ScaleBox(image_scales)])
     outputs = postprocessing(outputs)
     outputs = nms_per_class(outputs, 0.4)
-    outputs, class_map_idx = filterboxes(outputs, get_class_name_efficientdet('COCO'), 0.4)
-
+    outputs, class_map_idx = filterboxes(
+        outputs, get_class_name_efficientdet('COCO'), 0.4)
     draw_boxes2D = pr.DrawBoxes2D(get_class_name_efficientdet('COCO'))
     image = draw_boxes2D(raw_images.astype('uint8'), outputs)
-
     return image, outputs, class_map_idx

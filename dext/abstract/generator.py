@@ -6,12 +6,16 @@ import warnings
 
 """https://github.com/fizyr/keras-retinanet"""
 
+
 def compute_resize_scale(image_shape, min_side=800, max_side=1333):
-    """ Compute an image scale such that the image size is constrained to min_side and max_side.
+    """ Compute an image scale such that the image size is
+        constrained to min_side and max_side.
 
     Args
-        min_side: The image's min side will be equal to min_side after resizing.
-        max_side: If after resizing the image's max side is above max_side, resize until the max side is equal to max_side.
+        min_side: The image's min side will be equal to min_side
+        after resizing.
+        max_side: If after resizing the image's max side is above
+        max_side, resize until the max side is equal to max_side.
 
     Returns
         A resizing scale.
@@ -31,18 +35,22 @@ def compute_resize_scale(image_shape, min_side=800, max_side=1333):
 
     return scale
 
+
 def resize_image(img, min_side=800, max_side=1333):
     """ Resize an image such that the size is constrained to min_side and max_side.
 
     Args
-        min_side: The image's min side will be equal to min_side after resizing.
-        max_side: If after resizing the image's max side is above max_side, resize until the max side is equal to max_side.
+        min_side: The image's min side will be equal to min_side
+        after resizing.
+        max_side: If after resizing the image's max side is above
+        max_side, resize until the max side is equal to max_side.
 
     Returns
         A resized image.
     """
     # compute scale to resize the image
-    scale = compute_resize_scale(img.shape, min_side=min_side, max_side=max_side)
+    scale = compute_resize_scale(
+        img.shape, min_side=min_side, max_side=max_side)
 
     # resize the image with the computed scale
     img = cv2.resize(img, None, fx=scale, fy=scale)
@@ -137,7 +145,9 @@ class Generator(tf.keras.utils.Sequence):
         elif self.group_method == 'ratio':
             order.sort(key=lambda x: self.image_aspect_ratio(x))
 
-        self.groups = [[order[x % len(order)] for x in range(i, i + self.batch_size)] for i in range(0, len(order), self.batch_size)]
+        self.groups = [[order[x % len(order)]
+                        for x in range(i, i + self.batch_size)]
+                       for i in range(0, len(order), self.batch_size)]
 
     def load_image_group(self, group):
         """Load images for all images in a group."""
@@ -149,25 +159,37 @@ class Generator(tf.keras.utils.Sequence):
         if self.no_resize:
             return image, 1
         else:
-            return resize_image(image, min_side=self.image_min_side, max_side=self.image_max_side)
+            return resize_image(
+                image, min_side=self.image_min_side,
+                max_side=self.image_max_side)
 
     def load_annotations_group(self, group):
         """ Load annotations for all images in group.
         """
-        annotations_group = [self.load_annotations(image_index) for image_index in group]
+        annotations_group = [self.load_annotations(image_index)
+                             for image_index in group]
         for annotations in annotations_group:
-            assert(isinstance(annotations, dict)), '\'load_annotations\' should return a list of dictionaries, received: {}'.format(type(annotations))
-            assert('labels' in annotations), '\'load_annotations\' should return a list of dictionaries that contain \'labels\' and \'bboxes\'.'
-            assert('bboxes' in annotations), '\'load_annotations\' should return a list of dictionaries that contain \'labels\' and \'bboxes\'.'
+            assert(isinstance(annotations, dict)), \
+                '\'load_annotations\' should return a list ' \
+                'of dictionaries, received: {}'.format(type(annotations))
+            assert('labels' in annotations), \
+                '\'load_annotations\' should return a list of ' \
+                'dictionaries that contain \'labels\' and \'bboxes\'.'
+            assert('bboxes' in annotations), \
+                '\'load_annotations\' should return a list of ' \
+                'dictionaries that contain \'labels\' and \'bboxes\'.'
 
         return annotations_group
 
     def filter_annotations(self, image_group, annotations_group, group):
-        """ Filter annotations by removing those that are outside of the image bounds or whose width/height < 0.
+        """ Filter annotations by removing those that are
+         outside of the image bounds or whose width/height < 0.
         """
         # test all annotations
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
+        for index, (image, annotations) in enumerate(zip(image_group,
+                                                         annotations_group)):
+            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 |
+            # y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
             invalid_indices = np.where(
                 (annotations['bboxes'][:, 2] <= annotations['bboxes'][:, 0]) |
                 (annotations['bboxes'][:, 3] <= annotations['bboxes'][:, 1]) |
@@ -179,28 +201,34 @@ class Generator(tf.keras.utils.Sequence):
 
             # delete invalid indices
             if len(invalid_indices):
-                warnings.warn('Image {} with id {} (shape {}) contains the following invalid boxes: {}.'.format(
-                    self.image_path(group[index]),
-                    group[index],
-                    image.shape,
-                    annotations['bboxes'][invalid_indices, :]
-                ))
+                warnings.warn(
+                    'Image {} with id {} (shape {})'
+                    ' contains the following invalid boxes: {}.'.format(
+                        self.image_path(group[index]),
+                        group[index], image.shape,
+                        annotations['bboxes'][invalid_indices, :]))
                 for k in annotations_group[index].keys():
-                    annotations_group[index][k] = np.delete(annotations[k], invalid_indices, axis=0)
+                    annotations_group[index][k] = np.delete(
+                        annotations[k], invalid_indices, axis=0)
         return image_group, annotations_group
 
     def compute_inputs(self, image_group):
         """ Compute inputs for the network using an image_group.
         """
         # get the max image shape
-        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
+        max_shape = tuple(
+            max(image.shape[x] for image in image_group) for x in range(3))
 
         # construct an image batch object
-        image_batch = np.zeros((self.batch_size,) + max_shape, dtype=tf.keras.backend.floatx())
+        image_batch = np.zeros(
+            (self.batch_size,) + max_shape, dtype=tf.keras.backend.floatx())
 
         # copy all images to the upper left part of the image batch object
-        for image_index, image in enumerate(image_group):
-            image_batch[image_index, :image.shape[0], :image.shape[1], :image.shape[2]] = image
+        for img_arg, image in enumerate(image_group):
+            s1 = image.shape[0]
+            s2 = image.shape[1]
+            s3 = image.shape[2]
+            image_batch[img_arg, :s1, :s2, :s3] = image
 
         if tf.keras.backend.image_data_format() == 'channels_first':
             image_batch = image_batch.transpose((0, 3, 1, 2))
@@ -211,7 +239,8 @@ class Generator(tf.keras.utils.Sequence):
         """ Compute target outputs for the network using images and their annotations.
         """
         # get the max image shape
-        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
+        max_shape = tuple(
+            max(image.shape[x] for image in image_group) for x in range(3))
         anchors = self.generate_anchors(max_shape)
 
         batches = self.compute_anchor_targets(
@@ -231,7 +260,8 @@ class Generator(tf.keras.utils.Sequence):
         annotations_group = self.load_annotations_group(group)
 
         # check validity of annotations
-        image_group, annotations_group = self.filter_annotations(image_group, annotations_group, group)
+        image_group, annotations_group = self.filter_annotations(
+            image_group, annotations_group, group)
 
         # compute network inputs
         inputs = self.compute_inputs(image_group)

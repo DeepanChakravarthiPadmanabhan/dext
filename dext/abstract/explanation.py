@@ -5,7 +5,6 @@ class Explainer(object):
         self.model = model
         self.explainer = explainer
 
-
     def get_saliency_map(self):
         raise NotImplementedError('Interpretation method not implemented.')
 
@@ -19,5 +18,3 @@ class Explainer(object):
     @explainer.setter
     def explainer(self, explainer):
         self._explainer = explainer
-
-

@@ -2,7 +2,8 @@ import tensorflow as tf
 import dext.model.efficientdet.efficientnet_builder as efficientnet_builder
 from dext.model.efficientdet.anchors import get_prior_boxes
 from dext.model.efficientdet.efficientdet_blocks import ResampleFeatureMap
-from dext.model.efficientdet.efficientdet_blocks import FPNCells, ClassNet, BoxNet
+from dext.model.efficientdet.efficientdet_blocks import FPNCells
+from dext.model.efficientdet.efficientdet_blocks import ClassNet, BoxNet
 
 
 class EfficientDet(tf.keras.Model):
