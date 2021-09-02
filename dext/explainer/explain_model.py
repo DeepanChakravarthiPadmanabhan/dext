@@ -82,9 +82,8 @@ def explain_model(model_name, raw_image_path,
         # select - get index to visualize saliency input image
         box_features = get_box_feature_index(
             box_index, class_outputs, box_outputs, visualize_object)
-
+        print(box_features)
         # interpret - apply interpretation method
-        print("Box features out: ", box_features)
         saliency = interpretation_method_fn(
             model, model_name, raw_image, layer_name,
             box_features, preprocessor_fn, image_size)
@@ -97,7 +96,28 @@ def explain_model(model_name, raw_image_path,
     else:
         # collect saliency for all objects
         # visualize a few saliency together
-        pass
+        num_detections = len(detections)
+        saliency_list = []
+        for n, i in enumerate(range(num_detections)):
+            # select - get index to visualize saliency input image
+            box_features = get_box_feature_index(
+                box_index, class_outputs, box_outputs, n)
+            print(box_features)
+            # interpret - apply interpretation method
+            model_fn = ModelFactory(model_name).factory()
+            model = model_fn()
+            from dext.model.functional_models import get_functional_model
+            fn_model = get_functional_model(model_name, model)
+            saliency = interpretation_method_fn(
+                fn_model, model_name, raw_image, layer_name,
+                box_features, preprocessor_fn, image_size)
+
+            # visualize - visualize the interpretation result
+            saliency = visualize_saliency_grayscale(saliency)
+            f = plot_all(detection_image, resized_raw_image,
+                         saliency[0], interpretation_method)
+            f.savefig('explanation_all.jpg')
+            print(n)
 
     # saving results
     write_image('images/results/paz_postprocess.jpg', detection_image)

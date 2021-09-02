@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--interpretation_method", default="IntegratedGradients")
 @click.option("--image_size", default=512)
 @click.option("--layer_name", default=None)
-@click.option("--visualize_object", default=0)
+@click.option("--visualize_object", default=None)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))
