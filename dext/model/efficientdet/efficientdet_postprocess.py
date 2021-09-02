@@ -2,6 +2,7 @@ import numpy as np
 import paz.processors as pr
 from paz.abstract import SequentialProcessor, Box2D
 from dext.utils.class_names import get_class_name_efficientdet
+from dext.postprocessing.detection_visualization import draw_bounding_boxes
 
 
 def merge_level_outputs(class_outputs, box_outputs, num_levels, num_classes):
@@ -192,6 +193,5 @@ def efficientdet_postprocess(model, class_outputs, box_outputs,
     outputs = nms_per_class(outputs, 0.4)
     outputs, class_map_idx = filterboxes(
         outputs, get_class_name_efficientdet('COCO'), 0.4)
-    draw_boxes2D = pr.DrawBoxes2D(get_class_name_efficientdet('COCO'))
-    image = draw_boxes2D(raw_images.astype('uint8'), outputs)
+    image = draw_bounding_boxes(raw_images.astype('uint8'), outputs, get_class_name_efficientdet('COCO'))
     return image, outputs, class_map_idx

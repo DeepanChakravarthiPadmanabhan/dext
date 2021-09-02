@@ -5,10 +5,11 @@ from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
 from dext.abstract.explanation import Explainer
+from dext.model.functional_models import get_functional_model
 
 
 class IntegratedGradients(Explainer):
-    def __init__(self, model, image,
+    def __init__(self, model, model_name, image,
                  explainer="IntegreatedGradients",
                  layer_name=None, visualize_index=None,
                  preprocessor_fn=None, image_size=512,
@@ -18,8 +19,9 @@ class IntegratedGradients(Explainer):
         :param model:
         :param layer_name:
         """
-        super().__init__(model, image, explainer)
+        super().__init__(model, model_name, image, explainer)
         self.model = model
+        self.model_name = model_name
         self.image = image
         self.image_size = image_size
         self.explainer = explainer
@@ -59,7 +61,11 @@ class IntegratedGradients(Explainer):
         return input_image
 
     def build_custom_model(self):
-
+        if "EFFICIENTDET" in self.model_name:
+            self.model = get_functional_model(
+                self.model_name, self.model)
+        else:
+            self.model = self.model
         if self.visualize_index:
             custom_model = Model(
                 inputs=[self.model.inputs],
@@ -176,10 +182,10 @@ class IntegratedGradients(Explainer):
         plt.savefig(save_path)
 
 
-def IntegratedGradientExplainer(model, image,
+def IntegratedGradientExplainer(model, model_name, image,
                                 layer_name, visualize_index,
                                 preprocessor_fn, image_size):
-    ig = IntegratedGradients(model, image, "IG",
+    ig = IntegratedGradients(model, model_name, image, "IG",
                              layer_name, visualize_index,
                              preprocessor_fn, image_size)
     saliency = ig.get_saliency_map()

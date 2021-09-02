@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
+from dext.model.functional_models import get_functional_model
 
 
 @tf.custom_gradient
@@ -13,10 +14,11 @@ def guided_relu(x):
 
 
 class GuidedBackpropagation:
-    def __init__(self, model, image, explainer,
+    def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512):
         self.model = model
+        self.model_name = model_name
         self.image = image
         self.explainer = explainer
         self.layer_name = layer_name
@@ -50,6 +52,11 @@ class GuidedBackpropagation:
         return input_image
 
     def build_custom_model(self):
+        if "EFFICIENTDET" in self.model_name:
+            self.model = get_functional_model(
+                self.model_name, self.model)
+        else:
+            self.model = self.model
         if self.visualize_idx:
             custom_model = Model(
                 inputs=[self.model.inputs],
@@ -89,10 +96,10 @@ class GuidedBackpropagation:
         return saliency
 
 
-def GuidedBackpropagationExplainer(model, image,
+def GuidedBackpropagationExplainer(model, model_name, image,
                                    layer_name, visualize_index,
                                    preprocessor_fn, image_size):
-    explainer = GuidedBackpropagation(model, image, "GBP",
+    explainer = GuidedBackpropagation(model, model_name, image, "GBP",
                                       layer_name, visualize_index,
                                       preprocessor_fn, image_size)
     saliency = explainer.get_saliency_map()

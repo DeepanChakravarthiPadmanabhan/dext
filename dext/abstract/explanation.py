@@ -1,8 +1,9 @@
 class Explainer(object):
 
-    def __init__(self, image, model, explainer):
-        self.image = image
+    def __init__(self, model, model_name, image, explainer):
         self.model = model
+        self.model_name = model_name
+        self.image = image
         self.explainer = explainer
 
     def get_saliency_map(self):

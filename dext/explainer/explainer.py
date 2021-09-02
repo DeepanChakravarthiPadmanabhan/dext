@@ -10,7 +10,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--model_name", "-m", help="Model name to explain.",
               default="EFFICIENTDETD0")
 @click.option("--input_image_path",
-              default="images/000000309391.jpg")
+              default="images/000000114540.jpg")
 @click.option("--interpretation_method", default="IntegratedGradients")
 @click.option("--image_size", default=512)
 @click.option("--layer_name", default=None)
