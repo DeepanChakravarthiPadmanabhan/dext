@@ -66,7 +66,8 @@ def efficientdet_preprocess(image, image_size):
         the raw images to original size from the resized
         image.
     """
-
+    if type(image_size) == tuple:
+        image_size = image_size[0]
     preprocessing = SequentialProcessor([
         pr.CastImage(float),
         pr.SubtractMeanImage(mean=RGB_IMAGENET_MEAN),

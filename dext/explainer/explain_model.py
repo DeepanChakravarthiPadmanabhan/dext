@@ -33,11 +33,6 @@ def explain_model(model_name, raw_image_path,
 
     postprocessor_fn = PostprocessorFactory(model_name).factory()
 
-    if interpretation_method == "IntegratedGradients":
-        input_image_interpretation = resized_raw_image
-    else:
-        input_image_interpretation = input_image
-
     # forward pass - get model outputs for input image
     class_outputs, box_outputs = functional_model(input_image)
     functional_model.summary()
@@ -49,7 +44,7 @@ def explain_model(model_name, raw_image_path,
 
     # interpret - apply interpretation method
     interpretation_method_fn = ExplainerFactory(interpretation_method).factory()
-    saliency = interpretation_method_fn(functional_model, input_image_interpretation, layer_name, visualize_index)
+    saliency = interpretation_method_fn(functional_model, raw_image, layer_name, visualize_index, preprocessor_fn, image_size)
 
     # visualize - visualize the interpretation result
     saliency = visualize_saliency_grayscale(saliency)

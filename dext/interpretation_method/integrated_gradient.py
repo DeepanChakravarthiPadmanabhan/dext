@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 
-from dext.model.efficientdet.utils import efficientdet_preprocess
+from paz.backend.image import resize_image
 from dext.abstract.explanation import Explainer
 
 
@@ -11,6 +11,7 @@ class IntegratedGradients(Explainer):
     def __init__(self, model, image,
                  explainer="IntegreatedGradients",
                  layer_name=None, visualize_index=None,
+                 preprocessor_fn=None, image_size=512,
                  steps=5, batch_size=1):
         """
         Model: pre-softmax layer (logit layer)
@@ -20,12 +21,15 @@ class IntegratedGradients(Explainer):
         super().__init__(model, image, explainer)
         self.model = model
         self.image = image
-        self.image_size = image.shape[1]
+        self.image_size = image_size
         self.explainer = explainer
         self.layer_name = layer_name
         self.steps = steps
         self.batch_size = batch_size
         self.visualize_index = visualize_index
+        self.preprocessor_fn = preprocessor_fn
+
+        self.image = self.check_image_size(self.image, self.image_size)
 
         self.generate_baseline()
 
@@ -34,14 +38,27 @@ class IntegratedGradients(Explainer):
 
         self.custom_model = self.build_custom_model()
 
+    def check_image_size(self, image, image_size):
+        if image.shape != (image_size, image_size, 3):
+            image = resize_image(image, (image_size, image_size))
+        return image
+
     def generate_baseline(self):
-        self.baseline = np.zeros(shape=(1, self.image.shape[0], self.image.shape[1], 3))
+        self.baseline = np.zeros(shape=(1, self.image_size, self.image_size, 3))
 
     def find_target_layer(self):
         for layer in reversed(self.model.layers):
             if len(layer.output_shape) == 4:
                 return layer.name
         raise ValueError("Could not find 4D layer. Cannot apply Integrated Gradients.")
+
+    def preprocess_image(self, image, image_size):
+        preprocessed_image = self.preprocessor_fn(image, image_size)
+        if type(preprocessed_image) == tuple:
+            input_image, image_scales = preprocessed_image
+        else:
+            input_image = preprocessed_image
+        return input_image
 
     def build_custom_model(self):
 
@@ -56,8 +73,7 @@ class IntegratedGradients(Explainer):
         else:
             custom_model = Model(
                 inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output],
-            )
+                outputs=[self.model.get_layer(self.layer_name).output])
         if 'class' in self.layer_name:
             custom_model.get_layer(self.layer_name).activation = None
         return custom_model
@@ -87,7 +103,7 @@ class IntegratedGradients(Explainer):
         image_size = self.baseline.shape[1]
         new_interpolated_image = []
         for i in interpolated_images:
-            normimage, _ = efficientdet_preprocess(i, image_size)
+            normimage = self.preprocess_image(i, image_size)
             new_interpolated_image.append(normimage)
         new_interpolated_image = tf.concat(new_interpolated_image, axis=0)
         return new_interpolated_image
@@ -154,7 +170,7 @@ class IntegratedGradients(Explainer):
         plt.tight_layout()
         plt.savefig(save_path)
 
-def IntegratedGradientExplainer(model, image, layer_name, visualize_index):
-    ig = IntegratedGradients(model, image, "IG", layer_name, visualize_index)
+def IntegratedGradientExplainer(model, image, layer_name, visualize_index, preprocessor_fn, image_size):
+    ig = IntegratedGradients(model, image, "IG", layer_name, visualize_index, preprocessor_fn, image_size)
     saliency = ig.get_saliency_map()
     return saliency
