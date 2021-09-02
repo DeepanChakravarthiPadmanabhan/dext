@@ -11,35 +11,61 @@ from dext.interpretation_method.interpretation_method_factory import \
 from dext.postprocessing.visualization import visualize_saliency_grayscale
 from dext.postprocessing.visualization import plot_all
 from dext.explainer.utils import get_visualize_index
+from dext.explainer.check_saliency_maps import manipulate_raw_image_by_saliency
+
+
+def inference_image(model, raw_image, preprocessor_fn,
+                    postprocessor_fn, image_size):
+
+    input_image, image_scales = preprocessor_fn(raw_image, image_size)
+    # forward pass - get model outputs for input image
+    class_outputs, box_outputs = model(input_image)
+    detection_image, detections, class_map_idx = postprocessor_fn(
+        model, class_outputs, box_outputs, image_scales, raw_image)
+    forward_pass_outs = (detection_image, detections,
+                         class_map_idx, class_outputs, box_outputs)
+    return forward_pass_outs
+
+
+def check_saliency(model, raw_image, preprocessor_fn,
+                   postprocessor_fn, image_size, saliency):
+    modified_image = manipulate_raw_image_by_saliency(raw_image, saliency)
+    forward_pass_outs = inference_image(model, modified_image, preprocessor_fn,
+                                        postprocessor_fn, image_size)
+    modified_detection_image = forward_pass_outs[0]
+    write_image('modified_detections.jpg', modified_detection_image)
 
 
 def explain_model(model_name, raw_image_path,
                   interpretation_method="IntegratedGradients",
-                  layer_name=None, visualize_object=None,
-                  generate_functional_model=True):
+                  image_size=512, layer_name=None,
+                  visualize_object=None):
     # assemble - get all preprocesses and model
     loader = LoadImage()
     raw_image = loader(raw_image_path)
 
     model_fn = ModelFactory(model_name).factory()
     model = model_fn()
-    image_size = model.image_size
-    if generate_functional_model:
+
+    if "EFFICIENTDET" in model_name:
+        image_size = model.image_size
         functional_model = get_functional_model(model_name, model)
     else:
         functional_model = model
 
     preprocessor_fn = PreprocessorFactory(model_name).factory()
-    input_image, image_scales = preprocessor_fn(raw_image, image_size)
+    postprocessor_fn = PostprocessorFactory(model_name).factory()
     resized_raw_image = resize_image(raw_image, (image_size, image_size))
 
-    postprocessor_fn = PostprocessorFactory(model_name).factory()
-
     # forward pass - get model outputs for input image
-    class_outputs, box_outputs = functional_model(input_image)
-    functional_model.summary()
-    detection_image, detections, class_map_idx = postprocessor_fn(
-        model, class_outputs, box_outputs, image_scales, raw_image)
+    forward_pass_outs = inference_image(
+        model, raw_image, preprocessor_fn,
+        postprocessor_fn, image_size)
+    detection_image = forward_pass_outs[0]
+    detections = forward_pass_outs[1]
+    class_map_idx = forward_pass_outs[2]
+    class_outputs = forward_pass_outs[3]
+    box_outputs = forward_pass_outs[4]
 
     # select - get index to visualize saliency input image
     visualize_index = get_visualize_index(class_map_idx, class_outputs,
@@ -64,3 +90,7 @@ def explain_model(model_name, raw_image_path,
     write_image('images/results/paz_postprocess.jpg', detection_image)
     print(detections)
     print('To match class idx: ', class_map_idx)
+
+    # Saliency check
+    check_saliency(model, raw_image, preprocessor_fn,
+                   postprocessor_fn, image_size, saliency[0])

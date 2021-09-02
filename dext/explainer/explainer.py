@@ -12,18 +12,21 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--input_image_path",
               default="images/000000309391.jpg")
 @click.option("--interpretation_method", default="IntegratedGradients")
+@click.option("--image_size", default=512)
 @click.option("--layer_name", default=None)
 @click.option("--visualize_object", default=None)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))
 @click.option("--log-dir", default="")
-def explainer(model_name, input_image_path, interpretation_method, layer_name,
-              visualize_object, log_level, log_dir):
+def explainer(model_name, input_image_path, interpretation_method,
+              image_size, layer_name, visualize_object,
+              log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     LOGGER.info("Running explainer")
     explain_model(model_name, input_image_path,
-                  interpretation_method, layer_name, visualize_object)
+                  interpretation_method, image_size,
+                  layer_name, visualize_object)
 
 
 if __name__ == "__main__":
