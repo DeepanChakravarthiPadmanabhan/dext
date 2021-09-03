@@ -1,5 +1,6 @@
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import cv2
 
@@ -9,6 +10,7 @@ def visualize_saliency_grayscale(image_3d, percentile=99):
     vmax = np.percentile(image_2d, percentile)
     vmin = np.min(image_2d)
     image_2d = np.clip((image_2d - vmin) / (vmax - vmin), 0, 1)
+    image_2d = image_2d[0]
     return image_2d
 
 
@@ -19,7 +21,120 @@ def visualize_saliency_diverging(image_3d, percentile=99):
     vmin = -span
     vmax = span
     image_2d = np.clip((image_2d - vmin) / (vmax - vmin), -1, 1)
+    image_2d = image_2d[0]
     return image_2d
+
+
+def plot_detection_image(detection_image, ax):
+    ax.imshow(detection_image)
+    ax.axis('off')
+    ax.set_title('Detections')
+
+
+def plot_saliency(saliency, ax=None):
+    im = ax.imshow(saliency, cmap='inferno')
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    plt.colorbar(im, caz)
+    caz.yaxis.tick_right()
+    caz.yaxis.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    caz.yaxis.set_ticklabels([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.axis('off')
+    ax.set_title('Saliency map')
+
+
+def plot_single_saliency(detection_image, image, saliency,
+                         interpretation_method, confidence=0.5,
+                         class_name="BG"):
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    ax1, ax2 = axes
+    plot_detection_image(detection_image, ax1)
+    plot_saliency(saliency, ax2)
+    ax2.imshow(image, alpha=0.4)
+    text = '{:0.2f}, {}'.format(confidence, class_name)
+    ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
+    fig.suptitle('Detector explanation using ' + interpretation_method)
+    fig.subplots_adjust(left=0.125, right=0.9, bottom=0.11,
+                        top=0.88, wspace=0.2, hspace=0.2)
+    return fig
+
+
+def plot_all(detection_image, image, saliency_list,
+             interpretation_method, confidence=None,
+             class_name=None, mode="subplot"):
+    if mode == "subplot":
+        return plot_all_subplot(detection_image, image, saliency_list,
+                                interpretation_method, confidence,
+                                class_name)
+    else:
+        return plot_all_gridspec(detection_image, image, saliency_list,
+                                 interpretation_method, confidence,
+                                 class_name)
+
+
+def plot_all_subplot(detection_image, image, saliency_list,
+                     interpretation_method,  confidence=None,
+                     class_name=None):
+    num_axes = len(saliency_list) + 1
+    fig_width = 5 * num_axes
+    fig, ax = plt.subplots(1, num_axes, figsize=(fig_width, 5))
+    ax = ax.flat
+    plot_detection_image(detection_image, ax[0])
+    for obj, ax in enumerate(ax[1:]):
+        plot_saliency(saliency_list[obj], ax)
+        ax.imshow(image, alpha=0.4)
+        text = '{:0.2f}, {}'.format(confidence[obj], class_name[obj])
+        ax.text(0.5, -0.1, text, size=12, ha="center", transform=ax.transAxes)
+    fig.suptitle('Detector explanation using ' + interpretation_method)
+    fig.tight_layout()
+    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.05,
+                        top=0.9, wspace=0.2, hspace=0.2)
+    return fig
+
+
+def plot_all_gridspec(detection_image, image, saliency_list,
+                      interpretation_method, confidence=None,
+                      class_name=None):
+    saliency1, saliency2, saliency3, saliency4 = saliency_list
+    fig = plt.figure(figsize=(8, 4))
+    gs0 = gridspec.GridSpec(1, 2)
+    gs0.update(left=0.05, right=0.95)
+    gs00 = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[0])
+    ax1 = plt.Subplot(fig, gs00[:, :])
+    fig.add_subplot(ax1)
+    plot_detection_image(detection_image, ax1)
+
+    gs01 = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=gs0[1],
+                                            hspace=0.2, wspace=0.2)
+    ax2 = plt.Subplot(fig, gs01[0, 0])
+    fig.add_subplot(ax2)
+    plot_saliency(saliency1, ax2)
+    ax2.imshow(image, alpha=0.4)
+    text = '{:0.2f}, {}'.format(confidence[0], class_name[0])
+    ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
+
+    ax3 = plt.Subplot(fig, gs01[0, 1])
+    fig.add_subplot(ax3)
+    plot_saliency(saliency2, ax3)
+    ax3.imshow(image, alpha=0.4)
+    text = '{:0.2f}, {}'.format(confidence[1], class_name[1])
+    ax3.text(0.5, -0.1, text, size=12, ha="center", transform=ax3.transAxes)
+
+    ax4 = plt.Subplot(fig, gs01[1, 0])
+    fig.add_subplot(ax4)
+    plot_saliency(saliency3, ax4)
+    ax4.imshow(image, alpha=0.4)
+    text = '{:0.2f}, {}'.format(confidence[2], class_name[2])
+    ax4.text(0.5, -0.1, text, size=12, ha="center", transform=ax4.transAxes)
+
+    ax5 = plt.Subplot(fig, gs01[1, 1])
+    fig.add_subplot(ax5)
+    plot_saliency(saliency4, ax5)
+    ax5.imshow(image, alpha=0.4)
+    text = '{:0.2f}, {}'.format(confidence[3], class_name[3])
+    ax5.text(0.5, -0.1, text, size=12, ha="center", transform=ax5.transAxes)
+    fig.suptitle('Detector explanation using ' + interpretation_method)
+    return fig
 
 
 def create_overlay(image_3d, saliency_2d):
@@ -45,6 +160,7 @@ def get_mpl_colormap(cmap_name='jet_r'):
 
 
 def plot_saliency_image_overlay(image, saliency, ax):
+    """OpenCV based overlay function for plotting image and saliency map."""
     if ax is None:
         ax = plt.gca()
     new_image, max_intensity, min_intensity = create_overlay(image, saliency)
@@ -53,43 +169,5 @@ def plot_saliency_image_overlay(image, saliency, ax):
                         orientation='vertical',
                         fraction=0.046,
                         pad=0.04)
-    m1 = 0  # colorbar min value
-    m4 = 1  # colorbar max value
-    cbar.set_ticks([m1, m4])
-    cbar.set_ticklabels([0, 1])
-
-
-def plot_all(detection_image, image, saliency,
-             interpretation_method, overlay="matplotlib"):
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    ax1, ax2 = axes
-    ax1.imshow(detection_image)
-    ax1.axis('off')
-    ax1.set_title('Detections')
-
-    if overlay == "opencv":
-        plot_saliency_image_overlay(image, saliency, ax2)
-    else:
-        plot_saliency(saliency, ax2)
-        ax2.imshow(image, alpha=0.4)
-        ax2.axis('off')
-        ax2.set_title('Saliency map')
-    fig.suptitle('Detector explanation using ' + interpretation_method)
-    fig.subplots_adjust(left=0.125, right=0.9, bottom=0.11,
-                        top=0.88, wspace=0.2, hspace=0.2)
-    return fig
-
-
-def plot_saliency(saliency, ax=None):
-    if ax is None:
-        f = plt.figure(figsize=(5, 5))
-        ax = f.add_subplot()
-    im = ax.imshow(saliency, cmap='inferno')
-    divider = make_axes_locatable(ax)
-    caz = divider.append_axes("right", size="5%", pad=0.1)
-    plt.colorbar(im, caz)
-    m1 = 0  # colorbar min value
-    m4 = 1  # colorbar max value
-    caz.yaxis.tick_right()
-    caz.yaxis.set_ticks([m1, m4])
-    caz.yaxis.set_ticklabels([0, 1])
+    cbar.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    cbar.set_ticklabels([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])

@@ -1,15 +1,15 @@
 import numpy as np
 
 
-def get_interest_index(index, visualize_object):
-    interest_neuron_index = int(index[visualize_object][0])
-    interest_category_index = int(index[visualize_object][1])
-    return interest_neuron_index, interest_category_index
+def get_interest_index(box_index, visualize_object):
+    feature_map_position = int(box_index[visualize_object][0])
+    class_arg = int(box_index[visualize_object][1])
+    return feature_map_position, class_arg
 
 
 def get_box_feature_index(box_index, class_outputs,
                           box_outputs, visualize_object):
-    interest_neuron_index, interest_category_index = get_interest_index(
+    feature_map_position, class_arg = get_interest_index(
         box_index, visualize_object)
     level_num_boxes = []
     for level in box_outputs:
@@ -21,11 +21,11 @@ def get_box_feature_index(box_index, class_outputs,
         sum_all.append(sum(level_num_boxes[:n + 1]))
 
     bp_level = 0
-    remaining_idx = interest_neuron_index
+    remaining_idx = feature_map_position
     for n, i in enumerate(sum_all):
-        if i < interest_neuron_index:
+        if i < feature_map_position:
             bp_level = n + 1
-            remaining_idx = interest_neuron_index - i
+            remaining_idx = feature_map_position - i
 
     # print("selections: ", bp_level, remaining_idx, sum_all,
     #       interest_category_index, interest_neuron_index)
@@ -38,7 +38,7 @@ def get_box_feature_index(box_index, class_outputs,
     #       selected_class_level_reshaped.shape)
 
     interest_neuron_class = np.unravel_index(
-        np.ravel_multi_index((0, int(remaining_idx), interest_category_index),
+        np.ravel_multi_index((0, int(remaining_idx), class_arg),
                              selected_class_level_reshaped.shape),
         selected_class_level.shape)
 

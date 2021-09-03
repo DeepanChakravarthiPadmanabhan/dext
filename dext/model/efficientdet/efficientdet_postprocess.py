@@ -175,9 +175,9 @@ def filterboxes(boxes, class_names, conf_thresh=0.5):
         for confident_class_detection in confident_class_detections:
             coordinates = confident_class_detection[:4]
             score = confident_class_detection[4]
-            feature_map_idx = confident_class_detection[5]
+            feature_map_position = confident_class_detection[5]
             boxes2D.append(Box2D(coordinates, score, class_name))
-            class_map_idx.append([feature_map_idx, class_arg])
+            class_map_idx.append([feature_map_position, class_arg, score])
     return boxes2D, class_map_idx
 
 
