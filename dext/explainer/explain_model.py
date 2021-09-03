@@ -40,6 +40,7 @@ def check_saliency(model, model_name, raw_image, preprocessor_fn,
     write_image('modified_detections.jpg', modified_detection_image)
     class_outputs = forward_pass_outs[3]
     box_outputs = forward_pass_outs[4]
+
     if "EFFICIENTDET" in model_name:
         outputs = process_outputs(class_outputs, box_outputs,
                                   model.num_levels, model.num_classes)
@@ -49,10 +50,10 @@ def check_saliency(model, model_name, raw_image, preprocessor_fn,
 
 
 def explain_model(model_name, raw_image_path,
-                  interpretation_method="IntegratedGradients",
                   image_size=512, layer_name=None,
-                  visualize_object=None,
-                  num_visualize=2):
+                  explaining="Classification",
+                  interpretation_method="IntegratedGradients",
+                  visualize_object=None, num_visualize=2):
     # assemble - get all preprocesses and model
     loader = LoadImage()
     raw_image = loader(raw_image_path)
@@ -75,6 +76,7 @@ def explain_model(model_name, raw_image_path,
     box_index = forward_pass_outs[2]
     class_outputs = forward_pass_outs[3]
     box_outputs = forward_pass_outs[4]
+
     if "EFFICIENTDET" in model_name:
         outputs = process_outputs(class_outputs, box_outputs,
                                   model.num_levels, model.num_classes)
@@ -82,60 +84,65 @@ def explain_model(model_name, raw_image_path,
             print("Confidences of the box for object in raw image: ",
                   outputs[0][int(i[0])][int(i[1] + 4)])
 
-    if type(visualize_object) == int:
-        # select - get index to visualize saliency input image
-        box_features = get_box_feature_index(
-            box_index, class_outputs, box_outputs, visualize_object)
+    if len(detections):
+        if type(visualize_object) == int:
+            # select - get index to visualize saliency input image
+            box_features = get_box_feature_index(
+                box_index, class_outputs, box_outputs, visualize_object)
 
-        # interpret - apply interpretation method
-        saliency = interpretation_method_fn(
-            model, model_name, raw_image, layer_name,
-            box_features, preprocessor_fn, image_size)
+            # interpret - apply interpretation method
+            saliency = interpretation_method_fn(
+                model, model_name, raw_image, layer_name,
+                box_features, preprocessor_fn, image_size)
 
-        # visualize - visualize the interpretation result
-        saliency = visualize_saliency_grayscale(saliency)
-        f = plot_single_saliency(detection_image, resized_raw_image,
-                                 saliency, interpretation_method,
-                                 box_index[visualize_object][2],
-                                 get_class_name_efficientdet('COCO')
-                                 [box_index[visualize_object][1]])
-        f.savefig('explanation.jpg')
+            # visualize - visualize the interpretation result
+            saliency = visualize_saliency_grayscale(saliency)
+            f = plot_single_saliency(detection_image, resized_raw_image,
+                                     saliency, box_index[visualize_object][2],
+                                     get_class_name_efficientdet('COCO')
+                                     [box_index[visualize_object][1]],
+                                     explaining, interpretation_method,
+                                     model_name)
+            f.savefig('explanation.jpg')
+        else:
+            # collect saliency for all objects
+            # visualize a few saliency together
+            num_detections = len(detections)
+            saliency_list = []
+            confidence_list = []
+            class_name_list = []
+            for n, i in enumerate(range(num_detections)):
+                if n < num_visualize:
+                    # select - get index to visualize saliency input image
+                    box_features = get_box_feature_index(
+                        box_index, class_outputs, box_outputs, n)
+
+                    # interpret - apply interpretation method
+                    saliency = interpretation_method_fn(
+                        deepcopy(model), model_name, raw_image, layer_name,
+                        box_features, preprocessor_fn, image_size)
+
+                    # visualize - visualize the interpretation result
+                    saliency = visualize_saliency_grayscale(saliency)
+                    saliency_list.append(saliency)
+                    confidence_list.append(box_index[n][2])
+                    class_name_list.append(get_class_name_efficientdet('COCO')
+                                           [box_index[n][1]])
+
+            f = plot_all(detection_image, resized_raw_image, saliency_list,
+                         confidence_list, class_name_list, explaining,
+                         interpretation_method, model_name, "subplot")
+            f.savefig('explanation_all.jpg')
+
+        # saving results
+        write_image('images/results/paz_postprocess.jpg', detection_image)
+        print(detections)
+        print('Box indices and class labels filtered by post-processing: ',
+              box_index)
+
+        # Saliency check
+        check_saliency(model, model_name, raw_image, preprocessor_fn,
+                       postprocessor_fn, image_size, saliency, box_index)
+
     else:
-        # collect saliency for all objects
-        # visualize a few saliency together
-        num_detections = len(detections)
-        saliency_list = []
-        confidence_list = []
-        class_name_list = []
-        for n, i in enumerate(range(num_detections)):
-            if n < num_visualize:
-                # select - get index to visualize saliency input image
-                box_features = get_box_feature_index(
-                    box_index, class_outputs, box_outputs, n)
-
-                # interpret - apply interpretation method
-                saliency = interpretation_method_fn(
-                    deepcopy(model), model_name, raw_image, layer_name,
-                    box_features, preprocessor_fn, image_size)
-
-                # visualize - visualize the interpretation result
-                saliency = visualize_saliency_grayscale(saliency)
-                saliency_list.append(saliency)
-                confidence_list.append(box_index[n][2])
-                class_name_list.append(get_class_name_efficientdet('COCO')
-                                       [box_index[n][1]])
-
-        f = plot_all(detection_image, resized_raw_image,
-                     saliency_list, interpretation_method,
-                     confidence_list, class_name_list, "subplot")
-        f.savefig('explanation_all.jpg')
-
-    # saving results
-    write_image('images/results/paz_postprocess.jpg', detection_image)
-    print(detections)
-    print('Box indices and class labels filtered by post-processing: ',
-          box_index)
-
-    # Saliency check
-    check_saliency(model, model_name, raw_image, preprocessor_fn,
-                   postprocessor_fn, image_size, saliency, box_index)
+        print("No detections to analyze.")

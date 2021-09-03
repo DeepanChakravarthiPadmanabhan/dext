@@ -44,8 +44,10 @@ def plot_saliency(saliency, ax=None):
 
 
 def plot_single_saliency(detection_image, image, saliency,
-                         interpretation_method, confidence=0.5,
-                         class_name="BG"):
+                         confidence=0.5, class_name="BG",
+                         explaining="Classification",
+                         interpretation_method="Integrated Gradients",
+                         model_name="EfficientDet"):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes
     plot_detection_image(detection_image, ax1)
@@ -53,28 +55,32 @@ def plot_single_saliency(detection_image, image, saliency,
     ax2.imshow(image, alpha=0.4)
     text = '{:0.2f}, {}'.format(confidence, class_name)
     ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
-    fig.suptitle('Detector explanation using ' + interpretation_method)
+    fig.suptitle('%s explanation using %s on %s' % (
+        explaining, interpretation_method, model_name))
     fig.subplots_adjust(left=0.125, right=0.9, bottom=0.11,
                         top=0.88, wspace=0.2, hspace=0.2)
     return fig
 
 
 def plot_all(detection_image, image, saliency_list,
-             interpretation_method, confidence=None,
-             class_name=None, mode="subplot"):
+             confidence=None, class_name=None,
+             explaining="Classification",
+             interpretation_method="Integrated Gradients",
+             model_name="EfficientDet", mode="subplot"):
     if mode == "subplot":
         return plot_all_subplot(detection_image, image, saliency_list,
-                                interpretation_method, confidence,
-                                class_name)
+                                confidence, class_name, explaining,
+                                interpretation_method, model_name)
     else:
         return plot_all_gridspec(detection_image, image, saliency_list,
-                                 interpretation_method, confidence,
-                                 class_name)
+                                 confidence, class_name, explaining,
+                                 interpretation_method, model_name)
 
 
-def plot_all_subplot(detection_image, image, saliency_list,
-                     interpretation_method,  confidence=None,
-                     class_name=None):
+def plot_all_subplot(detection_image, image, saliency_list, confidence=None,
+                     class_name=None, explaining="Classification",
+                     interpretation_method="Integrated Gradients",
+                     model_name="EfficientDet"):
     num_axes = len(saliency_list) + 1
     fig_width = 5 * num_axes
     fig, ax = plt.subplots(1, num_axes, figsize=(fig_width, 5))
@@ -85,7 +91,8 @@ def plot_all_subplot(detection_image, image, saliency_list,
         ax.imshow(image, alpha=0.4)
         text = '{:0.2f}, {}'.format(confidence[obj], class_name[obj])
         ax.text(0.5, -0.1, text, size=12, ha="center", transform=ax.transAxes)
-    fig.suptitle('Detector explanation using ' + interpretation_method)
+    fig.suptitle('%s explanation using %s on %s' % (
+        explaining, interpretation_method, model_name))
     fig.tight_layout()
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.05,
                         top=0.9, wspace=0.2, hspace=0.2)
@@ -94,7 +101,8 @@ def plot_all_subplot(detection_image, image, saliency_list,
 
 def plot_all_gridspec(detection_image, image, saliency_list,
                       interpretation_method, confidence=None,
-                      class_name=None):
+                      class_name=None, explaining="Classification",
+                      model_name="EfficientDet"):
     saliency1, saliency2, saliency3, saliency4 = saliency_list
     fig = plt.figure(figsize=(8, 4))
     gs0 = gridspec.GridSpec(1, 2)
@@ -133,7 +141,8 @@ def plot_all_gridspec(detection_image, image, saliency_list,
     ax5.imshow(image, alpha=0.4)
     text = '{:0.2f}, {}'.format(confidence[3], class_name[3])
     ax5.text(0.5, -0.1, text, size=12, ha="center", transform=ax5.transAxes)
-    fig.suptitle('Detector explanation using ' + interpretation_method)
+    fig.suptitle('%s explanation using %s on %s' % (
+        explaining, interpretation_method, model_name))
     return fig
 
 
