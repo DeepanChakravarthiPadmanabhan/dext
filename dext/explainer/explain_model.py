@@ -13,47 +13,17 @@ from dext.postprocessing.saliency_visualization import \
 from dext.postprocessing.saliency_visualization import plot_single_saliency
 from dext.postprocessing.saliency_visualization import plot_all
 from dext.explainer.utils import get_box_feature_index
-from dext.explainer.check_saliency_maps import manipulate_raw_image_by_saliency
-from dext.model.efficientdet.efficientdet_postprocess import process_outputs
+from dext.explainer.check_saliency_maps import check_saliency
 from dext.utils.class_names import get_class_name_efficientdet
-
-
-def inference_image(model, raw_image, preprocessor_fn,
-                    postprocessor_fn, image_size):
-
-    input_image, image_scales = preprocessor_fn(raw_image, image_size)
-    # forward pass - get model outputs for input image
-    class_outputs, box_outputs = model(input_image)
-    detection_image, detections, box_index = postprocessor_fn(
-        model, class_outputs, box_outputs, image_scales, raw_image)
-    forward_pass_outs = (detection_image, detections,
-                         box_index, class_outputs, box_outputs)
-    return forward_pass_outs
-
-
-def check_saliency(model, model_name, raw_image, preprocessor_fn,
-                   postprocessor_fn, image_size, saliency, box_index):
-    modified_image = manipulate_raw_image_by_saliency(raw_image, saliency)
-    forward_pass_outs = inference_image(model, modified_image, preprocessor_fn,
-                                        postprocessor_fn, image_size)
-    modified_detection_image = forward_pass_outs[0]
-    write_image('modified_detections.jpg', modified_detection_image)
-    class_outputs = forward_pass_outs[3]
-    box_outputs = forward_pass_outs[4]
-
-    if "EFFICIENTDET" in model_name:
-        outputs = process_outputs(class_outputs, box_outputs,
-                                  model.num_levels, model.num_classes)
-        for n, i in enumerate(box_index):
-            print("Confidences of the box for object in modified image: ",
-                  outputs[0][int(i[0])][int(i[1] + 4)])
+from dext.inference.inference import inference_image
 
 
 def explain_model(model_name, raw_image_path,
                   image_size=512, layer_name=None,
                   explaining="Classification",
                   interpretation_method="IntegratedGradients",
-                  visualize_object=None, num_visualize=2):
+                  visualize_object=None, visualize_box_offset=1,
+                  num_visualize=2):
     # assemble - get all preprocesses and model
     loader = LoadImage()
     raw_image = loader(raw_image_path)
@@ -77,18 +47,12 @@ def explain_model(model_name, raw_image_path,
     class_outputs = forward_pass_outs[3]
     box_outputs = forward_pass_outs[4]
 
-    if "EFFICIENTDET" in model_name:
-        outputs = process_outputs(class_outputs, box_outputs,
-                                  model.num_levels, model.num_classes)
-        for n, i in enumerate(box_index):
-            print("Confidences of the box for object in raw image: ",
-                  outputs[0][int(i[0])][int(i[1] + 4)])
-
     if len(detections):
         if type(visualize_object) == int:
             # select - get index to visualize saliency input image
             box_features = get_box_feature_index(
-                box_index, class_outputs, box_outputs, visualize_object)
+                box_index, class_outputs, box_outputs, explaining,
+                visualize_object, visualize_box_offset)
 
             # interpret - apply interpretation method
             saliency = interpretation_method_fn(
@@ -115,7 +79,8 @@ def explain_model(model_name, raw_image_path,
                 if n < num_visualize:
                     # select - get index to visualize saliency input image
                     box_features = get_box_feature_index(
-                        box_index, class_outputs, box_outputs, n)
+                        box_index, class_outputs, box_outputs, explaining,
+                        n, visualize_box_offset)
 
                     # interpret - apply interpretation method
                     saliency = interpretation_method_fn(

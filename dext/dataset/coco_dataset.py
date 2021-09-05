@@ -112,7 +112,8 @@ class COCOGenerator(Generator):
         # get ground truth annotations.
         annotations_ids = self.coco.getAnnIds(
             imgIds=self.image_ids[image_index], iscrowd=False)
-        annotations = {'labels': np.empty((0,)), 'bboxes': np.empty((0, 4))}
+        annotations = {'labels': np.empty((0,)), 'bboxes': np.empty((0, 4)),
+                       'mask': np.empty(())}
 
         # some images apprear to miss annotations (like image with id 257034)
         if len(annotations_ids) == 0:
@@ -122,6 +123,11 @@ class COCOGenerator(Generator):
         coco_annotations = self.coco.loadAnns(annotations_ids)
         for idx, a in enumerate(coco_annotations):
             # some annotations have basically no width / height, skip them
+            # img_meta = self.coco.imgs[self.image_ids[image_index]]
+            # w = img_meta['width']
+            # h = img_meta['height']
+            # mask = np.zeros((h, w))
+            # mask = np.maximum(self.coco.annToMask(a), mask)
             if a['bbox'][2] < 1 or a['bbox'][3] < 1:
                 continue
             annotations['labels'] = np.concatenate(

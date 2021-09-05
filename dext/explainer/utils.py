@@ -7,8 +7,9 @@ def get_interest_index(box_index, visualize_object):
     return feature_map_position, class_arg
 
 
-def get_box_feature_index(box_index, class_outputs,
-                          box_outputs, visualize_object):
+def get_box_feature_index(box_index, class_outputs, box_outputs,
+                          explaining, visualize_object,
+                          visualize_box_offset=1):
     feature_map_position, class_arg = get_interest_index(
         box_index, visualize_object)
     level_num_boxes = []
@@ -50,7 +51,7 @@ def get_box_feature_index(box_index, class_outputs,
     #       selected_box_level_reshaped.shape)
 
     interest_neuron_box = np.unravel_index(
-        np.ravel_multi_index((0, int(remaining_idx), 1),
+        np.ravel_multi_index((0, int(remaining_idx), visualize_box_offset),
                              selected_box_level_reshaped.shape),
         selected_box_level.shape)
 
@@ -69,4 +70,15 @@ def get_box_feature_index(box_index, class_outputs,
     #                                   bp_class_w, bp_class_index))
     # print("PREDICTED BOX - BOX: ", (bp_level, bp_box_h,
     #                                 bp_box_w, bp_box_index))
-    return (bp_level, bp_class_h, bp_class_w, bp_class_index)
+
+    level, h, w, index = (None,) * 4
+    if explaining == "Classification":
+        level, h, w, index = (bp_level, bp_class_h,
+                              bp_class_w, bp_class_index)
+    elif explaining == "Box":
+        level, h, w, index = (bp_level, bp_box_h,
+                              bp_box_w, bp_box_index)
+    else:
+        pass
+
+    return (level, h, w, index)
