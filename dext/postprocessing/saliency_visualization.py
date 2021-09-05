@@ -25,7 +25,7 @@ def visualize_saliency_diverging(image_3d, percentile=99):
     return image_2d
 
 
-def plot_detection_image(detection_image, ax):
+def plot_detection_image(detection_image, ax=None):
     ax.imshow(detection_image)
     ax.axis('off')
     ax.set_title('Detections')
@@ -41,6 +41,29 @@ def plot_saliency(saliency, ax=None):
     caz.yaxis.set_ticklabels([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.axis('off')
     ax.set_title('Saliency map')
+
+
+def plot_and_save_saliency(image, saliency):
+    fig, ax = plt.subplots(1, 1)
+    im = ax.imshow(saliency, cmap='inferno')
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    plt.colorbar(im, caz)
+    caz.yaxis.tick_right()
+    caz.yaxis.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    caz.yaxis.set_ticklabels([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.axis('off')
+    ax.imshow(image, alpha=0.4)
+    fig.tight_layout()
+    fig.savefig("saliency_only.jpg", bbox_inches='tight')
+
+
+def plot_and_save_detection(image):
+    fig, ax = plt.subplots(1, 1)
+    ax.imshow(image)
+    ax.axis('off')
+    fig.tight_layout()
+    fig.savefig("detections_only.jpg", bbox_inches='tight')
 
 
 def plot_single_saliency(detection_image, image, saliency,
@@ -59,6 +82,8 @@ def plot_single_saliency(detection_image, image, saliency,
         explaining, interpretation_method, model_name))
     fig.subplots_adjust(left=0.125, right=0.9, bottom=0.11,
                         top=0.88, wspace=0.2, hspace=0.2)
+    plot_and_save_saliency(image, saliency)
+    plot_and_save_detection(detection_image)
     return fig
 
 
