@@ -1,9 +1,13 @@
+import logging
 import numpy as np
 
 from paz.backend.image import resize_image
 from paz.backend.image.opencv_image import write_image
 from dext.inference.inference import inference_image
 from dext.model.efficientdet.efficientdet_postprocess import process_outputs
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def check_saliency(model, model_name, raw_image, preprocessor_fn,
@@ -20,8 +24,8 @@ def check_saliency(model, model_name, raw_image, preprocessor_fn,
         outputs = process_outputs(class_outputs, box_outputs,
                                   model.num_levels, model.num_classes)
         for n, i in enumerate(box_index):
-            print("Confidences of the box for object in modified image: ",
-                  outputs[0][int(i[0])][int(i[1] + 4)])
+            LOGGER.info("Object confidences in same box of modified image: ",
+                        outputs[0][int(i[0])][int(i[1] + 4)])
 
 
 def manipulate_raw_image_by_saliency(raw_image, saliency,

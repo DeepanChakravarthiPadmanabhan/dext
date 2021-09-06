@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 from paz.backend.image.opencv_image import write_image
 
@@ -15,6 +16,9 @@ from dext.explainer.utils import get_images_to_explain
 from dext.explainer.check_saliency_maps import check_saliency
 from dext.utils.class_names import get_class_name_efficientdet
 from dext.inference.inference import inference_image
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def explain_object(interpretation_method, box_index,
@@ -94,13 +98,13 @@ def explain_model(model_name, explain_mode, raw_image_path,
             # saving results
             f.savefig('explanation_' + str(count) + '.jpg')
             write_image('images/results/paz_postprocess.jpg', detection_image)
-            print(detections)
-            print('Box indices and class labels filtered by post-processing: ',
-                  box_index)
+            LOGGER.info("Detections: %s" % (detections))
+            LOGGER.info('Box and class labels, after post-processing: %s' %
+                        (box_index))
 
             # Saliency check
             check_saliency(model, model_name, image, preprocessor_fn,
                            postprocessor_fn, image_size, saliency, box_index)
 
         else:
-            print("No detections to analyze.")
+            LOGGER.info("No detections to analyze.")

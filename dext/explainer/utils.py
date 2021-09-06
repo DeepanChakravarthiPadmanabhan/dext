@@ -1,7 +1,11 @@
+import logging
 import numpy as np
 
 from paz.processors.image import LoadImage
 from dext.dataset.coco_dataset import COCOGenerator
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def get_images_to_explain(explain_mode, raw_image_path,
@@ -21,8 +25,8 @@ def get_images_to_explain(explain_mode, raw_image_path,
 
 def get_explain_index(visualize_object, num_visualize, box_index):
     if num_visualize > len(box_index):
-        print("Number of detections less than objects to visualize."
-              "Switching to single object visualization.")
+        LOGGER.info("Number of detections less than objects to visualize. "
+                    "Switching to single object visualization.")
         num_visualize = 1
     if visualize_object == 0:
         # Object count from 1
@@ -67,14 +71,14 @@ def get_box_feature_index(box_index, class_outputs, box_outputs,
             bp_level = n + 1
             remaining_idx = feature_map_position - i
 
-    # print("selections: ", bp_level, remaining_idx, sum_all,
+    # LOGGER.info("selections: ", bp_level, remaining_idx, sum_all,
     #       interest_category_index, interest_neuron_index)
     selected_class_level = class_outputs[bp_level].numpy()
     selected_class_level = np.ones((1, selected_class_level.shape[1],
                                     selected_class_level.shape[2], 9, 90))
     selected_class_level_reshaped = selected_class_level.reshape((1, -1, 90))
 
-    # print('BOX SHAPES CLASS: ', selected_class_level.shape,
+    # LOGGER.info('BOX SHAPES CLASS: ', selected_class_level.shape,
     #       selected_class_level_reshaped.shape)
 
     interest_neuron_class = np.unravel_index(
@@ -86,7 +90,7 @@ def get_box_feature_index(box_index, class_outputs, box_outputs,
     selected_box_level = np.ones((1, selected_box_level.shape[1],
                                   selected_box_level.shape[2], 9, 4))
     selected_box_level_reshaped = selected_box_level.reshape((1, -1, 4))
-    # print('BOX SHAPES BOX: ', selected_box_level.shape,
+    # LOGGER.info('BOX SHAPES BOX: ', selected_box_level.shape,
     #       selected_box_level_reshaped.shape)
 
     interest_neuron_box = np.unravel_index(
@@ -94,8 +98,8 @@ def get_box_feature_index(box_index, class_outputs, box_outputs,
                              selected_box_level_reshaped.shape),
         selected_box_level.shape)
 
-    # print("INTEREST NEURON CLASS: ", interest_neuron_class)
-    # print("INTEREST NEURON BOX: ", interest_neuron_box)
+    # LOGGER.info("INTEREST NEURON CLASS: ", interest_neuron_class)
+    # LOGGER.info("INTEREST NEURON BOX: ", interest_neuron_box)
 
     bp_class_h = interest_neuron_class[1]
     bp_class_w = interest_neuron_class[2]
@@ -105,10 +109,10 @@ def get_box_feature_index(box_index, class_outputs, box_outputs,
     bp_box_w = interest_neuron_box[2]
     bp_box_index = interest_neuron_box[4] + (interest_neuron_box[3] * 4)
 
-    # print("PREDICTED BOX - CLASS: ", (bp_level, bp_class_h,
-    #                                   bp_class_w, bp_class_index))
-    # print("PREDICTED BOX - BOX: ", (bp_level, bp_box_h,
-    #                                 bp_box_w, bp_box_index))
+    # LOGGER.info("PREDICTED BOX - CLASS: ", (bp_level, bp_class_h,
+    #                                         bp_class_w, bp_class_index))
+    # LOGGER.info("PREDICTED BOX - BOX: ", (bp_level, bp_box_h,
+    #                                       bp_box_w, bp_box_index))
 
     level, h, w, index = (None,) * 4
     if explaining == "Classification":
