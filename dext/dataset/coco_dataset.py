@@ -107,13 +107,36 @@ class COCOGenerator(Generator):
         path = self.image_path(image_index)
         return read_image_bgr(path)
 
+    def load_annotations_mask(self, image_index):
+        img_meta = self.coco.imgs[self.image_ids[image_index]]
+        w = img_meta['width']
+        h = img_meta['height']
+        instance_masks = []
+        instance_masks_ids = []
+        annotations_ids = self.coco.getAnnIds(
+            imgIds=self.image_ids[image_index], iscrowd=False)
+        coco_annotations = self.coco.loadAnns(annotations_ids)
+        for annotation in coco_annotations:
+            mask = self.coco.annToMask(annotation)
+            idxs = np.where(mask > 0)
+            mask[idxs] = annotation['category_id']
+            instance_masks.append(mask)
+            instance_masks_ids.append(self.coco_label_to_label(
+                annotation['category_id']))
+        instance_masks = np.stack(instance_masks, axis=2).astype(np.bool)
+        instance_masks_ids = np.array(instance_masks_ids, dtype=np.int32)
+        return instance_masks, instance_masks_ids
+
     def load_annotations(self, image_index):
         """Load annotations for an image_index."""
         # get ground truth annotations.
         annotations_ids = self.coco.getAnnIds(
             imgIds=self.image_ids[image_index], iscrowd=False)
+
+        masks, masks_ids = self.load_annotations_mask(image_index)
+
         annotations = {'labels': np.empty((0,)), 'bboxes': np.empty((0, 4)),
-                       'mask': np.empty(())}
+                       'masks': masks, 'masks_ids': masks_ids}
 
         # some images apprear to miss annotations (like image with id 257034)
         if len(annotations_ids) == 0:
@@ -121,22 +144,18 @@ class COCOGenerator(Generator):
 
         # parse annotations
         coco_annotations = self.coco.loadAnns(annotations_ids)
-        for idx, a in enumerate(coco_annotations):
+        for idx, annotation in enumerate(coco_annotations):
             # some annotations have basically no width / height, skip them
-            # img_meta = self.coco.imgs[self.image_ids[image_index]]
-            # w = img_meta['width']
-            # h = img_meta['height']
-            # mask = np.zeros((h, w))
-            # mask = np.maximum(self.coco.annToMask(a), mask)
-            if a['bbox'][2] < 1 or a['bbox'][3] < 1:
+            if annotation['bbox'][2] < 1 or annotation['bbox'][3] < 1:
                 continue
             annotations['labels'] = np.concatenate(
                 [annotations['labels'],
-                 [self.coco_label_to_label(a['category_id'])]], axis=0)
-            annotations['bboxes'] = np.concatenate([annotations['bboxes'], [[
-                a['bbox'][0],
-                a['bbox'][1],
-                a['bbox'][0] + a['bbox'][2],
-                a['bbox'][1] + a['bbox'][3],
-            ]]], axis=0)
+                 [self.coco_label_to_label(annotation['category_id'])]],
+                axis=0)
+            annotations['bboxes'] = np.concatenate(
+                [annotations['bboxes'], [[
+                    annotation['bbox'][0], annotation['bbox'][1],
+                    annotation['bbox'][0] + annotation['bbox'][2],
+                    annotation['bbox'][1] + annotation['bbox'][3]]]],
+                axis=0)
         return annotations
