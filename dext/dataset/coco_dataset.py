@@ -1,27 +1,16 @@
 import os
 import numpy as np
-from PIL import Image
+from paz.processors.image import LoadImage
 from pycocotools.coco import COCO
 from dext.abstract.generator import Generator
 
 """https://github.com/fizyr/keras-retinanet"""
 
 
-def read_image_bgr(path):
-    """ Read an image in BGR format.
-    Args
-        path: Path to the image.
-    """
-    # We deliberately don't use cv2.imread here,
-    # since it gives no feedback on errors while reading the image.
-    image = np.ascontiguousarray(Image.open(path).convert('RGB'))
-    return image[:, :, ::-1]
-
-
 class COCOGenerator(Generator):
     """Generate data from COCO dataset."""
 
-    def __init__(self, data_dir, set_name):
+    def __init__(self, data_dir, set_name, num_images):
         """Initialize a COCO data generator."""
 
         self.data_dir = data_dir
@@ -31,6 +20,10 @@ class COCOGenerator(Generator):
         self.coco = COCO(self.annotation_file)
         self.image_ids = self.coco.getImgIds()
         self.image_ids = [114540, 117156, 128224, 130733]
+        if num_images:
+            self.image_ids = self.image_ids[: num_images]
+        else:
+            self.image_ids = self.image_ids
         self.load_classes()
 
         super(COCOGenerator, self).__init__()
@@ -104,13 +97,11 @@ class COCOGenerator(Generator):
 
     def load_image(self, image_index):
         """ Load an image at the image_index."""
+        loader = LoadImage()
         path = self.image_path(image_index)
-        return read_image_bgr(path)
+        return loader(path)
 
     def load_annotations_mask(self, image_index):
-        img_meta = self.coco.imgs[self.image_ids[image_index]]
-        w = img_meta['width']
-        h = img_meta['height']
         instance_masks = []
         instance_masks_ids = []
         annotations_ids = self.coco.getAnnIds(

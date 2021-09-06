@@ -41,7 +41,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
                   explaining="Classification",
                   interpretation_method="IntegratedGradients",
                   visualize_object=None, visualize_box_offset=1,
-                  num_visualize=2):
+                  num_images=2, num_visualize=2):
 
     model_fn = ModelFactory(model_name).factory()
     model = model_fn()
@@ -49,11 +49,12 @@ def explain_model(model_name, explain_mode, raw_image_path,
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
 
-    to_be_explained = get_images_to_explain(explain_mode, raw_image_path)
+    to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
+                                            num_images)
 
-    for data in to_be_explained:
+    for count, data in enumerate(to_be_explained):
         image, labels = data
-        image = image[0]
+        image = image[0].astype('uint8')
 
         # forward pass - get model outputs for input image
         forward_pass_outs = inference_image(
@@ -91,7 +92,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
                          interpretation_method, model_name, "subplot")
 
             # saving results
-            f.savefig('explanation_all.jpg')
+            f.savefig('explanation_' + str(count) + '.jpg')
             write_image('images/results/paz_postprocess.jpg', detection_image)
             print(detections)
             print('Box indices and class labels filtered by post-processing: ',

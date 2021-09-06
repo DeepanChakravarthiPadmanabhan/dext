@@ -4,14 +4,18 @@ from paz.processors.image import LoadImage
 from dext.dataset.coco_dataset import COCOGenerator
 
 
-def get_images_to_explain(explain_mode, raw_image_path):
+def get_images_to_explain(explain_mode, raw_image_path,
+                          num_images_to_explain=2):
     if explain_mode == 'single_image':
         loader = LoadImage()
         raw_image = loader(raw_image_path)
         to_be_explained = (([raw_image], None),)
     else:
-        dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/mscoco"
-        to_be_explained = COCOGenerator(dataset_path, "train2017")
+        dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/"
+        dataset_folder = "mscoco"
+        data_dir = dataset_path + dataset_folder
+        to_be_explained = COCOGenerator(data_dir, "train2017",
+                                        num_images_to_explain)
     return to_be_explained
 
 

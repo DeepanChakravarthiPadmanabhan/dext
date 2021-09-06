@@ -69,11 +69,14 @@ def plot_and_save_detection(image):
 
 
 def check_overlay_image_shape(image, saliency):
-    if ((image.shape[1] != saliency.shape[1]) or
-        (image.shape[0] != saliency.shape[0])):
-        image = resize_image(
-            image, (saliency.shape[0], saliency.shape[1]))
+    saliency_h = saliency.shape[0]
+    saliency_w = saliency.shape[1]
+    image_h = image.shape[0]
+    image_w = image.shape[1]
+    if (image_w != saliency_w) or (image_h != saliency_h):
+        image = resize_image(image, (saliency_h, saliency_w))
     return image
+
 
 def plot_single_saliency(detection_image, image, saliency,
                          confidence=0.5, class_name="BG",
