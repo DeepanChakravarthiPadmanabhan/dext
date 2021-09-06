@@ -4,6 +4,8 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import cv2
 
+from paz.backend.image import resize_image
+
 
 def visualize_saliency_grayscale(image_3d, percentile=99):
     image_2d = np.sum(np.abs(image_3d), axis=-1)
@@ -66,11 +68,19 @@ def plot_and_save_detection(image):
     fig.savefig("detections_only.jpg", bbox_inches='tight')
 
 
+def check_overlay_image_shape(image, saliency):
+    if ((image.shape[1] != saliency.shape[1]) or
+        (image.shape[0] != saliency.shape[0])):
+        image = resize_image(
+            image, (saliency.shape[0], saliency.shape[1]))
+    return image
+
 def plot_single_saliency(detection_image, image, saliency,
                          confidence=0.5, class_name="BG",
                          explaining="Classification",
                          interpretation_method="Integrated Gradients",
                          model_name="EfficientDet"):
+    image = check_overlay_image_shape(image, saliency)
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes
     plot_detection_image(detection_image, ax1)
@@ -92,6 +102,7 @@ def plot_all(detection_image, image, saliency_list,
              explaining="Classification",
              interpretation_method="Integrated Gradients",
              model_name="EfficientDet", mode="subplot"):
+    image = check_overlay_image_shape(image, saliency_list[0])
     if mode == "subplot":
         return plot_all_subplot(detection_image, image, saliency_list,
                                 confidence, class_name, explaining,

@@ -9,6 +9,8 @@ LOGGER = logging.getLogger(__name__)
 @click.command()
 @click.option("--model_name", "-m", help="Model name to explain.",
               default="EFFICIENTDETD0")
+@click.option("--image_dataset",
+              default="local")
 @click.option("--input_image_path",
               default="images/000000114540.jpg")
 @click.option("--image_size", default=512)
@@ -22,12 +24,12 @@ LOGGER = logging.getLogger(__name__)
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))
 @click.option("--log-dir", default="")
-def explainer(model_name, input_image_path, image_size, layer_name,
+def explainer(model_name, image_dataset, input_image_path, image_size, layer_name,
               explaining, interpretation_method, visualize_object,
               visualize_box_offset, num_visualize, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     LOGGER.info("Running explainer")
-    explain_model(model_name, input_image_path, image_size, layer_name,
+    explain_model(model_name, image_dataset, input_image_path, image_size, layer_name,
                   explaining, interpretation_method, visualize_object,
                   visualize_box_offset, num_visualize)
 

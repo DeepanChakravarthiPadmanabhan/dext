@@ -1,6 +1,6 @@
 from copy import deepcopy
 from paz.backend.image.opencv_image import write_image
-from paz.backend.image import resize_image
+
 from paz.processors.image import LoadImage
 
 from dext.model.model_factory import ModelFactory
@@ -16,9 +16,43 @@ from dext.explainer.utils import get_box_feature_index
 from dext.explainer.check_saliency_maps import check_saliency
 from dext.utils.class_names import get_class_name_efficientdet
 from dext.inference.inference import inference_image
+from dext.dataset.coco_dataset import COCOGenerator
 
 
-def explain_model(model_name, raw_image_path,
+def get_explain_object_index(image_dataset, raw_image_path,
+                             visualize_object, num_visualize):
+    if image_dataset == 'local':
+        loader = LoadImage()
+        raw_image = loader(raw_image_path)
+        to_be_explained = [raw_image]
+    else:
+        dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/mscoco"
+        dataset = COCOGenerator(dataset_path, "train2017")
+        to_be_explained = COCOGenerator(dataset_path, "train2017")
+    return to_be_explained
+
+
+
+def explain_object(interpretation_method, box_index,
+                   class_outputs, box_outputs, explaining,
+                   visualize_object, visualize_box_offset,
+                   model, model_name, raw_image, layer_name,
+                   preprocessor_fn, image_size):
+    # select - get index to visualize saliency input image
+    box_features = get_box_feature_index(
+        box_index, class_outputs, box_outputs, explaining,
+        visualize_object, visualize_box_offset)
+
+    # interpret - apply interpretation method
+    interpretation_method_fn = ExplainerFactory(
+        interpretation_method).factory()
+    saliency = interpretation_method_fn(
+        model, model_name, raw_image, layer_name,
+        box_features, preprocessor_fn, image_size)
+    return saliency
+
+
+def explain_model(model_name, image_dataset, raw_image_path,
                   image_size=512, layer_name=None,
                   explaining="Classification",
                   interpretation_method="IntegratedGradients",
@@ -33,9 +67,9 @@ def explain_model(model_name, raw_image_path,
 
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
-    interpretation_method_fn = ExplainerFactory(
-        interpretation_method).factory()
-    resized_raw_image = resize_image(raw_image, (image_size, image_size))
+
+    to_be_explained = get_explain_object_index(image_dataset, raw_image_path,
+                                               visualize_object, num_visualize)
 
     # forward pass - get model outputs for input image
     forward_pass_outs = inference_image(
@@ -47,21 +81,20 @@ def explain_model(model_name, raw_image_path,
     class_outputs = forward_pass_outs[3]
     box_outputs = forward_pass_outs[4]
 
+    # for i in to_be_explained:
+
+
     if len(detections):
         if type(visualize_object) == int:
-            # select - get index to visualize saliency input image
-            box_features = get_box_feature_index(
-                box_index, class_outputs, box_outputs, explaining,
-                visualize_object, visualize_box_offset)
-
-            # interpret - apply interpretation method
-            saliency = interpretation_method_fn(
-                model, model_name, raw_image, layer_name,
-                box_features, preprocessor_fn, image_size)
+            saliency = explain_object(
+                interpretation_method, box_index, class_outputs,
+                box_outputs, explaining, visualize_object,
+                visualize_box_offset, deepcopy(model), model_name,
+                raw_image, layer_name, preprocessor_fn, image_size)
 
             # visualize - visualize the interpretation result
             saliency = visualize_saliency_grayscale(saliency)
-            f = plot_single_saliency(detection_image, resized_raw_image,
+            f = plot_single_saliency(detection_image, raw_image,
                                      saliency, box_index[visualize_object][2],
                                      get_class_name_efficientdet('COCO')
                                      [box_index[visualize_object][1]],
@@ -77,15 +110,11 @@ def explain_model(model_name, raw_image_path,
             class_name_list = []
             for n, i in enumerate(range(num_detections)):
                 if n < num_visualize:
-                    # select - get index to visualize saliency input image
-                    box_features = get_box_feature_index(
-                        box_index, class_outputs, box_outputs, explaining,
-                        n, visualize_box_offset)
-
-                    # interpret - apply interpretation method
-                    saliency = interpretation_method_fn(
-                        deepcopy(model), model_name, raw_image, layer_name,
-                        box_features, preprocessor_fn, image_size)
+                    saliency = explain_object(
+                        interpretation_method, box_index, class_outputs,
+                        box_outputs, explaining, n,
+                        visualize_box_offset, deepcopy(model), model_name,
+                        raw_image, layer_name, preprocessor_fn, image_size)
 
                     # visualize - visualize the interpretation result
                     saliency = visualize_saliency_grayscale(saliency)
@@ -94,7 +123,7 @@ def explain_model(model_name, raw_image_path,
                     class_name_list.append(get_class_name_efficientdet('COCO')
                                            [box_index[n][1]])
 
-            f = plot_all(detection_image, resized_raw_image, saliency_list,
+            f = plot_all(detection_image, raw_image, saliency_list,
                          confidence_list, class_name_list, explaining,
                          interpretation_method, model_name, "subplot")
             f.savefig('explanation_all.jpg')
