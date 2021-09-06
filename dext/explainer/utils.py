@@ -1,5 +1,40 @@
 import numpy as np
 
+from paz.processors.image import LoadImage
+from dext.dataset.coco_dataset import COCOGenerator
+
+
+def get_images_to_explain(explain_mode, raw_image_path):
+    if explain_mode == 'single_image':
+        loader = LoadImage()
+        raw_image = loader(raw_image_path)
+        to_be_explained = (([raw_image], None),)
+    else:
+        dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/mscoco"
+        to_be_explained = COCOGenerator(dataset_path, "train2017")
+    return to_be_explained
+
+
+def get_explain_index(visualize_object, num_visualize, box_index):
+    if num_visualize > len(box_index):
+        print("Number of detections less than objects to visualize."
+              "Switching to single object visualization.")
+        num_visualize = 1
+    if visualize_object == 0:
+        # Object count from 1
+        visualize_object = visualize_object + 1
+    if visualize_object:
+        # Visualize object index is given higher priority
+        num_visualize = 1
+    visualize_object_index = []
+    if (visualize_object) and (num_visualize == 1):
+        # Select the visualize_object index
+        visualize_object_index.append(visualize_object - 1)
+    else:
+        # If visualize_object is none
+        visualize_object_index = list(range(num_visualize))
+    return visualize_object_index
+
 
 def get_interest_index(box_index, visualize_object):
     feature_map_position = int(box_index[visualize_object][0])
