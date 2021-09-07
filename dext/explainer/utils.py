@@ -23,29 +23,13 @@ def get_images_to_explain(explain_mode, raw_image_path,
     return to_be_explained
 
 
-def get_explaining_info(visualize_object_index, num_visualize, box_index,
-                        explaining, class_layer_name, reg_layer_name,
-                        box_offset):
-    if num_visualize > len(box_index):
-        LOGGER.info("Number of detections less than objects to visualize. "
-                    "Switching to single object visualization.")
-        num_visualize = 1
-    if visualize_object_index == 0:
-        # Object count from 1
-        visualize_object_index = visualize_object_index + 1
-    if visualize_object_index:
-        # Visualize object index is given higher priority
-        num_visualize = 1
+def get_explaining_info_lists(
+        visualize_object_index, explaining, class_layer_name,
+        reg_layer_name, box_offset):
 
     object_index_list = []
-    if (visualize_object_index) and (num_visualize == 1):
-        # Select the visualize_object index
-        object_index_list.append(visualize_object_index - 1)
-    else:
-        # If visualize_object is none
-        object_index_list = list(range(num_visualize))
-
     if explaining == 'Classification and Box offset':
+        object_index_list.append(visualize_object_index)
         index = object_index_list[-1]
         index_list = [index, ] * 4
         object_index_list += index_list
@@ -56,13 +40,47 @@ def get_explaining_info(visualize_object_index, num_visualize, box_index,
                            reg_layer_name]
         box_offset_list = [None, 0, 1, 2, 3]
     elif explaining == 'Classification':
+        object_index_list.append(visualize_object_index)
         explaining_list = ['Classification', ] * len(object_index_list)
         layer_name_list = [class_layer_name, ] * len(object_index_list)
         box_offset_list = [None, ] * len(object_index_list)
     else:
+        object_index_list.append(visualize_object_index)
         explaining_list = ['Box offset', ] * len(object_index_list)
         layer_name_list = [reg_layer_name, ] * len(object_index_list)
         box_offset_list = [box_offset, ] * len(object_index_list)
+
+    return object_index_list, explaining_list, layer_name_list, box_offset_list
+
+
+def get_explaining_info(visualize_object_index, box_index,
+                        explaining, class_layer_name, reg_layer_name,
+                        box_offset):
+    if visualize_object_index == 0:
+        # Object count from 1
+        visualize_object_index = visualize_object_index + 1
+
+    object_index_list = []
+    explaining_list = []
+    layer_name_list = []
+    box_offset_list = []
+    if visualize_object_index == 'all':
+        for i in range(len(box_index)):
+            explaining_info = get_explaining_info_lists(
+                i, explaining, class_layer_name, reg_layer_name, box_offset)
+            object_index_list = object_index_list + explaining_info[0]
+            explaining_list = explaining_list + explaining_info[1]
+            layer_name_list = layer_name_list + explaining_info[2]
+            box_offset_list = box_offset_list + explaining_info[3]
+    else:
+        visualize_object_index = visualize_object_index - 1
+        explaining_info = get_explaining_info_lists(
+            visualize_object_index, explaining, class_layer_name,
+            reg_layer_name, box_offset)
+        object_index_list = explaining_info[0]
+        explaining_list = explaining_info[1]
+        layer_name_list = explaining_info[2]
+        box_offset_list = explaining_info[3]
 
     return object_index_list, explaining_list, layer_name_list, box_offset_list
 
@@ -129,16 +147,21 @@ def get_box_feature_index(box_index, class_outputs, box_outputs,
     return level, h, w, index
 
 
-def resize_boxes(boxes2D, old_size, new_size):
+def resize_box(box2D, old_size, new_size):
     image_h, image_w, _ = old_size
     new_h, new_w = new_size
+    x_min, y_min, x_max, y_max = box2D.coordinates
+    x_min = int((x_min / image_w) * new_w)
+    y_min = int((y_min / image_h) * new_h)
+    x_max = int((x_max / image_w) * new_w)
+    y_max = int((y_max / image_h) * new_h)
+    return x_min, y_min, x_max, y_max
+
+
+def resize_boxes(boxes2D, old_size, new_size):
     new_boxes = []
     for box2D in boxes2D:
-        x_min, y_min, x_max, y_max = box2D.coordinates
-        x_min = int((x_min / image_w) * new_w)
-        y_min = int((y_min / image_h) * new_h)
-        x_max = int((x_max / image_w) * new_w)
-        y_max = int((y_max / image_h) * new_h)
+        x_min, y_min, x_max, y_max = resize_box(box2D, old_size, new_size)
         new_boxes.append([x_min, y_min, x_max, y_max])
     return new_boxes
 

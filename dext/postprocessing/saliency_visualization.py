@@ -151,7 +151,7 @@ def plot_all_subplot(detection_image, image, saliency_list, confidence,
     fig, ax = plt.subplots(rows, cols, figsize=(fig_width, fig_height))
     ax = ax.flat
     plot_detection_image(detection_image, ax[0])
-    for obj, ax in enumerate(ax[1:]):
+    for obj, ax in enumerate(ax[1:num_axes]):
         saliency_title = get_saliency_title(
             explaining_list[obj], box_offset_list[obj])
         plot_saliency(saliency_list[obj], ax, saliency_title)

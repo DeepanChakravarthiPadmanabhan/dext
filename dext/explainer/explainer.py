@@ -11,16 +11,15 @@ LOGGER = logging.getLogger(__name__)
               default="EFFICIENTDETD0")
 @click.option("--explain_mode", default="single_image")
 @click.option("--input_image_path",
-              default="images/000000309391.jpg")
+              default="images/surfboard.jpg")
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='class_net')
 @click.option("--reg_layer_name", default='box_net')
 @click.option("--to_explain", default="Classification and Box offset")
 @click.option("--interpretation_method", default="IntegratedGradients")
-@click.option("--visualize_object_index", default=6)  # 1 <
+@click.option("--visualize_object_index", default=1)  # 1 <
 @click.option("--visualize_box_offset", default=1)
 @click.option("--num_images", default=2)  # 1 <
-@click.option("--num_visualize", default=2)  # 1 <
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))
@@ -29,14 +28,13 @@ def explainer(model_name, explain_mode, input_image_path, image_size,
               class_layer_name, reg_layer_name, to_explain,
               interpretation_method, visualize_object_index,
               visualize_box_offset, num_images,
-              num_visualize, log_level, log_dir):
+              log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     LOGGER.info("Running explainer")
     explain_model(model_name, explain_mode, input_image_path, image_size,
                   class_layer_name, reg_layer_name, to_explain,
                   interpretation_method, visualize_object_index,
-                  visualize_box_offset, num_images,
-                  num_visualize)
+                  visualize_box_offset, num_images)
 
 
 if __name__ == "__main__":
