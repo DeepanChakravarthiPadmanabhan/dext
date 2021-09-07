@@ -24,7 +24,7 @@ def check_saliency(model, model_name, raw_image, preprocessor_fn,
         outputs = process_outputs(class_outputs, box_outputs,
                                   model.num_levels, model.num_classes)
         for n, i in enumerate(box_index):
-            LOGGER.info("Object confidences in same box of modified image: ",
+            LOGGER.info("Object confidence in same box of modified image: %s" %
                         outputs[0][int(i[0])][int(i[1] + 4)])
 
 
