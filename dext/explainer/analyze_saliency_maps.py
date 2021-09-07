@@ -1,12 +1,12 @@
 import cv2
 import numpy as np
 
-
 from dext.explainer.utils import resize_box
 from dext.explainer.utils import get_saliency_mask
 
-def analyze_saliency_maps(detections, image, saliency_map, visualize_object_index):
-    # include stats such as num detections, iou for each detection on a saliency map,
+
+def analyze_saliency_maps(detections, image, saliency_map,
+                          visualize_object_index):
     box = detections[visualize_object_index]
     box = resize_box(box, image.shape, saliency_map.shape)
     mask_2d = get_saliency_mask(saliency_map)
@@ -24,5 +24,3 @@ def analyze_saliency_maps(detections, image, saliency_map, visualize_object_inde
     num_whites = len(np.where(white_pixels == 1)[0])
     iou = num_whites / area
     return iou
-
-

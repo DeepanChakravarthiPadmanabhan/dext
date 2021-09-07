@@ -50,8 +50,10 @@ def explain_model(model_name, explain_mode, raw_image_path,
                   interpretation_method="IntegratedGradients",
                   visualize_object_index=None, visualize_box_offset=1,
                   num_images=2):
-    explanation_save_file = (os.path.basename(raw_image_path)).rsplit('.jpg', 1)[0]
-    LOGGER.info("Explanation module input image ID: %s" % explanation_save_file)
+    explanation_save_file = (os.path.basename(
+        raw_image_path)).rsplit('.jpg', 1)[0]
+    LOGGER.info("Explanation module input image ID: %s"
+                % explanation_save_file)
     model_fn = ModelFactory(model_name).factory()
     model = model_fn()
 
@@ -60,7 +62,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
 
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
                                             num_images)
-    df_metrics_columns = ["image_index", "object_index", "explaining", "class", "iou"]
+    df_metrics_columns = ["image_index", "object_index",
+                          "explaining", "class", "iou"]
     df_metrics = pd.DataFrame(columns=df_metrics_columns)
 
     for count, data in enumerate(to_be_explained):
@@ -120,7 +123,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 class_name_list.append(class_name)
 
                 # analyze saliency maps
-                iou = analyze_saliency_maps(detections, image, saliency, object_index)
+                iou = analyze_saliency_maps(detections, image,
+                                            saliency, object_index)
                 df_metrics.loc[len(df_metrics)] = [explanation_save_file,
                                                    object_index,
                                                    explaining,
@@ -137,18 +141,18 @@ def explain_model(model_name, explain_mode, raw_image_path,
                       str(visualize_object_index) + '.jpg')
             write_image('images/results/paz_postprocess.jpg', detection_image)
             LOGGER.info("Detections: %s" % detections)
-            LOGGER.info("Box and class labels, after post-processing: %s" % box_index)
-
+            LOGGER.info("Box and class labels, after post-processing: %s"
+                        % box_index)
             excel_writer = pd.ExcelWriter(
-                os.path.join('images/results', "report.xlsx"), engine="xlsxwriter")
+                os.path.join('images/results', "report.xlsx"),
+                engine="xlsxwriter")
             df_metrics.to_excel(excel_writer, sheet_name="micro")
             excel_writer.save()
 
             # check saliency maps
             check_saliency(model, model_name, image, preprocessor_fn,
-                           postprocessor_fn, image_size, saliency_list[0], box_index)
-
-
+                           postprocessor_fn, image_size, saliency_list[0],
+                           box_index)
 
         else:
             LOGGER.info("No detections to analyze.")
