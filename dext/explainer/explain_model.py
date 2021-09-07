@@ -13,6 +13,7 @@ from dext.postprocessing.saliency_visualization import plot_all
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
 from dext.explainer.utils import get_images_to_explain
+from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
 from dext.explainer.check_saliency_maps import check_saliency
 from dext.utils.class_names import get_class_name_efficientdet
 from dext.inference.inference import inference_image
@@ -124,9 +125,12 @@ def explain_model(model_name, explain_mode, raw_image_path,
             LOGGER.info('Box and class labels, after post-processing: %s' %
                         (box_index))
 
-            # Saliency check
+            # check saliency maps
             check_saliency(model, model_name, image, preprocessor_fn,
-                           postprocessor_fn, image_size, saliency, box_index)
+                           postprocessor_fn, image_size, saliency_list[0], box_index)
+
+            # analyze saliency maps
+            analyze_saliency_maps(detections, image, saliency_list, visualize_object_index)
 
         else:
             LOGGER.info("No detections to analyze.")

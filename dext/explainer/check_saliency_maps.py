@@ -4,6 +4,7 @@ import numpy as np
 from paz.backend.image import resize_image
 from paz.backend.image.opencv_image import write_image
 from dext.inference.inference import inference_image
+from dext.explainer.utils import get_saliency_mask
 from dext.model.efficientdet.efficientdet_postprocess import process_outputs
 
 
@@ -33,9 +34,7 @@ def manipulate_raw_image_by_saliency(raw_image, saliency,
     resized_raw_image = resize_image(
         raw_image, (saliency.shape))
     image = resized_raw_image.copy()
-    mask_2d = saliency.copy()
-    mask_2d[np.where(mask_2d > threshold)] = 1
-    mask_2d[np.where(mask_2d <= threshold)] = 0
+    mask_2d = get_saliency_mask(saliency.copy(), threshold)
     mask_3d = np.stack((mask_2d, mask_2d, mask_2d), axis=-1)
     result = np.where(mask_3d == 0, image, mask_3d).astype('uint8')
     return result

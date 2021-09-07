@@ -127,3 +127,24 @@ def get_box_feature_index(box_index, class_outputs, box_outputs,
                               bp_box_w, bp_box_index)
 
     return level, h, w, index
+
+
+def resize_boxes(boxes2D, old_size, new_size):
+    image_h, image_w, _ = old_size
+    new_h, new_w = new_size
+    new_boxes = []
+    for box2D in boxes2D:
+        x_min, y_min, x_max, y_max = box2D.coordinates
+        x_min = int((x_min / image_w) * new_w)
+        y_min = int((y_min / image_h) * new_h)
+        x_max = int((x_max / image_w) * new_w)
+        y_max = int((y_max / image_h) * new_h)
+        new_boxes.append([x_min, y_min, x_max, y_max])
+    return new_boxes
+
+
+def get_saliency_mask(saliency, threshold=0.7):
+    mask_2d = saliency.copy()
+    mask_2d[np.where(mask_2d > threshold)] = 1
+    mask_2d[np.where(mask_2d <= threshold)] = 0
+    return mask_2d
