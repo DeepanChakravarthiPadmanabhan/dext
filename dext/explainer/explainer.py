@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
               default="EFFICIENTDETD0")
 @click.option("--explain_mode", default="single_image")
 @click.option("--input_image_path",
-              default="images/surfboard.jpg")
+              default="images/000000309391.jpg")
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='class_net')
 @click.option("--reg_layer_name", default='box_net')

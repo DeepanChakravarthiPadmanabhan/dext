@@ -1,4 +1,5 @@
 import logging
+import os
 import numpy as np
 
 from paz.processors.image import LoadImage
@@ -13,7 +14,10 @@ def get_images_to_explain(explain_mode, raw_image_path,
     if explain_mode == 'single_image':
         loader = LoadImage()
         raw_image = loader(raw_image_path)
-        to_be_explained = (([raw_image], None),)
+        index = (os.path.basename(
+            raw_image_path)).rsplit('.jpg', 1)[0]
+        labels = [{"image_index": index}]
+        to_be_explained = (([raw_image], labels),)
     else:
         dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/"
         dataset_folder = "mscoco"

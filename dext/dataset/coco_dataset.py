@@ -127,7 +127,8 @@ class COCOGenerator(Generator):
         masks, masks_ids = self.load_annotations_mask(image_index)
 
         annotations = {'labels': np.empty((0,)), 'bboxes': np.empty((0, 4)),
-                       'masks': masks, 'masks_ids': masks_ids}
+                       'masks': masks, 'masks_ids': masks_ids,
+                       'image_index': str(self.image_ids[image_index])}
 
         # some images apprear to miss annotations (like image with id 257034)
         if len(annotations_ids) == 0:

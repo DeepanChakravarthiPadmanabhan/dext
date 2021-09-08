@@ -50,10 +50,6 @@ def explain_model(model_name, explain_mode, raw_image_path,
                   interpretation_method="IntegratedGradients",
                   visualize_object_index=None, visualize_box_offset=1,
                   num_images=2):
-    explanation_save_file = (os.path.basename(
-        raw_image_path)).rsplit('.jpg', 1)[0]
-    LOGGER.info("Explanation module input image ID: %s"
-                % explanation_save_file)
     model_fn = ModelFactory(model_name).factory()
     model = model_fn()
 
@@ -63,12 +59,16 @@ def explain_model(model_name, explain_mode, raw_image_path,
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
                                             num_images)
     df_metrics_columns = ["image_index", "object_index",
-                          "explaining", "class", "iou"]
+                          "explaining", "detection", "saliency_iou",
+                          "saliency_centroid", "saliency_variance"]
     df_metrics = pd.DataFrame(columns=df_metrics_columns)
 
     for count, data in enumerate(to_be_explained):
         image, labels = data
         image = image[0].astype('uint8')
+        explanation_save_file = labels[0]["image_index"]
+        LOGGER.info("Explanation module input image ID: %s"
+                    % explanation_save_file)
 
         # forward pass - get model outputs for input image
         forward_pass_outs = inference_image(
@@ -84,8 +84,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
             explaining_info = get_explaining_info(
                 visualize_object_index, box_index, to_explain,
                 class_layer_name, reg_layer_name, visualize_box_offset)
-
-            print(explaining_info)
+            LOGGER.info("Information used for explanation: %s" %
+                        (explaining_info,))
             object_index_list = explaining_info[0]
             explaining_list = explaining_info[1]
             layer_name_list = explaining_info[2]
@@ -93,7 +93,6 @@ def explain_model(model_name, explain_mode, raw_image_path,
             saliency_list = []
             confidence_list = []
             class_name_list = []
-
             explaining_info = zip(object_index_list,
                                   explaining_list,
                                   layer_name_list,
@@ -123,13 +122,15 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 class_name_list.append(class_name)
 
                 # analyze saliency maps
-                iou = analyze_saliency_maps(detections, image,
-                                            saliency, object_index)
-                df_metrics.loc[len(df_metrics)] = [explanation_save_file,
-                                                   object_index,
-                                                   explaining,
-                                                   class_name,
-                                                   iou]
+                metrics = analyze_saliency_maps(
+                    detections, image, saliency, object_index)
+                saliency_iou = metrics[0]
+                saliency_centroid = metrics[1]
+                saliency_variance = metrics[2]
+                df_metrics.loc[len(df_metrics)] = [
+                    explanation_save_file, object_index, explaining,
+                    detections[object_index], saliency_iou, saliency_centroid,
+                    saliency_variance]
 
             f = plot_all(detection_image, image, saliency_list,
                          confidence_list, class_name_list, explaining_list,
@@ -146,7 +147,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
             excel_writer = pd.ExcelWriter(
                 os.path.join('images/results', "report.xlsx"),
                 engine="xlsxwriter")
-            df_metrics.to_excel(excel_writer, sheet_name="micro")
+            df_metrics.to_excel(excel_writer, sheet_name="metrics")
             excel_writer.save()
 
             # check saliency maps
