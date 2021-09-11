@@ -1,3 +1,4 @@
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -6,6 +7,8 @@ from tensorflow.keras.models import Model
 from paz.backend.image import resize_image
 from dext.abstract.explanation import Explainer
 from dext.model.functional_models import get_functional_model
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IntegratedGradients(Explainer):
@@ -95,6 +98,9 @@ class IntegratedGradients(Explainer):
             inputs = tf.cast(image, tf.float32)
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
+        # TODO: Check conv outs value in custom model and box confidence
+        #  for the respective class in the classification explanation
+        LOGGER.debug('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         return grads
 
