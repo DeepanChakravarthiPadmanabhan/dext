@@ -11,10 +11,10 @@ LOGGER = logging.getLogger(__name__)
               default="EFFICIENTDETD0")
 @click.option("--explain_mode", default="single_image")
 @click.option("--input_image_path",
-              default="images/000000309391.jpg")
+              default="images/surfboard.jpg")
 @click.option("--image_size", default=512)
-@click.option("--class_layer_name", default='class_net')
-@click.option("--reg_layer_name", default='box_net')
+@click.option("--class_layer_name", default='boxes')
+@click.option("--reg_layer_name", default='boxes')
 @click.option("--to_explain", default="Classification and Box offset")
 @click.option("--interpretation_method", default="IntegratedGradients")
 @click.option("--visualize_object_index", default=1)  # 1 <

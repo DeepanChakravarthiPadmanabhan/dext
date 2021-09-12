@@ -63,11 +63,9 @@ class GuidedBackpropagation:
         if self.visualize_idx:
             custom_model = Model(
                 inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output[
-                             self.visualize_idx[0]][
-                             0, self.visualize_idx[1],
-                             self.visualize_idx[2],
-                             self.visualize_idx[3]]])
+                outputs=[self.model.output[self.visualize_idx[0],
+                                           self.visualize_idx[1],
+                                           self.visualize_idx[2]]])
         else:
             custom_model = Model(
                 inputs=[self.model.inputs],

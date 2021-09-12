@@ -4,7 +4,7 @@ from dext.model.efficientdet.anchors import get_prior_boxes
 from dext.model.efficientdet.efficientdet_blocks import ResampleFeatureMap
 from dext.model.efficientdet.efficientdet_blocks import FPNCells
 from dext.model.efficientdet.efficientdet_blocks import ClassNet, BoxNet
-
+from dext.model.efficientdet.utils import create_multibox_head
 
 class EfficientDet(tf.keras.Model):
     """
@@ -155,4 +155,7 @@ class EfficientDet(tf.keras.Model):
         # Box regression head
         box_outputs = self.box_net(fpn_features, training)
 
-        return class_outputs, box_outputs
+        outputs = create_multibox_head(
+            class_outputs, box_outputs, self)
+
+        return outputs

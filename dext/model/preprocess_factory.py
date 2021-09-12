@@ -1,4 +1,5 @@
 from dext.model.efficientdet.utils import efficientdet_preprocess
+from dext.model.ssd.utils import ssd_preprocess
 
 
 class PreprocessorFactory:
@@ -8,6 +9,8 @@ class PreprocessorFactory:
     def factory(self):
         if "EFFICIENTDET" in self.model_name:
             return efficientdet_preprocess
+        elif "SSD" in self.model_name:
+            return ssd_preprocess
         else:
             raise ValueError(
                 "Preprocessor not implemented %s" % (self.model_name))

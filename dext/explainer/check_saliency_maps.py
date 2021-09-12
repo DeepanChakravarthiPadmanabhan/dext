@@ -18,12 +18,10 @@ def check_saliency(model, model_name, raw_image, preprocessor_fn,
                                         postprocessor_fn, image_size)
     modified_detection_image = forward_pass_outs[0]
     write_image('modified_detections.jpg', modified_detection_image)
-    class_outputs = forward_pass_outs[3]
-    box_outputs = forward_pass_outs[4]
+    outputs = forward_pass_outs[3]
 
     if "EFFICIENTDET" in model_name:
-        outputs = process_outputs(class_outputs, box_outputs,
-                                  model.num_levels, model.num_classes)
+        outputs = process_outputs(outputs)
         for n, i in enumerate(box_index):
             LOGGER.info("Object confidence in same box of modified image: %s" %
                         outputs[0][int(i[0])][int(i[1] + 4)])

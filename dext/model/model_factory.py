@@ -3,6 +3,9 @@ from dext.model.efficientdet.efficientdet import EFFICIENTDETD2, EFFICIENTDETD3
 from dext.model.efficientdet.efficientdet import EFFICIENTDETD4, EFFICIENTDETD5
 from dext.model.efficientdet.efficientdet import EFFICIENTDETD6, EFFICIENTDETD7
 from dext.model.efficientdet.efficientdet import EFFICIENTDETD7x
+from dext.model.ssd.ssd300_no_pool_model import SSD300NoPool
+from paz.models.detection.ssd512 import SSD512
+from paz.models.detection.ssd300 import SSD300
 
 
 class ModelFactory:
@@ -28,5 +31,11 @@ class ModelFactory:
             return EFFICIENTDETD7
         elif self.model_name == "EFFICIENTDETD7x":
             return EFFICIENTDETD7x
+        elif self.model_name == "SSD512":
+            return SSD512
+        elif self.model_name == 'SSD300':
+            return SSD300
+        elif self.model_name == 'SSD300NoPool':
+            return SSD300NoPool
         else:
             raise ValueError("Model not implemented %s" % (self.model_name))

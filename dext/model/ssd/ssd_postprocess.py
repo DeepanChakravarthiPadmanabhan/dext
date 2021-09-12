@@ -1,9 +1,8 @@
 import numpy as np
-import paz.processors as pr
 from paz.abstract import SequentialProcessor, Box2D
-from dext.utils.class_names import get_class_name_efficientdet
 from dext.postprocessing.detection_visualization import draw_bounding_boxes
-
+from paz.datasets.utils import get_class_names
+from paz import processors as pr
 
 def apply_non_max_suppression(boxes, scores, iou_thresh=.45, top_k=200):
     """Apply non maximum suppression.
@@ -80,7 +79,7 @@ def nms_per_class(box_data, nms_thresh=0.45, conf_thresh=0.01, top_k=200):
     num_classes = class_predictions.shape[1]
     output = np.zeros((num_classes, top_k, 6))
     # skip the background class (start counter in 1)
-    for class_arg in range(0, num_classes):
+    for class_arg in range(1, num_classes):
         conf_mask = class_predictions[:, class_arg] >= conf_thresh
         scores = class_predictions[:, class_arg][conf_mask]
         if len(scores) == 0:
@@ -104,7 +103,7 @@ def filterboxes(boxes, class_names, conf_thresh=0.5):
     num_classes = boxes.shape[0]
     boxes2D = []
     class_map_idx = []
-    for class_arg in range(0, num_classes):
+    for class_arg in range(1, num_classes):
         class_detections = boxes[class_arg, :]
         confidence_mask = np.squeeze(class_detections[:, -2] >= conf_thresh)
         confident_class_detections = class_detections[confidence_mask]
@@ -120,46 +119,39 @@ def filterboxes(boxes, class_names, conf_thresh=0.5):
     return boxes2D, class_map_idx
 
 
-def process_outputs(outputs):
-    """
-    Merges all feature levels into single tensor and combines box offsets
-    and class scores.
+def denormalize_box(box, image_shape):
+    """Scales corner box coordinates from normalized values to image dimensions.
 
     # Arguments
-        class_outputs: Tensor, logits for all classes corresponding to the
-        features associated with the box coordinates at each feature levels.
-        box_outputs: Tensor, box coordinate offsets for the corresponding prior
-        boxes at each feature levels.
-        num_levels: Int, number of levels considered at efficientnet features.
-        num_classes: Int, number of classes in the dataset.
+        box: Numpy array containing corner box coordinates.
+        image_shape: List of integers with (height, width).
 
     # Returns
-        outputs: Numpy array, Processed outputs by merging the features at
-        all levels. Each row corresponds to box coordinate offsets and
-        sigmoid of the class logits.
+        returns: box corner coordinates in image dimensions
     """
-    outputs = outputs[0]
-    boxes, classes = outputs[:, :4], outputs[:, 4:]
-    s1, s2, s3, s4 = np.hsplit(boxes, 4)
-    boxes = np.concatenate([s2, s1, s4, s3], axis=1)
-    boxes = boxes[np.newaxis]
-    classes = classes[np.newaxis]
-    outputs = np.concatenate([boxes, classes], axis=2)
-    return outputs
+    x_min, y_min, x_max, y_max = box[:4]
+    height, width = image_shape
+    x_min = int(x_min * width)
+    y_min = int(y_min * height)
+    x_max = int(x_max * width)
+    y_max = int(y_max * height)
+    return (x_min, y_min, x_max, y_max)
 
 
-def efficientdet_postprocess(model, outputs,
-                             image_scales, raw_images=None):
-    outputs = process_outputs(outputs)
-    postprocessing = SequentialProcessor([
-        pr.Squeeze(axis=None),
-        pr.DecodeBoxes(model.prior_boxes, variances=[1, 1, 1, 1]),
-        pr.ScaleBox(image_scales)])
-    detections = postprocessing(outputs)
-    detections = nms_per_class(detections, 0.4)
-    detections, class_map_idx = filterboxes(
-        detections, get_class_name_efficientdet('COCO'), 0.4)
-    image = draw_bounding_boxes(raw_images.astype('uint8'),
-                                detections,
-                                get_class_name_efficientdet('COCO'))
+def denormalize_boxes(boxes2D, image_shape):
+    for box2D in boxes2D:
+        box2D.coordinates = denormalize_box(box2D.coordinates, image_shape)
+    return boxes2D
+
+
+def ssd_postprocess(model, outputs, raw_image):
+    postprocess = SequentialProcessor([pr.Squeeze(axis=None),
+                                       pr.DecodeBoxes(model.prior_boxes)])
+    detections = postprocess(outputs)
+    detections = nms_per_class(detections, nms_thresh=0.4, conf_thresh=0.01)
+    detections, class_map_idx = filterboxes(detections,
+                                            get_class_names('COCO'),
+                                            conf_thresh=0.4)
+    detections = denormalize_boxes(detections, model.input_shape[1:3])
+    image = draw_bounding_boxes(raw_image, detections, get_class_names("COCO"))
     return image, detections, class_map_idx

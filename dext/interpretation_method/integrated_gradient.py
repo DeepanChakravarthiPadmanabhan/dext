@@ -72,11 +72,9 @@ class IntegratedGradients(Explainer):
         if self.visualize_index:
             custom_model = Model(
                 inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output[
-                             self.visualize_index[0]][
-                             0, self.visualize_index[1],
-                             self.visualize_index[2],
-                             self.visualize_index[3]]])
+                outputs=[self.model.output[self.visualize_index[0],
+                                           self.visualize_index[1],
+                                           self.visualize_index[2]]])
         else:
             custom_model = Model(
                 inputs=[self.model.inputs],

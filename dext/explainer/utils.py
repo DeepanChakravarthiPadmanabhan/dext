@@ -89,13 +89,27 @@ def get_explaining_info(visualize_object_index, box_index,
     return object_index_list, explaining_list, layer_name_list, box_offset_list
 
 
+def get_box_feature_index(box_index, explaining, visualize_object,
+                          visualize_box_offset=1):
+    if explaining == 'Classification':
+        selection = (0,
+                     int(box_index[visualize_object][0]),
+                     int(box_index[visualize_object][1]) + 4)
+    else:
+        selection = (0,
+                     int(box_index[visualize_object][0]),
+                     int(visualize_box_offset))
+    return selection
+
+
+
 def get_interest_index(box_index, visualize_object):
     feature_map_position = int(box_index[visualize_object][0])
     class_arg = int(box_index[visualize_object][1])
     return feature_map_position, class_arg
 
 
-def get_box_feature_index(box_index, class_outputs, box_outputs,
+def get_box_feature_index_old(box_index, class_outputs, box_outputs,
                           explaining, visualize_object,
                           visualize_box_offset=1):
     feature_map_position, class_arg = get_interest_index(

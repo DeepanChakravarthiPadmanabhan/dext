@@ -1,4 +1,7 @@
 import tensorflow as tf
+import tensorflow.keras.backend as K
+from tensorflow.keras.layers import Reshape, Concatenate, Flatten, Activation
+
 import paz.processors as pr
 from paz.abstract import SequentialProcessor
 from paz.processors.image import RGB_IMAGENET_MEAN, RGB_IMAGENET_STDEV
@@ -76,3 +79,26 @@ def efficientdet_preprocess(image, image_size):
         ])
     image, image_scale = preprocessing(image)
     return image, image_scale
+
+
+def create_multibox_head(class_outputs, box_outputs, model, num_regressions=4):
+    num_levels = model.num_levels
+    num_classes = model.num_classes
+    classification_layers, regression_layers = [], []
+    for level in range(0, num_levels):
+        class_leaf = class_outputs[level]
+        class_leaf = Flatten()(class_leaf)
+        classification_layers.append(class_leaf)
+
+        regress_leaf = box_outputs[level]
+        regress_leaf = Flatten()(regress_leaf)
+        regression_layers.append(regress_leaf)
+
+    classifications = Concatenate(axis=1)(classification_layers)
+    regressions = Concatenate(axis=1)(regression_layers)
+    num_boxes = K.int_shape(regressions)[-1] // num_regressions
+    classifications = Reshape((num_boxes, num_classes))(classifications)
+    classifications = Activation('sigmoid')(classifications)
+    regressions = Reshape((num_boxes, num_regressions))(regressions)
+    outputs = Concatenate(axis=2, name='boxes')([regressions, classifications])
+    return outputs

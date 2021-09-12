@@ -25,15 +25,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 def explain_object(interpretation_method, box_index,
-                   class_outputs, box_outputs, explaining,
+                   outputs, explaining,
                    visualize_object_index, visualize_box_offset,
                    model, model_name, raw_image, layer_name,
                    preprocessor_fn, image_size):
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
-        box_index, class_outputs, box_outputs, explaining,
-        visualize_object_index, visualize_box_offset)
-
+        box_index, explaining, visualize_object_index, visualize_box_offset)
+    print(box_features)
     # interpret - apply interpretation method
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
@@ -77,8 +76,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
         detection_image = forward_pass_outs[0]
         detections = forward_pass_outs[1]
         box_index = forward_pass_outs[2]
-        class_outputs = forward_pass_outs[3]
-        box_outputs = forward_pass_outs[4]
+        outputs = forward_pass_outs[3]
 
         if len(detections):
             explaining_info = get_explaining_info(
@@ -110,8 +108,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
                             "Confidence - %s, Explaining - %s" %
                             (class_name, class_confidence, explaining))
                 saliency = explain_object(
-                    interpretation_method, box_index, class_outputs,
-                    box_outputs, explaining, object_index,
+                    interpretation_method, box_index, outputs,
+                    explaining, object_index,
                     box_offset, deepcopy(model), model_name,
                     image, layer_name, preprocessor_fn, image_size)
 
@@ -122,15 +120,15 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 class_name_list.append(class_name)
 
                 # analyze saliency maps
-                metrics = analyze_saliency_maps(
-                    detections, image, saliency, object_index)
-                saliency_iou = metrics[0]
-                saliency_centroid = metrics[1]
-                saliency_variance = metrics[2]
-                df_metrics.loc[len(df_metrics)] = [
-                    explanation_save_file, object_index, explaining,
-                    detections[object_index], saliency_iou, saliency_centroid,
-                    saliency_variance]
+                # metrics = analyze_saliency_maps(
+                #     detections, image, saliency, object_index)
+                # saliency_iou = metrics[0]
+                # saliency_centroid = metrics[1]
+                # saliency_variance = metrics[2]
+                # df_metrics.loc[len(df_metrics)] = [
+                #     explanation_save_file, object_index, explaining,
+                #     detections[object_index], saliency_iou, saliency_centroid,
+                #     saliency_variance]
 
             f = plot_all(detection_image, image, saliency_list,
                          confidence_list, class_name_list, explaining_list,
@@ -151,9 +149,9 @@ def explain_model(model_name, explain_mode, raw_image_path,
             excel_writer.save()
 
             # check saliency maps
-            check_saliency(model, model_name, image, preprocessor_fn,
-                           postprocessor_fn, image_size, saliency_list[0],
-                           box_index)
+            # check_saliency(model, model_name, image, preprocessor_fn,
+            #                postprocessor_fn, image_size, saliency_list[0],
+            #                box_index)
 
         else:
             LOGGER.info("No detections to analyze.")
