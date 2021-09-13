@@ -1,6 +1,7 @@
 import tensorflow as tf
 from dext.model.efficientdet.utils import create_multibox_head
 
+
 def get_functional_efficientdet(model):
     image_size = model.image_size
     # Functional API calling only provides access to intermediate tensors

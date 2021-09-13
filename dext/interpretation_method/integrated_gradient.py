@@ -79,6 +79,8 @@ class IntegratedGradients(Explainer):
             custom_model = Model(
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output])
+
+        # To get logits without softmax
         if 'class' in self.layer_name:
             custom_model.get_layer(self.layer_name).activation = None
         return custom_model
@@ -96,8 +98,6 @@ class IntegratedGradients(Explainer):
             inputs = tf.cast(image, tf.float32)
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
-        # TODO: Check conv outs value in custom model and box confidence
-        #  for the respective class in the classification explanation
         LOGGER.debug('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         return grads

@@ -6,6 +6,7 @@ from dext.model.efficientdet.efficientdet_blocks import FPNCells
 from dext.model.efficientdet.efficientdet_blocks import ClassNet, BoxNet
 from dext.model.efficientdet.utils import create_multibox_head
 
+
 class EfficientDet(tf.keras.Model):
     """
     EfficientDet model in PAZ.

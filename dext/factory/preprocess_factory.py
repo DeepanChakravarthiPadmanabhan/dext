@@ -13,4 +13,4 @@ class PreprocessorFactory:
             return ssd_preprocess
         else:
             raise ValueError(
-                "Preprocessor not implemented %s" % (self.model_name))
+                "Preprocessor not implemented %s" % self.model_name)

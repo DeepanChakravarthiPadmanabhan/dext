@@ -68,8 +68,8 @@ def SSD300NoPool(num_classes=81, base_weights='VOC', head_weights='VOC',
                      trainable=trainable_base,
                      name='conv1_2')(conv1_1)
     conv1_3 = Conv2D(64, (2, 2), strides=(2, 2), activation='relu',
-                   padding='same', kernel_regularizer=l2(l2_loss),
-                   trainable=trainable_base, name='conv1_3')(conv1_2)
+                     padding='same', kernel_regularizer=l2(l2_loss),
+                     trainable=trainable_base, name='conv1_3')(conv1_2)
 
     # Block 2 -----------------------------------------------------------------
     conv2_1 = Conv2D(128, (3, 3), padding='same', activation='relu',

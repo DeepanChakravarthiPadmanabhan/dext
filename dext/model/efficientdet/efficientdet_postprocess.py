@@ -148,17 +148,32 @@ def process_outputs(outputs):
     return outputs
 
 
+def scale_box(box, image_scale):
+    x_min, y_min, x_max, y_max = box[:4]
+    x_min = int(x_min * image_scale[1])
+    y_min = int(y_min * image_scale[0])
+    x_max = int(x_max * image_scale[1])
+    y_max = int(y_max * image_scale[0])
+    return (x_min, y_min, x_max, y_max)
+
+
+def scale_boxes(boxes2D, image_scale):
+    for box2D in boxes2D:
+        box2D.coordinates = scale_box(box2D.coordinates, image_scale)
+    return boxes2D
+
+
 def efficientdet_postprocess(model, outputs,
                              image_scales, raw_images=None):
     outputs = process_outputs(outputs)
     postprocessing = SequentialProcessor([
         pr.Squeeze(axis=None),
-        pr.DecodeBoxes(model.prior_boxes, variances=[1, 1, 1, 1]),
-        pr.ScaleBox(image_scales)])
+        pr.DecodeBoxes(model.prior_boxes, variances=[1, 1, 1, 1])])
     detections = postprocessing(outputs)
     detections = nms_per_class(detections, 0.4)
     detections, class_map_idx = filterboxes(
         detections, get_class_name_efficientdet('COCO'), 0.4)
+    detections = scale_boxes(detections, image_scales)
     image = draw_bounding_boxes(raw_images.astype('uint8'),
                                 detections,
                                 get_class_name_efficientdet('COCO'))

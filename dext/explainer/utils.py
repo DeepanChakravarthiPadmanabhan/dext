@@ -4,9 +4,27 @@ import numpy as np
 
 from paz.processors.image import LoadImage
 from dext.dataset.coco_dataset import COCOGenerator
-
+from dext.factory.model_factory import ModelFactory
+from dext.utils.class_names import get_class_name_efficientdet
+from paz.datasets.utils import get_class_names
 
 LOGGER = logging.getLogger(__name__)
+
+
+def get_model(model_name):
+    model_fn = ModelFactory(model_name).factory()
+    model = model_fn()
+    return model
+
+
+def get_model_class_name(model_name, dataset_name):
+    if "EFFICIENTDET" in model_name:
+        class_names = get_class_name_efficientdet(dataset_name)
+    elif "SSD" in model_name:
+        class_names = get_class_names(dataset_name)
+    else:
+        raise ValueError("Model not implemented %s" % model_name)
+    return class_names
 
 
 def get_images_to_explain(explain_mode, raw_image_path,
@@ -91,7 +109,9 @@ def get_explaining_info(visualize_object_index, box_index,
 
 def get_box_feature_index(box_index, explaining, visualize_object,
                           visualize_box_offset=1):
+    print(box_index, visualize_object, explaining)
     if explaining == 'Classification':
+
         selection = (0,
                      int(box_index[visualize_object][0]),
                      int(box_index[visualize_object][1]) + 4)
@@ -102,7 +122,6 @@ def get_box_feature_index(box_index, explaining, visualize_object,
     return selection
 
 
-
 def get_interest_index(box_index, visualize_object):
     feature_map_position = int(box_index[visualize_object][0])
     class_arg = int(box_index[visualize_object][1])
@@ -110,8 +129,8 @@ def get_interest_index(box_index, visualize_object):
 
 
 def get_box_feature_index_old(box_index, class_outputs, box_outputs,
-                          explaining, visualize_object,
-                          visualize_box_offset=1):
+                              explaining, visualize_object,
+                              visualize_box_offset=1):
     feature_map_position, class_arg = get_interest_index(
         box_index, visualize_object)
     level_num_boxes = []

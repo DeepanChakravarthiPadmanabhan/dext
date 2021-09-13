@@ -3,7 +3,7 @@ import numpy as np
 
 from paz.backend.image import resize_image
 from paz.backend.image.opencv_image import write_image
-from dext.inference.inference import inference_image
+from dext.inference.inference import InferenceFactory
 from dext.explainer.utils import get_saliency_mask
 from dext.model.efficientdet.efficientdet_postprocess import process_outputs
 
@@ -14,8 +14,9 @@ LOGGER = logging.getLogger(__name__)
 def check_saliency(model, model_name, raw_image, preprocessor_fn,
                    postprocessor_fn, image_size, saliency, box_index):
     modified_image = manipulate_raw_image_by_saliency(raw_image, saliency)
-    forward_pass_outs = inference_image(model, modified_image, preprocessor_fn,
-                                        postprocessor_fn, image_size)
+    inference_fn = InferenceFactory(model_name).factory()
+    forward_pass_outs = inference_fn(model, modified_image, preprocessor_fn,
+                                     postprocessor_fn, image_size)
     modified_detection_image = forward_pass_outs[0]
     write_image('modified_detections.jpg', modified_detection_image)
     outputs = forward_pass_outs[3]

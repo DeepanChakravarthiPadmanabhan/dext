@@ -1,13 +1,12 @@
 import logging
 import os
 import pandas as pd
-from copy import deepcopy
 from paz.backend.image.opencv_image import write_image
 
-from dext.model.model_factory import ModelFactory
-from dext.model.preprocess_factory import PreprocessorFactory
-from dext.model.postprocess_factory import PostprocessorFactory
-from dext.interpretation_method.interpretation_method_factory import \
+from dext.explainer.utils import get_model
+from dext.factory.preprocess_factory import PreprocessorFactory
+from dext.factory.postprocess_factory import PostprocessorFactory
+from dext.factory.interpretation_method_factory import \
     ExplainerFactory
 from dext.postprocessing.saliency_visualization import \
     visualize_saliency_grayscale
@@ -17,8 +16,8 @@ from dext.explainer.utils import get_explaining_info
 from dext.explainer.utils import get_images_to_explain
 from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
 from dext.explainer.check_saliency_maps import check_saliency
-from dext.utils.class_names import get_class_name_efficientdet
-from dext.inference.inference import inference_image
+from dext.explainer.utils import get_model_class_name
+from dext.inference.inference import InferenceFactory
 
 
 LOGGER = logging.getLogger(__name__)
@@ -32,7 +31,6 @@ def explain_object(interpretation_method, box_index,
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
         box_index, explaining, visualize_object_index, visualize_box_offset)
-    print(box_features)
     # interpret - apply interpretation method
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
@@ -49,11 +47,10 @@ def explain_model(model_name, explain_mode, raw_image_path,
                   interpretation_method="IntegratedGradients",
                   visualize_object_index=None, visualize_box_offset=1,
                   num_images=2):
-    model_fn = ModelFactory(model_name).factory()
-    model = model_fn()
-
+    model = get_model(model_name)
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
+    inference_fn = InferenceFactory(model_name).factory()
 
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
                                             num_images)
@@ -63,14 +60,15 @@ def explain_model(model_name, explain_mode, raw_image_path,
     df_metrics = pd.DataFrame(columns=df_metrics_columns)
 
     for count, data in enumerate(to_be_explained):
-        image, labels = data
-        image = image[0].astype('uint8')
+        raw_image, labels = data
+        raw_image = raw_image[0].astype('uint8')
+        image = raw_image.copy()
         explanation_save_file = labels[0]["image_index"]
         LOGGER.info("Explanation module input image ID: %s"
                     % explanation_save_file)
 
         # forward pass - get model outputs for input image
-        forward_pass_outs = inference_image(
+        forward_pass_outs = inference_fn(
             model, image, preprocessor_fn,
             postprocessor_fn, image_size)
         detection_image = forward_pass_outs[0]
@@ -101,7 +99,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 explaining = info[1]
                 layer_name = info[2]
                 box_offset = info[3]
-                class_name = get_class_name_efficientdet('COCO')[
+                class_name = get_model_class_name(model_name, 'COCO')[
                     box_index[object_index][1]]
                 class_confidence = box_index[object_index][2]
                 LOGGER.info("Generating saliency: Object - %s, "
@@ -110,8 +108,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 saliency = explain_object(
                     interpretation_method, box_index, outputs,
                     explaining, object_index,
-                    box_offset, deepcopy(model), model_name,
-                    image, layer_name, preprocessor_fn, image_size)
+                    box_offset, get_model(model_name), model_name,
+                    raw_image, layer_name, preprocessor_fn, image_size)
 
                 # visualize - visualize the interpretation result
                 saliency = visualize_saliency_grayscale(saliency)
@@ -120,17 +118,17 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 class_name_list.append(class_name)
 
                 # analyze saliency maps
-                # metrics = analyze_saliency_maps(
-                #     detections, image, saliency, object_index)
-                # saliency_iou = metrics[0]
-                # saliency_centroid = metrics[1]
-                # saliency_variance = metrics[2]
-                # df_metrics.loc[len(df_metrics)] = [
-                #     explanation_save_file, object_index, explaining,
-                #     detections[object_index], saliency_iou, saliency_centroid,
-                #     saliency_variance]
+                metrics = analyze_saliency_maps(
+                    detections, raw_image, saliency, object_index)
+                saliency_iou = metrics[0]
+                saliency_centroid = metrics[1]
+                saliency_variance = metrics[2]
+                df_metrics.loc[len(df_metrics)] = [
+                    explanation_save_file, object_index, explaining,
+                    detections[object_index], saliency_iou, saliency_centroid,
+                    saliency_variance]
 
-            f = plot_all(detection_image, image, saliency_list,
+            f = plot_all(detection_image, raw_image, saliency_list,
                          confidence_list, class_name_list, explaining_list,
                          box_offset_list, to_explain, interpretation_method,
                          model_name, "subplot")
@@ -149,9 +147,10 @@ def explain_model(model_name, explain_mode, raw_image_path,
             excel_writer.save()
 
             # check saliency maps
-            # check_saliency(model, model_name, image, preprocessor_fn,
-            #                postprocessor_fn, image_size, saliency_list[0],
-            #                box_index)
+            check_saliency(get_model(model_name), model_name, raw_image,
+                           preprocessor_fn,
+                           postprocessor_fn, image_size, saliency_list[0],
+                           box_index)
 
         else:
             LOGGER.info("No detections to analyze.")

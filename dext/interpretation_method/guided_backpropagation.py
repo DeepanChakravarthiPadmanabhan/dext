@@ -60,6 +60,7 @@ class GuidedBackpropagation:
                 self.model_name, self.model)
         else:
             self.model = self.model
+
         if self.visualize_idx:
             custom_model = Model(
                 inputs=[self.model.inputs],
@@ -71,17 +72,25 @@ class GuidedBackpropagation:
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output])
 
-        base_model_layers = [act_layer
-                             for act_layer in custom_model.layers[1].layers
-                             if hasattr(act_layer, 'activation')]
-        head_layers = [layer
-                       for layer in custom_model.layers[1:]
-                       if hasattr(layer, "activation")]
-        all_layers = base_model_layers + head_layers
+        # TODO: Move get all layers from the model to a separate function
+        if 'EFFICIENTDET' in self.model_name:
+            base_model_layers = [act_layer
+                                 for act_layer in custom_model.layers[1].layers
+                                 if hasattr(act_layer, 'activation')]
+            head_layers = [layer
+                           for layer in custom_model.layers[1:]
+                           if hasattr(layer, "activation")]
+            all_layers = base_model_layers + head_layers
+        else:
+            all_layers = [act_layer
+                          for act_layer in custom_model.layers
+                          if hasattr(act_layer, 'activation')]
+
         for layer in all_layers:
             if layer.activation == tf.keras.activations.relu:
                 layer.activation = guided_relu
 
+        # To get logits without softmax
         if 'class' in self.layer_name:
             custom_model.get_layer(self.layer_name).activation = None
         return custom_model

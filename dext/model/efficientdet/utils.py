@@ -1,10 +1,10 @@
+import numpy as np
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.layers import Reshape, Concatenate, Flatten, Activation
 
 import paz.processors as pr
 from paz.abstract import SequentialProcessor
-from paz.processors.image import RGB_IMAGENET_MEAN, RGB_IMAGENET_STDEV
 
 
 def get_activation(features, activation):
@@ -53,6 +53,14 @@ def get_drop_connect(features, is_training, survival_rate):
     return output
 
 
+def find_image_scale(input_image_shape, processed_image_shape):
+    input_h, input_w, _ = input_image_shape
+    _, processed_h, processed_w, _ = processed_image_shape
+    image_scale_y = np.array(processed_h).astype('float32') / input_h
+    image_scale_x = np.array(processed_w).astype('float32') / input_w
+    return 1/image_scale_y, 1/image_scale_x
+
+
 def efficientdet_preprocess(image, image_size):
     """
     Preprocess image for EfficientDet model.
@@ -69,15 +77,20 @@ def efficientdet_preprocess(image, image_size):
         the raw images to original size from the resized
         image.
     """
-    if type(image_size) == tuple:
-        image_size = image_size[0]
+    input_image_shape = image.shape
+    if type(image_size) == int:
+        image_size = (image_size, image_size)
     preprocessing = SequentialProcessor([
+        pr.ResizeImage(image_size),
+        pr.SubtractMeanImage(mean=pr.RGB_IMAGENET_MEAN),
+        pr.DivideStandardDeviationImage(
+            standard_deviation=pr.RGB_IMAGENET_STDEV),
         pr.CastImage(float),
-        pr.SubtractMeanImage(mean=RGB_IMAGENET_MEAN),
-        pr.DivideStandardDeviationImage(standard_deviation=RGB_IMAGENET_STDEV),
-        pr.ScaledResize(image_size=image_size),
+        pr.ExpandDims(axis=0)
         ])
-    image, image_scale = preprocessing(image)
+    image = preprocessing(image)
+    processed_image_shape = image.shape
+    image_scale = find_image_scale(input_image_shape, processed_image_shape)
     return image, image_scale
 
 

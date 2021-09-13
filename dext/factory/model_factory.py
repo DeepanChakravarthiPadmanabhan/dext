@@ -38,4 +38,4 @@ class ModelFactory:
         elif self.model_name == 'SSD300NoPool':
             return SSD300NoPool
         else:
-            raise ValueError("Model not implemented %s" % (self.model_name))
+            raise ValueError("Model not implemented %s" % self.model_name)

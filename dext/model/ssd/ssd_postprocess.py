@@ -4,6 +4,7 @@ from dext.postprocessing.detection_visualization import draw_bounding_boxes
 from paz.datasets.utils import get_class_names
 from paz import processors as pr
 
+
 def apply_non_max_suppression(boxes, scores, iou_thresh=.45, top_k=200):
     """Apply non maximum suppression.
 
@@ -144,7 +145,23 @@ def denormalize_boxes(boxes2D, image_shape):
     return boxes2D
 
 
-def ssd_postprocess(model, outputs, raw_image):
+def scale_box(box, image_scale):
+    x_min, y_min, x_max, y_max = box[:4]
+    x_min = int(x_min * image_scale[1])
+    y_min = int(y_min * image_scale[0])
+    x_max = int(x_max * image_scale[1])
+    y_max = int(y_max * image_scale[0])
+    return (x_min, y_min, x_max, y_max)
+
+
+def scale_boxes(boxes2D, image_scale):
+    image_scale = image_scale
+    for box2D in boxes2D:
+        box2D.coordinates = scale_box(box2D.coordinates, image_scale)
+    return boxes2D
+
+
+def ssd_postprocess(model, outputs, image_scale, raw_image):
     postprocess = SequentialProcessor([pr.Squeeze(axis=None),
                                        pr.DecodeBoxes(model.prior_boxes)])
     detections = postprocess(outputs)
@@ -153,5 +170,6 @@ def ssd_postprocess(model, outputs, raw_image):
                                             get_class_names('COCO'),
                                             conf_thresh=0.4)
     detections = denormalize_boxes(detections, model.input_shape[1:3])
+    detections = scale_boxes(detections, image_scale)
     image = draw_bounding_boxes(raw_image, detections, get_class_names("COCO"))
     return image, detections, class_map_idx
