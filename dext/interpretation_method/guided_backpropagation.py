@@ -73,19 +73,23 @@ class GuidedBackpropagation:
                 outputs=[self.model.get_layer(self.layer_name).output])
 
         # TODO: Move get all layers from the model to a separate function
-        if 'EFFICIENTDET' in self.model_name:
-            base_model_layers = [act_layer
-                                 for act_layer in custom_model.layers[1].layers
-                                 if hasattr(act_layer, 'activation')]
-            head_layers = [layer
-                           for layer in custom_model.layers[1:]
-                           if hasattr(layer, "activation")]
-            all_layers = base_model_layers + head_layers
-        else:
-            all_layers = [act_layer
-                          for act_layer in custom_model.layers
-                          if hasattr(act_layer, 'activation')]
-
+        # if 'EFFICIENTDET' in self.model_name:
+        #     base_model_layers = [act_layer
+        #                          for act_layer in custom_model.layers[1].layers
+        #                          if hasattr(act_layer, 'activation')]
+        #     head_layers = [layer
+        #                    for layer in custom_model.layers[1:]
+        #                    if hasattr(layer, "activation")]
+        #     all_layers = base_model_layers + head_layers
+        # else:
+        #     all_layers = [act_layer
+        #                   for act_layer in custom_model.layers
+        #                   if hasattr(act_layer, 'activation')]
+        from dext.model.utils import get_all_layers
+        all_layers = get_all_layers(custom_model)
+        print("Length of all layers: ", all_layers)
+        all_layers = [act_layer for act_layer in all_layers if hasattr(act_layer, 'activation')]
+        print("Length of all layers after filter: ", all_layers)
         for layer in all_layers:
             if layer.activation == tf.keras.activations.relu:
                 layer.activation = guided_relu
