@@ -24,8 +24,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def explain_object(interpretation_method, box_index,
-                   outputs, explaining,
-                   visualize_object_index, visualize_box_offset,
+                   explaining, visualize_object_index, visualize_box_offset,
                    model, model_name, raw_image, layer_name,
                    preprocessor_fn, image_size):
     # select - get index to visualize saliency input image
@@ -35,7 +34,7 @@ def explain_object(interpretation_method, box_index,
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
     saliency = interpretation_method_fn(
-        model, model_name, raw_image, layer_name,
+        model, model_name, raw_image, interpretation_method, layer_name,
         box_features, preprocessor_fn, image_size)
     return saliency
 
@@ -106,10 +105,9 @@ def explain_model(model_name, explain_mode, raw_image_path,
                             "Confidence - %s, Explaining - %s" %
                             (class_name, class_confidence, explaining))
                 saliency = explain_object(
-                    interpretation_method, box_index, outputs,
-                    explaining, object_index,
-                    box_offset, get_model(model_name), model_name,
-                    raw_image, layer_name, preprocessor_fn, image_size)
+                    interpretation_method, box_index, explaining, object_index,
+                    box_offset, get_model(model_name), model_name, raw_image,
+                    layer_name, preprocessor_fn, image_size)
 
                 # visualize - visualize the interpretation result
                 saliency = visualize_saliency_grayscale(saliency)

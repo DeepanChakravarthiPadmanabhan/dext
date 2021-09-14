@@ -13,12 +13,11 @@ def inference_image_efficientdet(model, raw_image, preprocessor_fn,
 
 def inference_image_ssd(model, raw_image, preprocessor_fn,
                         postprocessor_fn, image_size):
-
-    input_image = preprocessor_fn(raw_image, model.input_shape[1:3])
+    input_image, image_scales = preprocessor_fn(raw_image, image_size)
     # forward pass - get model outputs for input image
     outputs = model(input_image)
     detection_image, detections, box_index = postprocessor_fn(
-        model, outputs, raw_image)
+        model, outputs, image_scales, raw_image)
     forward_pass_outs = (detection_image, detections,
                          box_index, outputs)
     return forward_pass_outs

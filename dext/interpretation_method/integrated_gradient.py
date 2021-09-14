@@ -187,10 +187,12 @@ class IntegratedGradients(Explainer):
 
 
 def IntegratedGradientExplainer(model, model_name, image,
+                                interpretation_method,
                                 layer_name, visualize_index,
-                                preprocessor_fn, image_size):
-    ig = IntegratedGradients(model, model_name, image, "IG",
+                                preprocessor_fn, image_size,
+                                steps=5, batch_size=1):
+    ig = IntegratedGradients(model, model_name, image, interpretation_method,
                              layer_name, visualize_index,
-                             preprocessor_fn, image_size)
+                             preprocessor_fn, image_size, steps, batch_size)
     saliency = ig.get_saliency_map()
     return saliency

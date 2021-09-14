@@ -14,7 +14,10 @@ dependencies = [
     "opencv-python",
     "tensorflow",
     "pypaz",
-    "click"
+    "click",
+    "pandas",
+    "pycocotools",
+    "xlsxwriter"
 ]
 
 setup(

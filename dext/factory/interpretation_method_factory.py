@@ -3,6 +3,7 @@ from dext.interpretation_method.integrated_gradient import \
 from dext.interpretation_method.guided_backpropagation import \
     GuidedBackpropagationExplainer
 from dext.interpretation_method.grad_cam import GradCAMExplainer
+from dext.interpretation_method.smooth_grad import SmoothGradExplainer
 
 
 class ExplainerFactory:
@@ -16,6 +17,8 @@ class ExplainerFactory:
             return GuidedBackpropagationExplainer
         elif self.explainer == "GradCAM":
             return GradCAMExplainer
+        elif "SmoothGrad" in self.explainer:
+            return SmoothGradExplainer
         else:
-            raise ValueError(
-                "Architecture name not implemented %s" % (self.explainer))
+            raise ValueError("Explanation method not implemented %s"
+                             % self.explainer)

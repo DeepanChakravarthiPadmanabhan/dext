@@ -5,6 +5,7 @@ from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
 from dext.model.functional_models import get_functional_model
+from dext.model.utils import get_all_layers
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,24 +73,9 @@ class GuidedBackpropagation:
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.layer_name).output])
 
-        # TODO: Move get all layers from the model to a separate function
-        # if 'EFFICIENTDET' in self.model_name:
-        #     base_model_layers = [act_layer
-        #                          for act_layer in custom_model.layers[1].layers
-        #                          if hasattr(act_layer, 'activation')]
-        #     head_layers = [layer
-        #                    for layer in custom_model.layers[1:]
-        #                    if hasattr(layer, "activation")]
-        #     all_layers = base_model_layers + head_layers
-        # else:
-        #     all_layers = [act_layer
-        #                   for act_layer in custom_model.layers
-        #                   if hasattr(act_layer, 'activation')]
-        from dext.model.utils import get_all_layers
         all_layers = get_all_layers(custom_model)
-        print("Length of all layers: ", all_layers)
-        all_layers = [act_layer for act_layer in all_layers if hasattr(act_layer, 'activation')]
-        print("Length of all layers after filter: ", all_layers)
+        all_layers = [act_layer for act_layer in all_layers
+                      if hasattr(act_layer, 'activation')]
         for layer in all_layers:
             if layer.activation == tf.keras.activations.relu:
                 layer.activation = guided_relu
@@ -112,9 +98,11 @@ class GuidedBackpropagation:
 
 
 def GuidedBackpropagationExplainer(model, model_name, image,
+                                   interpretation_method,
                                    layer_name, visualize_index,
                                    preprocessor_fn, image_size):
-    explainer = GuidedBackpropagation(model, model_name, image, "GBP",
+    explainer = GuidedBackpropagation(model, model_name, image,
+                                      interpretation_method,
                                       layer_name, visualize_index,
                                       preprocessor_fn, image_size)
     saliency = explainer.get_saliency_map()

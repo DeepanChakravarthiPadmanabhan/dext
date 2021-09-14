@@ -5,6 +5,14 @@
 pip install -e .
 ```
 
+## Object detectors with weights available
+1. EfficientDet - COCO
+2. SSD512 - COCO
+
+## Interpretation methods available
+1. Intergrated Gradients
+2. Guided Backpropagation
+
 ## References
 [1] Octavio Arriaga, Matias Valdenegro-Toro, Mohandass Muthuraja, Sushma Devaramani, and Frank Kirchner. "Perception for Autonomous Systems (PAZ)." arXiv preprint arXiv:2010.14541. 2020.
 
@@ -22,8 +30,8 @@ pip install -e .
 
 [8] Hoa Nguyen, CNN Visualization Keras TF2, GitHub, Available at: https://github.com/nguyenhoa93/cnn-visualization-keras-tf2, Accessed on: 03. 05. 2021.
 
-[9] Available at: https://pair-code.github.io/saliency/#guided-ig
+[9] People + AI Research, Google Research, "Saliency Methods", Available at: https://github.com/PAIR-code/saliency, Accessed on: 01. 06. 2021.
 
-[10] https://github.com/marcoancona/DeepExplain
+[10] Marco Ancona, "DeepExplain", Available at: https://github.com/marcoancona/DeepExplain, Accessed on: 01. 06. 2021.
 
 [11] https://github.com/albermax/innvestigate

@@ -109,9 +109,7 @@ def get_explaining_info(visualize_object_index, box_index,
 
 def get_box_feature_index(box_index, explaining, visualize_object,
                           visualize_box_offset=1):
-    print(box_index, visualize_object, explaining)
     if explaining == 'Classification':
-
         selection = (0,
                      int(box_index[visualize_object][0]),
                      int(box_index[visualize_object][1]) + 4)

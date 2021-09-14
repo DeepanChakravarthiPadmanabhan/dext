@@ -30,8 +30,12 @@ class GradCAM:
         self.image = self.check_image_size(self.image, self.image_size)
         self.image = self.preprocess_image(self.image, self.image_size)
         self.grad_cam_layer = grad_cam_layer
+        if self.layer_name is None:
+            self.layer_name = self.find_target_layer()
         if self.grad_cam_layer is None:
-            self.grad_cam_layer = self.find_target_layer()
+            self.grad_cam_layer = self.layer_name
+        LOGGER.info('GradCAM visualization of the layer: %s'
+                    % self.grad_cam_layer)
         self.custom_model = self.build_custom_model()
 
     def check_image_size(self, image, image_size):
@@ -60,11 +64,9 @@ class GradCAM:
             custom_model = Model(
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.grad_cam_layer).output,
-                         self.model.get_layer(self.layer_name).output[
-                             self.visualize_idx[0]][
-                             0, self.visualize_idx[1],
-                             self.visualize_idx[2],
-                             self.visualize_idx[3]]])
+                         self.model.output[self.visualize_idx[0],
+                                           self.visualize_idx[1],
+                                           self.visualize_idx[2]]])
         else:
             custom_model = Model(
                 inputs=[self.model.inputs],
