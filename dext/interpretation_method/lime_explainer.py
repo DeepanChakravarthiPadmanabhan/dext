@@ -69,6 +69,10 @@ class LIME:
             images_processed.append(ex_image)
         explain_images = np.stack(images_processed, axis=0)
         output = self.custom_model(explain_images).numpy()
+        # TODO: Modify to study all box offsets and class prob.
+        # TODO: Use visualize_idx[2] at the last idx and
+        #  check outputs by changing labels arg in explain_instance
+        #  method call.
         output = output[:, self.visualize_idx[1], 4:]
         return output
 
@@ -76,21 +80,24 @@ class LIME:
         image = self.image.copy()
         prediction_fn = self.batch_predict
         explainer = lime_image.LimeImageExplainer(verbose=True)
+        # TODO: Check the parameters and verify the best arguments in cluster.
+        # Tunable params: num_samples=10000, num_features=5
         explanation = explainer.explain_instance(image.astype('double'),
                                                  prediction_fn,
                                                  labels=np.arange(0, 90),
                                                  top_labels=1, hide_color=0.0,
                                                  num_samples=30, batch_size=8,
                                                  random_seed=10)
-        _, mask = explanation.get_image_and_mask(explanation.top_labels[0],
+        temp, mask = explanation.get_image_and_mask(explanation.top_labels[0],
                                                  positive_only=True,
                                                  num_features=10,
                                                  min_weight=1e-3,
                                                  hide_rest=False)
-
-        mask_norm = np.max(np.abs(mask)) + 1e-8
-        mask = mask / mask_norm
-        return mask
+        # Mask of important pixels
+        # plt.imsave("marked.jpg", mask)
+        # Overlap with important pixel boundary marked
+        # plt.imsave("temp.jpg", mark_boundaries(temp, mask).astype('uint8'))
+        return mask.astype('float32')
 
 
 def LimeExplainer(model, model_name, image,
