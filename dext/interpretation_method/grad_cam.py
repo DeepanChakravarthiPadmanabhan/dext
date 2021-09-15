@@ -13,7 +13,7 @@ class GradCAM:
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512,
-                 grad_cam_layer=None):
+                 grad_cam_layer=None, guided_grad_cam=True):
         self.model = model
         self.model_name = model_name
         if "EFFICIENTDET" in self.model_name:
@@ -27,6 +27,7 @@ class GradCAM:
         self.visualize_idx = visualize_idx
         self.preprocessor_fn = preprocessor_fn
         self.image_size = image_size
+        print("image: ", self.image_size, self.image.shape)
         self.image = self.check_image_size(self.image, self.image_size)
         self.image = self.preprocess_image(self.image, self.image_size)
         self.grad_cam_layer = grad_cam_layer
@@ -36,6 +37,7 @@ class GradCAM:
             self.grad_cam_layer = self.layer_name
         LOGGER.info('GradCAM visualization of the layer: %s'
                     % self.grad_cam_layer)
+        self.guided_grad_cam = guided_grad_cam
         self.custom_model = self.build_custom_model()
 
     def check_image_size(self, image, image_size):
@@ -81,11 +83,18 @@ class GradCAM:
             inputs = tf.cast(self.image, tf.float32)
             tape.watch(inputs)
             conv_outs, predictions = self.custom_model(inputs)
+
         loss = predictions
         LOGGER.debug('Conv outs from custom model: ', predictions)
         grads = tape.gradient(loss, conv_outs)
-        norm_grads = tf.divide(grads, tf.reduce_mean(tf.square(grads))
-                               * tf.constant(1e-5))
+        # TODO: Debug Guided GradCAM. Currently only GradCAM works.
+        if self.guided_grad_cam:
+            gate_f = tf.cast(conv_outs > 0, 'float32')
+            gate_r = tf.cast(grads > 0, 'float32')
+            norm_grads = gate_r * gate_f * grads
+        else:
+            norm_grads = tf.divide(grads, tf.reduce_mean(tf.square(grads))
+                                   * tf.constant(1e-5))
         weights = tf.reduce_mean(norm_grads, axis=(0, 1))
         cam = tf.reduce_sum(tf.multiply(weights, conv_outs), axis=-1)
         cam = np.maximum(cam, 0)
@@ -97,10 +106,11 @@ class GradCAM:
         return saliency
 
 
-def GradCAMExplainer(model, model_name, image, layer_name, visualize_index,
-                     preprocessor_fn, image_size, grad_cam_layer=None):
-    explainer = GradCAM(model, model_name, image, "GradCAM", layer_name,
-                        visualize_index, preprocessor_fn, image_size,
-                        grad_cam_layer)
+def GradCAMExplainer(model, model_name, image, interpretation_method,
+                     layer_name, visualize_index, preprocessor_fn,
+                     image_size, grad_cam_layer=None, guided_grad_cam=False):
+    explainer = GradCAM(model, model_name, image, interpretation_method,
+                        layer_name, visualize_index, preprocessor_fn,
+                        image_size, grad_cam_layer, guided_grad_cam)
     saliency = explainer.get_saliency_map()
     return saliency

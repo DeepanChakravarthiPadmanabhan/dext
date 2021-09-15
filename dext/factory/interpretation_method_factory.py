@@ -4,6 +4,7 @@ from dext.interpretation_method.guided_backpropagation import \
     GuidedBackpropagationExplainer
 from dext.interpretation_method.grad_cam import GradCAMExplainer
 from dext.interpretation_method.smooth_grad import SmoothGradExplainer
+from dext.interpretation_method.lime_explainer import LimeExplainer
 
 
 class ExplainerFactory:
@@ -19,6 +20,8 @@ class ExplainerFactory:
             return GradCAMExplainer
         elif "SmoothGrad" in self.explainer:
             return SmoothGradExplainer
+        elif self.explainer == "LIME":
+            return LimeExplainer
         else:
             raise ValueError("Explanation method not implemented %s"
                              % self.explainer)
