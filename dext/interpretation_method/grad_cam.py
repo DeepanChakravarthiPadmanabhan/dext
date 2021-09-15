@@ -5,6 +5,8 @@ from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
 from dext.model.functional_models import get_functional_model
+from dext.postprocessing.saliency_visualization import \
+    visualize_saliency_grayscale
 
 LOGGER = logging.getLogger(__name__)
 
@@ -113,4 +115,5 @@ def GradCAMExplainer(model, model_name, image, interpretation_method,
                         layer_name, visualize_index, preprocessor_fn,
                         image_size, grad_cam_layer, guided_grad_cam)
     saliency = explainer.get_saliency_map()
+    saliency = visualize_saliency_grayscale(saliency)
     return saliency

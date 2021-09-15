@@ -8,6 +8,8 @@ from dext.interpretation_method.integrated_gradient \
     import IntegratedGradientExplainer
 from dext.interpretation_method.guided_backpropagation \
     import GuidedBackpropagationExplainer
+from dext.postprocessing.saliency_visualization import \
+    visualize_saliency_grayscale
 
 LOGGER = logging.getLogger(__name__)
 
@@ -90,4 +92,5 @@ def SmoothGradExplainer(model, model_name, image, interpretation_method,
                     image_size, standard_deviation, nsamples,
                     magnitude, steps, batch_size)
     saliency = sg.get_saliency_map()
+    saliency = visualize_saliency_grayscale(saliency)
     return saliency

@@ -7,6 +7,8 @@ from tensorflow.keras.models import Model
 from paz.backend.image import resize_image
 from dext.abstract.explanation import Explainer
 from dext.model.functional_models import get_functional_model
+from dext.postprocessing.saliency_visualization import \
+    visualize_saliency_grayscale
 
 LOGGER = logging.getLogger(__name__)
 
@@ -195,4 +197,5 @@ def IntegratedGradientExplainer(model, model_name, image,
                              layer_name, visualize_index,
                              preprocessor_fn, image_size, steps, batch_size)
     saliency = ig.get_saliency_map()
+    saliency = visualize_saliency_grayscale(saliency)
     return saliency

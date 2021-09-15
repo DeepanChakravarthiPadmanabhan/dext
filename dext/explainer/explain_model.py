@@ -109,8 +109,6 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     box_offset, get_model(model_name), model_name, raw_image,
                     layer_name, preprocessor_fn, image_size)
 
-                # visualize - visualize the interpretation result
-                saliency = visualize_saliency_grayscale(saliency)
                 saliency_list.append(saliency)
                 confidence_list.append(class_confidence)
                 class_name_list.append(class_name)

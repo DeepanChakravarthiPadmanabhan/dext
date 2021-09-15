@@ -4,6 +4,7 @@ from skimage.segmentation import  mark_boundaries
 import logging
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
@@ -56,38 +57,40 @@ class LIME:
         else:
             self.model = self.model
 
-        if self.visualize_idx:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.output[self.visualize_idx[0],
-                                           self.visualize_idx[1],
-                                           self.visualize_idx[2]]])
-        else:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output])
-
+        custom_model = Model(inputs=[self.model.inputs],
+                             outputs=[self.model.output])
         return custom_model
 
     def batch_predict(self, images):
         images_processed = []
-        for i in images:
+        for n, i in enumerate(images):
             ex_image = self.preprocess_image(i, self.image_size)
             ex_image = ex_image[0]
             images_processed.append(ex_image)
         explain_images = np.stack(images_processed, axis=0)
-        return self.custom_model(explain_images)
+        output = self.custom_model(explain_images).numpy()
+        output = output[:, self.visualize_idx[1], 4:]
+        return output
 
     def get_saliency_map(self):
-        pred_fn = self.batch_predict
+        image = self.image.copy()
+        prediction_fn = self.batch_predict
         explainer = lime_image.LimeImageExplainer(verbose=True)
-        explanation = explainer.explain_instance(self.image.astype('double'),
-                                                 pred_fn, labels=np.arange(1),
+        explanation = explainer.explain_instance(image.astype('double'),
+                                                 prediction_fn,
+                                                 labels=np.arange(0, 90),
                                                  top_labels=1, hide_color=0.0,
-                                                 num_samples=2, batch_size=8,
+                                                 num_samples=30, batch_size=8,
                                                  random_seed=10)
-        print('explanation: ', explanation)
-        return 1
+        _, mask = explanation.get_image_and_mask(explanation.top_labels[0],
+                                                 positive_only=True,
+                                                 num_features=10,
+                                                 min_weight=1e-3,
+                                                 hide_rest=False)
+
+        mask_norm = np.max(np.abs(mask)) + 1e-8
+        mask = mask / mask_norm
+        return mask
 
 
 def LimeExplainer(model, model_name, image,
