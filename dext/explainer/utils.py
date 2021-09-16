@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from paz.processors.image import LoadImage
-from dext.dataset.coco_dataset import COCOGenerator
+from dext.dataset.coco_retinanet import COCOGenerator
 from dext.factory.model_factory import ModelFactory
 from dext.utils.class_names import get_class_name_efficientdet
 from paz.datasets.utils import get_class_names

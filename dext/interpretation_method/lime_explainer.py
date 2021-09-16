@@ -15,7 +15,8 @@ LOGGER = logging.getLogger(__name__)
 class LIME:
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
-                 preprocessor_fn=None, image_size=512):
+                 preprocessor_fn=None, image_size=512,
+                 num_samples=30, min_weight=1e-3, num_features=5):
         self.model = model
         self.model_name = model_name
         self.image = image
@@ -24,6 +25,9 @@ class LIME:
         self.visualize_idx = visualize_idx
         self.preprocessor_fn = preprocessor_fn
         self.image_size = image_size
+        self.num_samples = num_samples
+        self.min_weight = min_weight
+        self.num_features = num_features
         self.image = self.check_image_size(self.image, self.image_size)
         if self.layer_name is None:
             self.layer_name = self.find_target_layer()
@@ -78,35 +82,20 @@ class LIME:
                      self.visualize_idx[2]: self.visualize_idx[2] + 1]
         return output
 
-    def get_lime_hyperparameters(self):
-        num_samples = 30
-        if self.visualize_idx[2] <= 3:
-            min_weight = 1e-5
-            num_features = 10
-        else:
-            min_weight = 1e-3
-            num_features = 5
-        hyperparameters = {"num_samples": num_samples,
-                           "min_weight": min_weight,
-                           "num_features": num_features}
-        return hyperparameters
-
     def get_saliency_map(self):
         image = self.image.copy()
         prediction_fn = self.batch_predict
         explainer = lime_image.LimeImageExplainer(verbose=True)
         # TODO: Check the parameters and verify the best arguments in cluster.
-        # Tunable params: num_samples=10000, num_features=5
-        hyperparameters = self.get_lime_hyperparameters()
         explanation = explainer.explain_instance(
             image.astype('double'), prediction_fn, labels=np.arange(1),
             top_labels=1, hide_color=0.0,
-            num_samples=hyperparameters["num_samples"], batch_size=8,
+            num_samples=self.num_samples, batch_size=8,
             random_seed=10)
         temp, mask = explanation.get_image_and_mask(
             explanation.top_labels[0], positive_only=True,
-            num_features=hyperparameters["num_features"],
-            min_weight=hyperparameters["min_weight"], hide_rest=False)
+            num_features=self.num_features,
+            min_weight=self.min_weight, hide_rest=False)
         # Mask of important pixels
         # plt.imsave("marked.jpg", mask)
         # Overlap with important pixel boundary marked
@@ -117,10 +106,15 @@ class LIME:
 def LimeExplainer(model, model_name, image,
                   interpretation_method,
                   layer_name, visualize_index,
-                  preprocessor_fn, image_size):
+                  preprocessor_fn, image_size,
+                  num_samples=30, min_weight=1e-3,
+                  num_features=5):
+    # Reg: num_samples=30, min_weight=1e-5, num_features=10
+    # Class: num_samples=30, min_weight=1e-3, num_features=5
     explainer = LIME(model, model_name, image,
                      interpretation_method,
                      layer_name, visualize_index,
-                     preprocessor_fn, image_size)
+                     preprocessor_fn, image_size,
+                     num_samples, min_weight, num_features)
     saliency = explainer.get_saliency_map()
     return saliency
