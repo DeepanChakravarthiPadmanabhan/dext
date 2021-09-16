@@ -1,11 +1,10 @@
-from lime import lime_image
-from skimage.segmentation import  mark_boundaries
-
 import logging
 import numpy as np
-import tensorflow as tf
-import matplotlib.pyplot as plt
 from tensorflow.keras.models import Model
+from lime import lime_image
+# import matplotlib.pyplot as plt
+# from skimage.segmentation import  mark_boundaries
+# import tensorflow as tf
 
 from paz.backend.image import resize_image
 from dext.model.functional_models import get_functional_model
@@ -69,12 +68,28 @@ class LIME:
             images_processed.append(ex_image)
         explain_images = np.stack(images_processed, axis=0)
         output = self.custom_model(explain_images).numpy()
-        # TODO: Modify to study all box offsets and class prob.
-        # TODO: Use visualize_idx[2] at the last idx and
-        #  check outputs by changing labels arg in explain_instance
-        #  method call.
-        output = output[:, self.visualize_idx[1], 4:]
+        if self.visualize_idx[2] <= 3:
+            output = output[
+                     :, self.visualize_idx[1],
+                     self.visualize_idx[2]: self.visualize_idx[2] + 1]
+        else:
+            output = output[
+                     :, self.visualize_idx[1],
+                     self.visualize_idx[2]: self.visualize_idx[2] + 1]
         return output
+
+    def get_lime_hyperparameters(self):
+        num_samples = 30
+        if self.visualize_idx[2] <= 3:
+            min_weight = 1e-5
+            num_features = 10
+        else:
+            min_weight = 1e-3
+            num_features = 5
+        hyperparameters = {"num_samples": num_samples,
+                           "min_weight": min_weight,
+                           "num_features": num_features}
+        return hyperparameters
 
     def get_saliency_map(self):
         image = self.image.copy()
@@ -82,17 +97,16 @@ class LIME:
         explainer = lime_image.LimeImageExplainer(verbose=True)
         # TODO: Check the parameters and verify the best arguments in cluster.
         # Tunable params: num_samples=10000, num_features=5
-        explanation = explainer.explain_instance(image.astype('double'),
-                                                 prediction_fn,
-                                                 labels=np.arange(0, 90),
-                                                 top_labels=1, hide_color=0.0,
-                                                 num_samples=30, batch_size=8,
-                                                 random_seed=10)
-        temp, mask = explanation.get_image_and_mask(explanation.top_labels[0],
-                                                 positive_only=True,
-                                                 num_features=10,
-                                                 min_weight=1e-3,
-                                                 hide_rest=False)
+        hyperparameters = self.get_lime_hyperparameters()
+        explanation = explainer.explain_instance(
+            image.astype('double'), prediction_fn, labels=np.arange(1),
+            top_labels=1, hide_color=0.0,
+            num_samples=hyperparameters["num_samples"], batch_size=8,
+            random_seed=10)
+        temp, mask = explanation.get_image_and_mask(
+            explanation.top_labels[0], positive_only=True,
+            num_features=hyperparameters["num_features"],
+            min_weight=hyperparameters["min_weight"], hide_rest=False)
         # Mask of important pixels
         # plt.imsave("marked.jpg", mask)
         # Overlap with important pixel boundary marked

@@ -1,8 +1,8 @@
 def get_layers_and_length(layer):
-    try:
+    if hasattr(layer, 'layers'):
         block_length = len(layer.layers)
         block_layers = layer.layers
-    except:
+    else:
         block_length = 0
         block_layers = layer
     return block_length, block_layers

@@ -8,8 +8,6 @@ from dext.factory.preprocess_factory import PreprocessorFactory
 from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.interpretation_method_factory import \
     ExplainerFactory
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
 from dext.postprocessing.saliency_visualization import plot_all
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
@@ -73,7 +71,6 @@ def explain_model(model_name, explain_mode, raw_image_path,
         detection_image = forward_pass_outs[0]
         detections = forward_pass_outs[1]
         box_index = forward_pass_outs[2]
-        outputs = forward_pass_outs[3]
 
         if len(detections):
             explaining_info = get_explaining_info(
