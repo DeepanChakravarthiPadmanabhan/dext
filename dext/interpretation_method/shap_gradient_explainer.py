@@ -3,9 +3,9 @@ import numpy as np
 from tensorflow.keras.models import Model
 import matplotlib.pyplot as plt
 import shap
-# import tensorflow as tf
+import tensorflow as tf
 # tf.compat.v1.disable_v2_behavior()
-# from tensorflow.compat.v1.keras.backend import get_session
+from tensorflow.compat.v1.keras.backend import get_session
 
 from paz.backend.image import resize_image
 from paz.backend.image.opencv_image import load_image
@@ -75,7 +75,7 @@ class GradientSHAP:
         return background_images
 
     def map2layer(self, model, x, layer):
-        feed_dict = dict(zip([model.layers[0].input], [x.copy()]))
+        feed_dict = dict(zip([model.layers[0].input.ref()], [x.copy()]))
         return get_session().run(model.layers[layer].input, feed_dict)
 
     def build_custom_model(self):
@@ -101,9 +101,9 @@ class GradientSHAP:
     def get_saliency_map(self):
         image = self.image.copy().astype('float32')
         e = shap.GradientExplainer(
-            (self.custom_model.layers[-1].input,
+            (self.custom_model.layers[2].input,
              self.custom_model.layers[-1].output),
-            self.map2layer(self.custom_model, image.ref(), -1),
+            self.map2layer(self.custom_model, image, -1),
             local_smoothing=0
         )
         shap_values, indexes = e.shap_values(

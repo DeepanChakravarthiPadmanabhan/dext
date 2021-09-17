@@ -78,6 +78,10 @@ def get_explaining_info_lists(
 def get_explaining_info(visualize_object_index, box_index,
                         explaining, class_layer_name, reg_layer_name,
                         box_offset):
+    if 'None' in class_layer_name:
+        class_layer_name = None
+    if 'None' in reg_layer_name:
+        reg_layer_name = None
     if visualize_object_index == 0:
         # Object count from 1
         visualize_object_index = visualize_object_index + 1

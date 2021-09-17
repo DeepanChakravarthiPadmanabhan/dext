@@ -29,7 +29,6 @@ class GradCAM:
         self.visualize_idx = visualize_idx
         self.preprocessor_fn = preprocessor_fn
         self.image_size = image_size
-        print("image: ", self.image_size, self.image.shape)
         self.image = self.check_image_size(self.image, self.image_size)
         self.image = self.preprocess_image(self.image, self.image_size)
         self.grad_cam_layer = grad_cam_layer
@@ -63,7 +62,6 @@ class GradCAM:
         return input_image
 
     def build_custom_model(self):
-
         if self.visualize_idx:
             custom_model = Model(
                 inputs=[self.model.inputs],
@@ -76,7 +74,6 @@ class GradCAM:
                 inputs=[self.model.inputs],
                 outputs=[self.model.get_layer(self.grad_cam_layer).output,
                          self.model.get_layer(self.layer_name).output])
-
         return custom_model
 
     def get_saliency_map(self):
@@ -89,6 +86,8 @@ class GradCAM:
         loss = predictions
         LOGGER.debug('Conv outs from custom model: ', predictions)
         grads = tape.gradient(loss, conv_outs)
+        grads = grads[0]
+        conv_outs = conv_outs[0]
         # TODO: Debug Guided GradCAM. Currently only GradCAM works.
         if self.guided_grad_cam:
             gate_f = tf.cast(conv_outs > 0, 'float32')
@@ -101,7 +100,7 @@ class GradCAM:
         cam = tf.reduce_sum(tf.multiply(weights, conv_outs), axis=-1)
         cam = np.maximum(cam, 0)
         cam = cam / np.max(cam)
-        cam = resize_image(cam[0], (self.image_size, self.image_size))
+        cam = resize_image(cam, (self.image_size, self.image_size))
         cam = np.stack((cam,) * 3, axis=-1)
         cam = cam[np.newaxis]
         saliency = np.asarray(cam)
@@ -111,9 +110,13 @@ class GradCAM:
 def GradCAMExplainer(model, model_name, image, interpretation_method,
                      layer_name, visualize_index, preprocessor_fn,
                      image_size, grad_cam_layer=None, guided_grad_cam=False):
+    if 'SSD' in model_name:
+        grad_cam_layer = 'conv2d_14'
+    elif 'EFFICIENTDET' in model_name:
+        grad_cam_layer = None
     explainer = GradCAM(model, model_name, image, interpretation_method,
                         layer_name, visualize_index, preprocessor_fn,
                         image_size, grad_cam_layer, guided_grad_cam)
     saliency = explainer.get_saliency_map()
-    saliency = visualize_saliency_grayscale(saliency)
+    saliency = visualize_saliency_grayscale(saliency, 100)
     return saliency
