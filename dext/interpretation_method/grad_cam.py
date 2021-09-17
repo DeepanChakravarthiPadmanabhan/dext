@@ -34,6 +34,8 @@ class GradCAM:
         self.grad_cam_layer = grad_cam_layer
         if self.layer_name is None:
             self.layer_name = self.find_target_layer()
+        if type(self.grad_cam_layer) == int:
+            self.grad_cam_layer = self.model.layers[self.grad_cam_layer].name
         if self.grad_cam_layer is None:
             self.grad_cam_layer = self.layer_name
         LOGGER.info('GradCAM visualization of the layer: %s'
@@ -111,7 +113,10 @@ def GradCAMExplainer(model, model_name, image, interpretation_method,
                      layer_name, visualize_index, preprocessor_fn,
                      image_size, grad_cam_layer=None, guided_grad_cam=False):
     if 'SSD' in model_name:
-        grad_cam_layer = 'conv2d_14'
+        if visualize_index[-1] <= 3:
+            grad_cam_layer = 45
+        else:
+            grad_cam_layer = 38
     elif 'EFFICIENTDET' in model_name:
         grad_cam_layer = None
     explainer = GradCAM(model, model_name, image, interpretation_method,

@@ -11,6 +11,7 @@ from dext.model.ssd.ssd_postprocess import ssd_postprocess
 from dext.postprocessing.saliency_visualization import plot_single_saliency
 from dext.model.utils import get_all_layers
 
+
 class_names = get_class_names("COCO")
 num_classes = len(class_names)
 model = SSD512(num_classes=num_classes, weights="COCO")
