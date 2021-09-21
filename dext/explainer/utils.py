@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from paz.processors.image import LoadImage
-from dext.dataset.coco_retinanet import COCOGenerator
+from dext.dataset.coco import COCODataset
 from dext.factory.model_factory import ModelFactory
 from dext.utils.class_names import get_class_name_efficientdet
 from paz.datasets.utils import get_class_names
@@ -38,10 +38,9 @@ def get_images_to_explain(explain_mode, raw_image_path,
         to_be_explained = (([raw_image], labels),)
     else:
         dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/"
-        dataset_folder = "mscoco"
+        dataset_folder = "coco"
         data_dir = dataset_path + dataset_folder
-        to_be_explained = COCOGenerator(data_dir, "train2017",
-                                        num_images_to_explain)
+        to_be_explained = COCODataset(data_dir, "train", name="train2017",)
     return to_be_explained
 
 
