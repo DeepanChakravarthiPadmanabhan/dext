@@ -1,7 +1,10 @@
 import logging
 import os
+
+import numpy as np
 import pandas as pd
 from paz.backend.image.opencv_image import write_image
+from paz.processors.image import LoadImage
 
 from dext.explainer.utils import get_model
 from dext.factory.preprocess_factory import PreprocessorFactory
@@ -16,6 +19,7 @@ from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
 from dext.explainer.check_saliency_maps import check_saliency
 from dext.explainer.utils import get_model_class_name
 from dext.inference.inference import InferenceFactory
+from dext.explainer.postprocess_saliency import combine_saliency
 
 
 LOGGER = logging.getLogger(__name__)
@@ -57,10 +61,13 @@ def explain_model(model_name, explain_mode, raw_image_path,
     df_metrics = pd.DataFrame(columns=df_metrics_columns)
 
     for count, data in enumerate(to_be_explained):
-        raw_image, labels = data
-        raw_image = raw_image[0].astype('uint8')
+        raw_image = data["image"]
+        image_index = data["image_index"]
+        loader = LoadImage()
+        raw_image = loader(raw_image)
+        raw_image = raw_image.astype('uint8')
         image = raw_image.copy()
-        explanation_save_file = labels[0]["image_index"]
+        explanation_save_file = str(image_index)
         LOGGER.info("Explanation module input image ID: %s"
                     % explanation_save_file)
 
@@ -120,6 +127,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     explanation_save_file, object_index, explaining,
                     detections[object_index], saliency_iou, saliency_centroid,
                     saliency_variance]
+
+            combined_saliency = combine_saliency(saliency_list)
 
             f = plot_all(detection_image, raw_image, saliency_list,
                          confidence_list, class_name_list, explaining_list,

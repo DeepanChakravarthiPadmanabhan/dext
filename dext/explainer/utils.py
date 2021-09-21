@@ -30,17 +30,19 @@ def get_model_class_name(model_name, dataset_name):
 def get_images_to_explain(explain_mode, raw_image_path,
                           num_images_to_explain=2):
     if explain_mode == 'single_image':
-        loader = LoadImage()
-        raw_image = loader(raw_image_path)
+        data = {}
         index = (os.path.basename(
             raw_image_path)).rsplit('.jpg', 1)[0]
-        labels = [{"image_index": index}]
-        to_be_explained = (([raw_image], labels),)
+        data["image"] = raw_image_path
+        data["image_index"] = index
+        data["boxes"] = None
+        to_be_explained = [data]
     else:
         dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/"
         dataset_folder = "coco"
         data_dir = dataset_path + dataset_folder
-        to_be_explained = COCODataset(data_dir, "train", name="train2017",)
+        to_be_explained = COCODataset(data_dir, "val", name="val2017",)
+        to_be_explained = to_be_explained.load_data()[:num_images_to_explain]
     return to_be_explained
 
 
