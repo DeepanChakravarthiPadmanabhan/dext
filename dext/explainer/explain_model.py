@@ -1,7 +1,6 @@
 import logging
 import os
 
-import numpy as np
 import pandas as pd
 from paz.backend.image.opencv_image import write_image
 from paz.processors.image import LoadImage
@@ -19,7 +18,7 @@ from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
 from dext.explainer.check_saliency_maps import check_saliency
 from dext.explainer.utils import get_model_class_name
 from dext.inference.inference import InferenceFactory
-from dext.explainer.postprocess_saliency import combine_saliency
+from dext.explainer.postprocess_saliency import merge_saliency
 
 
 LOGGER = logging.getLogger(__name__)
@@ -128,7 +127,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     detections[object_index], saliency_iou, saliency_centroid,
                     saliency_variance]
 
-            combined_saliency = combine_saliency(saliency_list)
+            combined_saliency = merge_saliency(saliency_list)
 
             f = plot_all(detection_image, raw_image, saliency_list,
                          confidence_list, class_name_list, explaining_list,

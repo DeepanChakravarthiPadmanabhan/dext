@@ -37,7 +37,7 @@ for n, data in enumerate(datasets):
     input_image, image_scales = preprocessing(image, model.input_shape[1:3])
     outputs = model(input_image)
     detection_image, detections, class_map_idx = postprocessing(
-    model, outputs, image_scales, raw_image.copy())
+        model, outputs, image_scales, raw_image.copy())
     # plt.imsave("ssd512" + str(n) + ".jpg", detection_image)
     # LOGGER.info('Saved entry: %s' % n)
     all_boxes = get_evaluation_details(detections)
@@ -48,4 +48,3 @@ for n, data in enumerate(datasets):
     LOGGER.info('Added json entry: %s' % n)
 with open('eval.json', 'w', encoding='utf-8') as f:
     json.dump(eval_json, f, ensure_ascii=False, indent=4)
-

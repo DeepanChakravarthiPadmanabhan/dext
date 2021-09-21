@@ -2,7 +2,6 @@ import logging
 import os
 import numpy as np
 
-from paz.processors.image import LoadImage
 from dext.dataset.coco import COCODataset
 from dext.factory.model_factory import ModelFactory
 from dext.utils.class_names import get_class_name_efficientdet
