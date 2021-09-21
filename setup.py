@@ -14,6 +14,10 @@ dependencies = [
     "opencv-python",
     "tensorflow",
     "pypaz",
+    "click",
+    "pandas",
+    "pycocotools",
+    "xlsxwriter"
 ]
 
 setup(
@@ -26,7 +30,7 @@ setup(
     zip_safe=False,
     entry_points=dict(
         console_scripts=[
-            "dext_explainer=dext.explainer:explain",
+            "dext_explainer=dext.explainer:explainer",
         ]
     ),
     python_requires=">=3.6,<=3.9",
