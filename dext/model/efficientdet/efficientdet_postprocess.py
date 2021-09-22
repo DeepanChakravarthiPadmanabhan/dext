@@ -154,13 +154,13 @@ def scale_box(box, image_scale):
     y_min = int(y_min * image_scale[0])
     x_max = int(x_max * image_scale[1])
     y_max = int(y_max * image_scale[0])
-    return (x_min, y_min, x_max, y_max)
+    return x_min, y_min, x_max, y_max
 
 
-def scale_boxes(boxes2D, image_scale):
-    for box2D in boxes2D:
-        box2D.coordinates = scale_box(box2D.coordinates, image_scale)
-    return boxes2D
+def scale_boxes(boxes2d, image_scale):
+    for box2d in boxes2d:
+        box2d.coordinates = scale_box(box2d.coordinates, image_scale)
+    return boxes2d
 
 
 def efficientdet_postprocess(model, outputs,

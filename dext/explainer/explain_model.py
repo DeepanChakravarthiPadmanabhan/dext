@@ -127,6 +127,11 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     detections[object_index], saliency_iou, saliency_centroid,
                     saliency_variance]
 
+            if 'EFFICIENTDET' in model_name:
+                saliency_list[1], saliency_list[2] = saliency_list[2], \
+                                                     saliency_list[1]
+                saliency_list[4], saliency_list[3] = saliency_list[3], \
+                                                     saliency_list[4]
             combined_saliency = merge_saliency(saliency_list)
 
             f = plot_all(detection_image, raw_image, saliency_list,
