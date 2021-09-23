@@ -145,7 +145,7 @@ def get_saliency_title(explaining, box_offset):
 def plot_all_subplot(detection_image, image, saliency_list, confidence,
                      class_name, explaining_list, box_offset_list, to_explain,
                      interpretation_method="Integrated Gradients",
-                     model_name="EfficientDet"):
+                     model_name="EFFICIENTDETD0"):
     num_axes = len(saliency_list) + 1
     rows, cols, fig_width, fig_height = get_plot_params(num_axes)
     fig, ax = plt.subplots(rows, cols, figsize=(fig_width, fig_height))

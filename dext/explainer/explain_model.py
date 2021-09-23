@@ -19,6 +19,7 @@ from dext.explainer.check_saliency_maps import check_saliency
 from dext.explainer.utils import get_model_class_name
 from dext.inference.inference import InferenceFactory
 from dext.explainer.postprocess_saliency import merge_saliency
+from dext.explainer.utils import get_efficientdet_saliency_list
 
 
 LOGGER = logging.getLogger(__name__)
@@ -105,8 +106,9 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     box_index[object_index][1]]
                 class_confidence = box_index[object_index][2]
                 LOGGER.info("Generating saliency: Object - %s, "
-                            "Confidence - %s, Explaining - %s" %
-                            (class_name, class_confidence, explaining))
+                            "Confidence - %s, Explaining - %s, Box offset - %s"
+                            % (class_name, class_confidence, explaining,
+                               box_offset))
                 saliency = explain_object(
                     interpretation_method, box_index, explaining, object_index,
                     box_offset, get_model(model_name), model_name, raw_image,
@@ -115,6 +117,13 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 saliency_list.append(saliency)
                 confidence_list.append(class_confidence)
                 class_name_list.append(class_name)
+                # if explaining == 'Classification' and box_offset == None:
+                #     from dext.postprocessing.saliency_visualization import
+                #     plot_single_saliency
+                #     plot_single_saliency(detection_image, raw_image,
+                #                          saliency, class_confidence,
+                #                          class_name, explaining,
+                #                          interpretation_method, model_name)
 
                 # analyze saliency maps
                 metrics = analyze_saliency_maps(
@@ -128,11 +137,9 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     saliency_variance]
 
             if 'EFFICIENTDET' in model_name:
-                saliency_list[1], saliency_list[2] = saliency_list[2], \
-                                                     saliency_list[1]
-                saliency_list[4], saliency_list[3] = saliency_list[3], \
-                                                     saliency_list[4]
-            combined_saliency = merge_saliency(saliency_list)
+                saliency_list = get_efficientdet_saliency_list(saliency_list)
+
+            merge_saliency(saliency_list)
 
             f = plot_all(detection_image, raw_image, saliency_list,
                          confidence_list, class_name_list, explaining_list,

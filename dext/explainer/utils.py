@@ -10,6 +10,12 @@ from paz.datasets.utils import get_class_names
 LOGGER = logging.getLogger(__name__)
 
 
+def get_efficientdet_saliency_list(saliency_list):
+    saliency_list[1], saliency_list[2] = saliency_list[2], saliency_list[1]
+    saliency_list[4], saliency_list[3] = saliency_list[3], saliency_list[4]
+    return saliency_list
+
+
 def get_model(model_name):
     model_fn = ModelFactory(model_name).factory()
     model = model_fn()
