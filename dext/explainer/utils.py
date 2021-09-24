@@ -10,12 +10,6 @@ from paz.datasets.utils import get_class_names
 LOGGER = logging.getLogger(__name__)
 
 
-def get_efficientdet_saliency_list(saliency_list):
-    saliency_list[1], saliency_list[2] = saliency_list[2], saliency_list[1]
-    saliency_list[4], saliency_list[3] = saliency_list[3], saliency_list[4]
-    return saliency_list
-
-
 def get_model(model_name):
     model_fn = ModelFactory(model_name).factory()
     model = model_fn()
@@ -51,9 +45,36 @@ def get_images_to_explain(explain_mode, raw_image_path,
     return to_be_explained
 
 
+def get_box_arg_to_index(model_name):
+    if 'EFFICIENTDET' in model_name:
+        box_arg_to_index = {'y_min': 0, 'x_min': 1, 'y_max': 2, 'x_max': 3}
+    else:
+        box_arg_to_index = {'x_min': 0, 'y_min': 1, 'x_max': 2, 'y_max': 3}
+    return box_arg_to_index
+
+
+def get_box_index_to_arg(model_name):
+    if 'EFFICIENTDET' in model_name:
+        box_index_to_arg = {0: 'y_min', 1: 'x_min', 2: 'y_max', 3: 'x_max'}
+    else:
+        box_index_to_arg = {0: 'x_min', 1: 'y_min', 2: 'x_max', 3: 'y_max'}
+    return box_index_to_arg
+
+
+def get_box_index_order(model_name):
+    box_index_order = []
+    box_arg_to_index = get_box_arg_to_index(model_name)
+    for i in BOX_ORDER_TO_PLOT[1:]:
+        box_index_order.append(box_arg_to_index[i])
+    return box_index_order
+
+
+BOX_ORDER_TO_PLOT = ['class', 'x_min', 'y_min', 'x_max', 'y_max']
+
+
 def get_explaining_info_lists(
         visualize_object_index, explaining, class_layer_name,
-        reg_layer_name, box_offset):
+        reg_layer_name, box_offset, box_arg_to_index, model_name):
 
     object_index_list = []
     if explaining == 'Classification and Box offset':
@@ -66,7 +87,8 @@ def get_explaining_info_lists(
         layer_name_list = [class_layer_name, reg_layer_name,
                            reg_layer_name, reg_layer_name,
                            reg_layer_name]
-        box_offset_list = [None, 0, 1, 2, 3]
+        box_index_order = get_box_index_order(model_name)
+        box_offset_list = [None, ] + box_index_order
     elif explaining == 'Classification':
         object_index_list.append(visualize_object_index)
         explaining_list = ['Classification', ] * len(object_index_list)
@@ -76,14 +98,16 @@ def get_explaining_info_lists(
         object_index_list.append(visualize_object_index)
         explaining_list = ['Box offset', ] * len(object_index_list)
         layer_name_list = [reg_layer_name, ] * len(object_index_list)
-        box_offset_list = [box_offset, ] * len(object_index_list)
+        box_offset_list = [box_arg_to_index[box_offset],
+                           ] * len(object_index_list)
 
     return object_index_list, explaining_list, layer_name_list, box_offset_list
 
 
 def get_explaining_info(visualize_object_index, box_index,
                         explaining, class_layer_name, reg_layer_name,
-                        box_offset):
+                        box_offset, model_name):
+    box_arg_to_index = get_box_arg_to_index(model_name)
     if 'None' in class_layer_name:
         class_layer_name = None
     if 'None' in reg_layer_name:
@@ -99,7 +123,8 @@ def get_explaining_info(visualize_object_index, box_index,
     if visualize_object_index == 'all':
         for i in range(len(box_index)):
             explaining_info = get_explaining_info_lists(
-                i, explaining, class_layer_name, reg_layer_name, box_offset)
+                i, explaining, class_layer_name, reg_layer_name, box_offset,
+                box_arg_to_index)
             object_index_list = object_index_list + explaining_info[0]
             explaining_list = explaining_list + explaining_info[1]
             layer_name_list = layer_name_list + explaining_info[2]
@@ -108,7 +133,7 @@ def get_explaining_info(visualize_object_index, box_index,
         visualize_object_index = visualize_object_index - 1
         explaining_info = get_explaining_info_lists(
             visualize_object_index, explaining, class_layer_name,
-            reg_layer_name, box_offset)
+            reg_layer_name, box_offset, box_arg_to_index, model_name)
         object_index_list = explaining_info[0]
         explaining_list = explaining_info[1]
         layer_name_list = explaining_info[2]

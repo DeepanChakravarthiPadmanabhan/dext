@@ -1,4 +1,5 @@
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 
 from dext.explainer.utils import resize_box
@@ -42,3 +43,8 @@ def analyze_saliency_maps(detections, image, saliency_map,
     centroid = calculate_centroid(mask_2d)
     variance = calculate_variance(mask_2d)
     return iou, centroid, variance
+
+
+def get_object_ap_curve(saliency, model, raw_image, preprocessor,
+                        postprocessor, model_name='SSD512'):
+    plt.imsave("ap_img.jpg", raw_image)

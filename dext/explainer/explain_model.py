@@ -1,6 +1,6 @@
 import logging
 import os
-
+from copy import deepcopy
 import pandas as pd
 from paz.backend.image.opencv_image import write_image
 from paz.processors.image import LoadImage
@@ -19,7 +19,7 @@ from dext.explainer.check_saliency_maps import check_saliency
 from dext.explainer.utils import get_model_class_name
 from dext.inference.inference import InferenceFactory
 from dext.explainer.postprocess_saliency import merge_saliency
-from dext.explainer.utils import get_efficientdet_saliency_list
+from dext.explainer.analyze_saliency_maps import get_object_ap_curve
 
 
 LOGGER = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
         loader = LoadImage()
         raw_image = loader(raw_image)
         raw_image = raw_image.astype('uint8')
-        image = raw_image.copy()
+        image = deepcopy(raw_image)
         explanation_save_file = str(image_index)
         LOGGER.info("Explanation module input image ID: %s"
                     % explanation_save_file)
@@ -82,7 +82,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
         if len(detections):
             explaining_info = get_explaining_info(
                 visualize_object_index, box_index, to_explain,
-                class_layer_name, reg_layer_name, visualize_box_offset)
+                class_layer_name, reg_layer_name, visualize_box_offset,
+                model_name)
             LOGGER.info("Information used for explanation: %s" %
                         (explaining_info,))
             object_index_list = explaining_info[0]
@@ -118,8 +119,8 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 confidence_list.append(class_confidence)
                 class_name_list.append(class_name)
                 # if explaining == 'Classification' and box_offset == None:
-                #     from dext.postprocessing.saliency_visualization import
-                #     plot_single_saliency
+                #     from dext.postprocessing.saliency_visualization import \
+                #         plot_single_saliency
                 #     plot_single_saliency(detection_image, raw_image,
                 #                          saliency, class_confidence,
                 #                          class_name, explaining,
@@ -136,10 +137,9 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     detections[object_index], saliency_iou, saliency_centroid,
                     saliency_variance]
 
-            if 'EFFICIENTDET' in model_name:
-                saliency_list = get_efficientdet_saliency_list(saliency_list)
-
-            merge_saliency(saliency_list)
+            combined_saliency = merge_saliency(saliency_list)
+            get_object_ap_curve(combined_saliency, model, raw_image,
+                                preprocessor_fn, postprocessor_fn, model_name)
 
             f = plot_all(detection_image, raw_image, saliency_list,
                          confidence_list, class_name_list, explaining_list,
