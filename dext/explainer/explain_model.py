@@ -10,6 +10,7 @@ from dext.factory.preprocess_factory import PreprocessorFactory
 from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.interpretation_method_factory import \
     ExplainerFactory
+from dext.factory.inference_factory import InferenceFactory
 from dext.postprocessing.saliency_visualization import plot_all
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
@@ -17,7 +18,6 @@ from dext.explainer.utils import get_images_to_explain
 from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
 from dext.explainer.check_saliency_maps import check_saliency
 from dext.explainer.utils import get_model_class_name
-from dext.inference.inference import InferenceFactory
 from dext.explainer.postprocess_saliency import merge_saliency
 from dext.explainer.analyze_saliency_maps import get_object_ap_curve
 
@@ -79,6 +79,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
         detections = forward_pass_outs[1]
         box_index = forward_pass_outs[2]
 
+        # TODO: Run explanations for all detections in an image if needed.
         if len(detections):
             explaining_info = get_explaining_info(
                 visualize_object_index, box_index, to_explain,
@@ -138,8 +139,10 @@ def explain_model(model_name, explain_mode, raw_image_path,
                     saliency_variance]
 
             combined_saliency = merge_saliency(saliency_list)
-            get_object_ap_curve(combined_saliency, model, raw_image,
-                                preprocessor_fn, postprocessor_fn, model_name)
+            get_object_ap_curve(combined_saliency, raw_image,
+                                preprocessor_fn, postprocessor_fn,
+                                inference_fn, image_size,
+                                model_name, image_index)
 
             f = plot_all(detection_image, raw_image, saliency_list,
                          confidence_list, class_name_list, explaining_list,

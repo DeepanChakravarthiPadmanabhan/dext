@@ -18,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--interpretation_method", default="IntegratedGradients")
 @click.option("--visualize_object_index", default=2)  # 1 <
 @click.option("--visualize_box_offset", default='y_min')
-@click.option("--num_images", default=2)  # 1 <
+@click.option("--num_images", default=1)  # 1 <
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))

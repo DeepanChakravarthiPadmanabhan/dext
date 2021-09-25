@@ -1,9 +1,15 @@
+import os
+import json
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from copy import deepcopy
 
 from dext.explainer.utils import resize_box
+from dext.explainer.utils import get_model
 from dext.explainer.utils import get_saliency_mask
+from dext.evaluate.utils import get_evaluation_details
+from dext.evaluate.coco_evaluation import get_coco_metrics
 
 
 def calculate_saliency_iou(mask_2d, box):
@@ -45,6 +51,32 @@ def analyze_saliency_maps(detections, image, saliency_map,
     return iou, centroid, variance
 
 
-def get_object_ap_curve(saliency, model, raw_image, preprocessor,
-                        postprocessor, model_name='SSD512'):
+def get_object_ap_curve(saliency, raw_image, preprocessor_fn,
+                        postprocessor_fn, inference_fn, image_size=512,
+                        model_name='SSD512', image_index=None,
+                        result_file='ap_curve.json'):
     plt.imsave("ap_img.jpg", raw_image)
+    model = get_model(model_name)
+    image = deepcopy(raw_image)
+
+    # TODO: Get perturbed image. Calculate AP @.5.
+    forward_pass_outs = inference_fn(
+        model, image, preprocessor_fn,
+        postprocessor_fn, image_size)
+    detections = forward_pass_outs[1]
+    eval_json = []
+    all_boxes = get_evaluation_details(detections)
+    for i in all_boxes:
+        eval_entry = {'image_id': image_index, 'category_id': i[5],
+                      'bbox': i[:4], 'score': i[4]}
+        eval_json.append(eval_entry)
+    try:
+        os.remove(result_file)
+    except OSError:
+        pass
+    with open(result_file, 'w', encoding='utf-8') as f:
+        json.dump(eval_json, f, ensure_ascii=False, indent=4)
+    ap_50cent = get_coco_metrics(result_file)
+
+    ap_curve = ap_50cent
+    return ap_curve

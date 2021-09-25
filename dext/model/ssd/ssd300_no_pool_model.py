@@ -191,12 +191,3 @@ def SSD300NoPool(num_classes=81, base_weights='VOC', head_weights='VOC',
     model = Model(inputs=image, outputs=outputs, name='SSD300NoPool')
     model.prior_boxes = create_prior_boxes('VOC')
     return model
-
-
-# TODO: Preprocess image for ssd
-# TODO: Postprocess image for ssd
-# TODO: Select neuron in the model output corresponding to the box class
-#  and offset
-# TODO: Do BP
-
-# TODO: Finally integrate the procedure with explain_model method in explainer

@@ -37,7 +37,7 @@ def get_evaluation_box(box):
     w = float(x_max - x_min)
     h = float(y_max - y_min)
     class_id = get_category_id(box.class_name)
-    return [float(x_min), float(y_min), w, h, box.score, class_id]
+    return [float(x_min), float(y_min), w, h, class_id, box.score]
 
 
 def get_evaluation_details(boxes2d):

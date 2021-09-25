@@ -6,6 +6,7 @@ from dext.dataset.coco import COCODataset
 from dext.factory.model_factory import ModelFactory
 from dext.utils.class_names import get_class_name_efficientdet
 from paz.datasets.utils import get_class_names
+from dext.utils.constants import DATASET_PATH
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,10 +38,8 @@ def get_images_to_explain(explain_mode, raw_image_path,
         data["boxes"] = None
         to_be_explained = [data]
     else:
-        dataset_path = "/media/deepan/externaldrive1/datasets_project_repos/"
-        dataset_folder = "coco"
-        data_dir = dataset_path + dataset_folder
-        to_be_explained = COCODataset(data_dir, "val", name="val2017",)
+        dataset_path = DATASET_PATH
+        to_be_explained = COCODataset(dataset_path, "val", name="val2017",)
         to_be_explained = to_be_explained.load_data()[:num_images_to_explain]
     return to_be_explained
 

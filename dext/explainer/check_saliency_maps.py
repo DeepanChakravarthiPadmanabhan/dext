@@ -3,7 +3,7 @@ import numpy as np
 
 from paz.backend.image import resize_image
 from paz.backend.image.opencv_image import write_image
-from dext.inference.inference import InferenceFactory
+from dext.factory.inference_factory import InferenceFactory
 from dext.explainer.utils import get_saliency_mask
 from dext.model.efficientdet.efficientdet_postprocess import process_outputs
 
