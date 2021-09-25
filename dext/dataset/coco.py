@@ -162,7 +162,6 @@ class COCOParser(object):
                 y_max = (annotation['bbox'][1] + annotation['bbox'][3])
                 class_arg = annotation['category_id']
 
-
             box_data.append([x_min, y_min, x_max, y_max, class_arg])
         return box_data
 

@@ -58,7 +58,9 @@ def get_object_ap_curve(saliency, raw_image, preprocessor_fn,
     plt.imsave("ap_img.jpg", raw_image)
     model = get_model(model_name)
     image = deepcopy(raw_image)
-
+    # Order pixels in saliency map based on intensity as x, y coordinate - will be equal to number of pixels in the saliency map
+    # Get modified image: replace 5% percentage of pixels in image based on the top 5% of saliency map ordered coordinates
+    # Infer and calculate AP @.5 for the modified image.
     # TODO: Get perturbed image. Calculate AP @.5.
     forward_pass_outs = inference_fn(
         model, image, preprocessor_fn,
