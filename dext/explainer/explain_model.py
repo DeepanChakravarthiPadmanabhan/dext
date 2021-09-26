@@ -43,9 +43,9 @@ def get_single_saliency(
 
 def explain_single_object(
         raw_image, image_size, preprocessor_fn, postprocessor_fn, detections,
-        detection_image, df_metrics, interpretation_method, object_arg,
-        box_index, to_explain, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name, image_index):
+        detection_image, interpretation_method, object_arg, box_index,
+        to_explain, class_layer_name, reg_layer_name, visualize_box_offset,
+        model_name, image_index):
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain,
         class_layer_name, reg_layer_name, visualize_box_offset,
@@ -99,15 +99,16 @@ def explain_single_object(
         saliency_iou = metrics[0]
         saliency_centroid = metrics[1]
         saliency_variance = metrics[2]
-        df_metrics.loc[len(df_metrics)] = [
+        df_metrics_entry = [
             str(image_index), object_index, explaining,
             detections[object_index], saliency_iou, saliency_centroid,
             saliency_variance]
 
     combined_saliency = merge_saliency(saliency_list)
-    get_object_ap_curve(combined_saliency, raw_image,
-                        preprocessor_fn, postprocessor_fn, image_size,
-                        model_name, image_index)
+    ap_curve = get_object_ap_curve(
+        combined_saliency, raw_image, preprocessor_fn, postprocessor_fn,
+        image_size, model_name, image_index)
+    df_ap_curve_entry = [str(image_index), object_arg, ap_curve]
 
     f = plot_all(detection_image, raw_image, saliency_list,
                  confidence_list, class_name_list, explaining_list,
@@ -119,29 +120,25 @@ def explain_single_object(
               + str(object_arg) + '.jpg')
     LOGGER.info("Box and class labels, after post-processing: %s"
                 % box_index)
-    return saliency_list, df_metrics
+    return df_metrics_entry, df_ap_curve_entry
 
 
 def explain_all_objects(
         objects_to_analyze, raw_image, image_size, preprocessor_fn,
         postprocessor_fn, detections, detection_image, interpretation_method,
         box_index, to_explain, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name, image_index):
-    df_metrics_columns = ["image_index", "object_index",
-                          "explaining", "detection", "saliency_iou",
-                          "saliency_centroid", "saliency_variance"]
-    df_metrics = pd.DataFrame(columns=df_metrics_columns)
+        visualize_box_offset, model_name, image_index, df_metrics_image,
+        df_ap_curve_image):
     for object_arg in objects_to_analyze:
-        saliency_list, df_metrics = explain_single_object(
+        df_metrics_entry, df_ap_curve_entry = explain_single_object(
             raw_image, image_size, preprocessor_fn, postprocessor_fn,
-            detections, detection_image, df_metrics, interpretation_method,
+            detections, detection_image, interpretation_method,
             object_arg, box_index, to_explain, class_layer_name,
             reg_layer_name, visualize_box_offset, model_name, image_index)
-    excel_writer = pd.ExcelWriter(
-        os.path.join('images/results', "report.xlsx"),
-        engine="xlsxwriter")
-    df_metrics.to_excel(excel_writer, sheet_name="metrics")
-    excel_writer.save()
+        df_metrics_image.loc[len(df_metrics_image)] = df_metrics_entry
+        df_ap_curve_image.loc[len(df_ap_curve_image)] = df_ap_curve_entry
+    return df_metrics_image, df_ap_curve_image
+
 
 
 def explain_model(model_name, explain_mode, raw_image_path,
@@ -158,6 +155,12 @@ def explain_model(model_name, explain_mode, raw_image_path,
 
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
                                             num_images)
+    df_metrics_columns = ["image_index", "object_index",
+                          "explaining", "detection", "saliency_iou",
+                          "saliency_centroid", "saliency_variance"]
+    df_ap_curve_columns = ["image_index", "object_index", "ap_50percent"]
+    df_metrics = pd.DataFrame(columns=df_metrics_columns)
+    df_ap_curve = pd.DataFrame(columns=df_ap_curve_columns)
 
     for count, data in enumerate(to_be_explained):
         raw_image = data["image"]
@@ -184,11 +187,18 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 objects_to_analyze = list(range(1, len(detections) + 1))
             else:
                 objects_to_analyze = [int(visualize_object_index)]
-            explain_all_objects(
+            df_metrics, df_ap_curve = explain_all_objects(
                 objects_to_analyze, raw_image, image_size, preprocessor_fn,
                 postprocessor_fn, detections, detection_image,
                 interpretation_method, box_index, to_explain,
                 class_layer_name, reg_layer_name, visualize_box_offset,
-                model_name, image_index)
+                model_name, image_index, df_metrics, df_ap_curve)
         else:
             LOGGER.info("No detections to analyze.")
+
+    excel_writer = pd.ExcelWriter(
+        os.path.join('images/results', "report.xlsx"),
+        engine="xlsxwriter")
+    df_metrics.to_excel(excel_writer, sheet_name="metrics")
+    df_ap_curve.to_excel(excel_writer, sheet_name="ap_curve")
+    excel_writer.save()

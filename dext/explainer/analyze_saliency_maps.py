@@ -65,9 +65,8 @@ def save_modified_image(raw_image, name, saliency_shape, change_pixels):
                modified_image.astype('uint8'))
 
 
-def get_object_ap_curve(saliency, raw_image, preprocessor_fn,
-                        postprocessor_fn, image_size=512,
-                        model_name='SSD512', image_index=None,
+def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
+                        image_size=512, model_name='SSD512', image_index=None,
                         result_file='ap_curve.json',
                         save_modified_images=False):
     model = get_model(model_name)
