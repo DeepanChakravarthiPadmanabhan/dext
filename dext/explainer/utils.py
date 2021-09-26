@@ -74,7 +74,6 @@ BOX_ORDER_TO_PLOT = ['class', 'x_min', 'y_min', 'x_max', 'y_max']
 def get_explaining_info_lists(
         visualize_object_index, explaining, class_layer_name,
         reg_layer_name, box_offset, box_arg_to_index, model_name):
-
     object_index_list = []
     if explaining == 'Classification and Box offset':
         object_index_list.append(visualize_object_index)
@@ -115,28 +114,14 @@ def get_explaining_info(visualize_object_index, box_index,
         # Object count from 1
         visualize_object_index = visualize_object_index + 1
 
-    object_index_list = []
-    explaining_list = []
-    layer_name_list = []
-    box_offset_list = []
-    if visualize_object_index == 'all':
-        for i in range(len(box_index)):
-            explaining_info = get_explaining_info_lists(
-                i, explaining, class_layer_name, reg_layer_name, box_offset,
-                box_arg_to_index)
-            object_index_list = object_index_list + explaining_info[0]
-            explaining_list = explaining_list + explaining_info[1]
-            layer_name_list = layer_name_list + explaining_info[2]
-            box_offset_list = box_offset_list + explaining_info[3]
-    else:
-        visualize_object_index = visualize_object_index - 1
-        explaining_info = get_explaining_info_lists(
-            visualize_object_index, explaining, class_layer_name,
-            reg_layer_name, box_offset, box_arg_to_index, model_name)
-        object_index_list = explaining_info[0]
-        explaining_list = explaining_info[1]
-        layer_name_list = explaining_info[2]
-        box_offset_list = explaining_info[3]
+    visualize_object_index = visualize_object_index - 1
+    explaining_info = get_explaining_info_lists(
+        visualize_object_index, explaining, class_layer_name,
+        reg_layer_name, box_offset, box_arg_to_index, model_name)
+    object_index_list = explaining_info[0]
+    explaining_list = explaining_info[1]
+    layer_name_list = explaining_info[2]
+    box_offset_list = explaining_info[3]
 
     return object_index_list, explaining_list, layer_name_list, box_offset_list
 

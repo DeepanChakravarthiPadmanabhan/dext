@@ -38,8 +38,7 @@ def evaluate_model(model_name, image_size=512, dataset_path=None,
             postprocessor_fn, image_size)
         detection_image = forward_pass_outs[0]
         detections = forward_pass_outs[1]
-
-        plt.imsave("ssd512" + str(n) + ".jpg", detection_image)
+        plt.imsave(model_name + str(n) + ".jpg", detection_image)
         LOGGER.info('Saved entry: %s' % n)
         all_boxes = get_evaluation_details(detections)
         for i in all_boxes:
@@ -55,4 +54,4 @@ def evaluate_model(model_name, image_size=512, dataset_path=None,
         json.dump(eval_json, f, ensure_ascii=False, indent=4)
 
     coco_stats = get_coco_metrics(result_file, annotation_file)
-    LOGGER.info('AP @[IOU=0.5]: %s' % coco_stats[1])
+    LOGGER.info('AP @[IOU=0.5]: %s' % coco_stats)
