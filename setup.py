@@ -17,7 +17,9 @@ dependencies = [
     "click",
     "pandas",
     "pycocotools",
-    "xlsxwriter"
+    "xlsxwriter",
+    "xlrd==1.2.0",
+    "matplotlib"
 ]
 
 setup(

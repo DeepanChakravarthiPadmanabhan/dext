@@ -71,7 +71,7 @@ def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
                         save_modified_images=False):
     model = get_model(model_name)
     num_pixels = saliency.size
-    percentage_space = np.linspace(0, 1, 10)
+    percentage_space = np.linspace(0, 1, 20)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
     sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
     sorted_indices = np.vstack(sorted_flat_indices).T
@@ -106,8 +106,9 @@ def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
                 json.dump(eval_json, f, ensure_ascii=False, indent=4)
             from dext.utils.constants import COCO_VAL_ANNOTATION_FILE
             ap_50cent = get_coco_metrics(result_file, COCO_VAL_ANNOTATION_FILE)
+            ap_50cent = round(ap_50cent, 3)
             LOGGER.info('AP 50 at modification percentage %s: %s' % (
-                percent, ap_50cent))
+                round(percent, 2), ap_50cent))
             ap_curve.append(ap_50cent)
         else:
             LOGGER.info('No detections. Mapping AP to 0.')

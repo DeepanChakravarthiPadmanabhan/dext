@@ -7,7 +7,6 @@ def add_saliency_maps(saliency_list):
     vmax = np.max(new_saliency)
     vmin = np.min(new_saliency)
     new_saliency = np.clip((new_saliency - vmin) / (vmax - vmin), 0, 1)
-    plt.imsave('new_saliency.jpg', new_saliency)
     return new_saliency
 
 

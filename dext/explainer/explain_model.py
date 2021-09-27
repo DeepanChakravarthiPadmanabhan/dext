@@ -2,6 +2,7 @@ import logging
 import os
 from copy import deepcopy
 import pandas as pd
+import numpy as np
 from paz.backend.image.opencv_image import write_image
 from paz.processors.image import LoadImage
 
@@ -45,7 +46,7 @@ def explain_single_object(
         raw_image, image_size, preprocessor_fn, postprocessor_fn, detections,
         detection_image, interpretation_method, object_arg, box_index,
         to_explain, class_layer_name, reg_layer_name, visualize_box_offset,
-        model_name, image_index):
+        model_name, merge_method, image_index):
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain,
         class_layer_name, reg_layer_name, visualize_box_offset,
@@ -85,14 +86,6 @@ def explain_single_object(
         confidence_list.append(class_confidence)
         class_name_list.append(class_name)
 
-        # if explaining == 'Classification' and box_offset == None:
-        #     from dext.postprocessing.saliency_visualization import \
-        #         plot_single_saliency
-        #     plot_single_saliency(detection_image, raw_image,
-        #                          saliency, class_confidence,
-        #                          class_name, explaining,
-        #                          interpretation_method, model_name)
-
         # analyze saliency maps
         metrics = analyze_saliency_maps(
             detections, raw_image, saliency, object_index)
@@ -104,11 +97,12 @@ def explain_single_object(
             detections[object_index], saliency_iou, saliency_centroid,
             saliency_variance]
 
-    combined_saliency = merge_saliency(saliency_list)
+    combined_saliency = merge_saliency(saliency_list, merge_method)
     ap_curve = get_object_ap_curve(
         combined_saliency, raw_image, preprocessor_fn, postprocessor_fn,
         image_size, model_name, image_index)
-    df_ap_curve_entry = [str(image_index), object_arg, ap_curve]
+    df_ap_curve_entry = [str(image_index), object_arg, ]
+    df_ap_curve_entry = df_ap_curve_entry + ap_curve
 
     f = plot_all(detection_image, raw_image, saliency_list,
                  confidence_list, class_name_list, explaining_list,
@@ -127,27 +121,27 @@ def explain_all_objects(
         objects_to_analyze, raw_image, image_size, preprocessor_fn,
         postprocessor_fn, detections, detection_image, interpretation_method,
         box_index, to_explain, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name, image_index, df_metrics_image,
-        df_ap_curve_image):
+        visualize_box_offset, model_name, merge_method, image_index,
+        df_metrics_image, df_ap_curve_image):
     for object_arg in objects_to_analyze:
         df_metrics_entry, df_ap_curve_entry = explain_single_object(
             raw_image, image_size, preprocessor_fn, postprocessor_fn,
             detections, detection_image, interpretation_method,
             object_arg, box_index, to_explain, class_layer_name,
-            reg_layer_name, visualize_box_offset, model_name, image_index)
+            reg_layer_name, visualize_box_offset, model_name, merge_method,
+            image_index)
         df_metrics_image.loc[len(df_metrics_image)] = df_metrics_entry
         df_ap_curve_image.loc[len(df_ap_curve_image)] = df_ap_curve_entry
     return df_metrics_image, df_ap_curve_image
 
 
-
-def explain_model(model_name, explain_mode, raw_image_path,
-                  image_size=512, class_layer_name=None,
-                  reg_layer_name=None,
+def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
+                  class_layer_name=None, reg_layer_name=None,
                   to_explain="Classification",
                   interpretation_method="IntegratedGradients",
-                  visualize_object_index=None, visualize_box_offset=1,
-                  num_images=2):
+                  visualize_object_index=None, visualize_box_offset=None,
+                  num_images=2, merge_method='add', save_detections=False,
+                  ap_curve_linspace=20):
     model = get_model(model_name)
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
@@ -158,7 +152,10 @@ def explain_model(model_name, explain_mode, raw_image_path,
     df_metrics_columns = ["image_index", "object_index",
                           "explaining", "detection", "saliency_iou",
                           "saliency_centroid", "saliency_variance"]
-    df_ap_curve_columns = ["image_index", "object_index", "ap_50percent"]
+    df_ap_curve_columns = ["image_index", "object_index", ]
+    ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
+                            for n in np.linspace(0, 1, ap_curve_linspace)]
+    df_ap_curve_columns = df_ap_curve_columns + ap_50percent_columns
     df_metrics = pd.DataFrame(columns=df_metrics_columns)
     df_ap_curve = pd.DataFrame(columns=df_ap_curve_columns)
 
@@ -179,8 +176,9 @@ def explain_model(model_name, explain_mode, raw_image_path,
         detection_image = forward_pass_outs[0]
         detections = forward_pass_outs[1]
         box_index = forward_pass_outs[2]
-        write_image('images/results/paz_postprocess.jpg', detection_image)
         LOGGER.info("Detections: %s" % detections)
+        if save_detections:
+            write_image('images/results/paz_postprocess.jpg', detection_image)
 
         if len(detections):
             if visualize_object_index == 'all':
@@ -192,7 +190,7 @@ def explain_model(model_name, explain_mode, raw_image_path,
                 postprocessor_fn, detections, detection_image,
                 interpretation_method, box_index, to_explain,
                 class_layer_name, reg_layer_name, visualize_box_offset,
-                model_name, image_index, df_metrics, df_ap_curve)
+                model_name, merge_method, image_index, df_metrics, df_ap_curve)
         else:
             LOGGER.info("No detections to analyze.")
 
