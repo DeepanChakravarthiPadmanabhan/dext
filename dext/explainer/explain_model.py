@@ -47,7 +47,8 @@ def explain_single_object(
         detection_image, interpretation_method, object_arg, box_index,
         to_explain, result_dir, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, df_metrics, df_ap_curve):
+        save_explanations, analyze_each_maps, ap_curve_linspace, df_metrics,
+        df_ap_curve):
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain,
         class_layer_name, reg_layer_name, visualize_box_offset,
@@ -103,7 +104,7 @@ def explain_single_object(
     combined_saliency = merge_saliency(saliency_list, merge_method)
     ap_curve = get_object_ap_curve(
         combined_saliency, raw_image, preprocessor_fn, postprocessor_fn,
-        image_size, model_name, image_index)
+        image_size, model_name, image_index, ap_curve_linspace)
     df_ap_curve_entry = [str(image_index), object_arg, ]
     df_ap_curve_entry = df_ap_curve_entry + ap_curve
     df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
@@ -128,15 +129,16 @@ def explain_all_objects(
         postprocessor_fn, detections, detection_image, interpretation_method,
         box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, df_metrics, df_ap_curve):
+        save_explanations, analyze_each_maps, ap_curve_linspace, df_metrics,
+        df_ap_curve):
     for object_arg in objects_to_analyze:
         df_metrics, df_ap_curve = explain_single_object(
             raw_image, image_size, preprocessor_fn, postprocessor_fn,
             detections, detection_image, interpretation_method,
             object_arg, box_index, to_explain, result_dir, class_layer_name,
             reg_layer_name, visualize_box_offset, model_name, merge_method,
-            image_index, save_explanations, analyze_each_maps, df_metrics,
-            df_ap_curve)
+            image_index, save_explanations, analyze_each_maps,
+            ap_curve_linspace, df_metrics, df_ap_curve)
     return df_metrics, df_ap_curve
 
 
@@ -200,7 +202,7 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
                 model_name, merge_method, image_index, save_explanations,
-                analyze_each_maps, df_metrics, df_ap_curve)
+                analyze_each_maps, ap_curve_linspace, df_metrics, df_ap_curve)
         else:
             LOGGER.info("No detections to analyze.")
     excel_writer = pd.ExcelWriter(

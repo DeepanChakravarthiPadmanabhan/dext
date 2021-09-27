@@ -67,11 +67,11 @@ def save_modified_image(raw_image, name, saliency_shape, change_pixels):
 
 def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
                         image_size=512, model_name='SSD512', image_index=None,
-                        result_file='ap_curve.json',
+                        ap_curve_linspace=10, result_file='ap_curve.json',
                         save_modified_images=False):
     model = get_model(model_name)
     num_pixels = saliency.size
-    percentage_space = np.linspace(0, 1, 20)
+    percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
     sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
     sorted_indices = np.vstack(sorted_flat_indices).T
