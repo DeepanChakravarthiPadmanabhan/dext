@@ -1,8 +1,8 @@
 from dext.model.efficientdet.efficientdet_model import EfficientDet
+from dext.utils.constants import EFFICIENTDET_WEIGHT_PATH
 
 
-WEIGHT_PATH = '/media/deepan/externaldrive1/project_repos/' \
-              'paz_versions/paz_efficientdet_weights/'
+WEIGHT_PATH = EFFICIENTDET_WEIGHT_PATH
 
 
 def EFFICIENTDET(image_size, num_classes, fpn_num_filters,

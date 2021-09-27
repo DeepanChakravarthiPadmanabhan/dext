@@ -19,7 +19,9 @@ dependencies = [
     "pycocotools",
     "xlsxwriter",
     "xlrd==1.2.0",
-    "matplotlib"
+    "matplotlib",
+    "lime",
+    "shap"
 ]
 
 setup(

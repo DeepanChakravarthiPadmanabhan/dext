@@ -45,8 +45,9 @@ def get_single_saliency(
 def explain_single_object(
         raw_image, image_size, preprocessor_fn, postprocessor_fn, detections,
         detection_image, interpretation_method, object_arg, box_index,
-        to_explain, class_layer_name, reg_layer_name, visualize_box_offset,
-        model_name, merge_method, image_index):
+        to_explain, result_dir, class_layer_name, reg_layer_name,
+        visualize_box_offset, model_name, merge_method, image_index,
+        save_explanations, analyze_each_maps, df_metrics, df_ap_curve):
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain,
         class_layer_name, reg_layer_name, visualize_box_offset,
@@ -87,15 +88,17 @@ def explain_single_object(
         class_name_list.append(class_name)
 
         # analyze saliency maps
-        metrics = analyze_saliency_maps(
-            detections, raw_image, saliency, object_index)
-        saliency_iou = metrics[0]
-        saliency_centroid = metrics[1]
-        saliency_variance = metrics[2]
-        df_metrics_entry = [
-            str(image_index), object_index, explaining,
-            detections[object_index], saliency_iou, saliency_centroid,
-            saliency_variance]
+        if analyze_each_maps:
+            metrics = analyze_saliency_maps(
+                detections, raw_image, saliency, object_index)
+            saliency_iou = metrics[0]
+            saliency_centroid = metrics[1]
+            saliency_variance = metrics[2]
+            df_metrics_entry = [
+                str(image_index), object_index, explaining,
+                detections[object_index], saliency_iou, saliency_centroid,
+                saliency_variance]
+            df_metrics.loc[len(df_metrics)] = df_metrics_entry
 
     combined_saliency = merge_saliency(saliency_list, merge_method)
     ap_curve = get_object_ap_curve(
@@ -103,45 +106,50 @@ def explain_single_object(
         image_size, model_name, image_index)
     df_ap_curve_entry = [str(image_index), object_arg, ]
     df_ap_curve_entry = df_ap_curve_entry + ap_curve
+    df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
 
-    f = plot_all(detection_image, raw_image, saliency_list,
-                 confidence_list, class_name_list, explaining_list,
-                 box_offset_list, to_explain, interpretation_method,
-                 model_name, "subplot")
-
-    # saving results
-    f.savefig('explanation_' + str(image_index) + "_" + "obj"
-              + str(object_arg) + '.jpg')
+    if save_explanations:
+        explanation_result_dir = os.path.join(result_dir, 'explanations')
+        if not os.path.exists(explanation_result_dir):
+            os.makedirs(explanation_result_dir)
+        f = plot_all(detection_image, raw_image, saliency_list,
+                     confidence_list, class_name_list, explaining_list,
+                     box_offset_list, to_explain, interpretation_method,
+                     model_name, "subplot")
+        f.savefig(os.path.join(explanation_result_dir, 'explanation_'
+                  + str(image_index) + "_" + "obj" + str(object_arg) + '.jpg'))
     LOGGER.info("Box and class labels, after post-processing: %s"
                 % box_index)
-    return df_metrics_entry, df_ap_curve_entry
+    return df_metrics, df_ap_curve
 
 
 def explain_all_objects(
         objects_to_analyze, raw_image, image_size, preprocessor_fn,
         postprocessor_fn, detections, detection_image, interpretation_method,
-        box_index, to_explain, class_layer_name, reg_layer_name,
+        box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name, merge_method, image_index,
-        df_metrics_image, df_ap_curve_image):
+        save_explanations, analyze_each_maps, df_metrics, df_ap_curve):
     for object_arg in objects_to_analyze:
-        df_metrics_entry, df_ap_curve_entry = explain_single_object(
+        df_metrics, df_ap_curve = explain_single_object(
             raw_image, image_size, preprocessor_fn, postprocessor_fn,
             detections, detection_image, interpretation_method,
-            object_arg, box_index, to_explain, class_layer_name,
+            object_arg, box_index, to_explain, result_dir, class_layer_name,
             reg_layer_name, visualize_box_offset, model_name, merge_method,
-            image_index)
-        df_metrics_image.loc[len(df_metrics_image)] = df_metrics_entry
-        df_ap_curve_image.loc[len(df_ap_curve_image)] = df_ap_curve_entry
-    return df_metrics_image, df_ap_curve_image
+            image_index, save_explanations, analyze_each_maps, df_metrics,
+            df_ap_curve)
+    return df_metrics, df_ap_curve
 
 
 def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   class_layer_name=None, reg_layer_name=None,
-                  to_explain="Classification",
+                  to_explain="Classification", result_dir='images/results/',
                   interpretation_method="IntegratedGradients",
                   visualize_object_index=None, visualize_box_offset=None,
                   num_images=2, merge_method='add', save_detections=False,
+                  save_explanations=False, analyze_each_maps=False,
                   ap_curve_linspace=20):
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
     model = get_model(model_name)
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
@@ -178,7 +186,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
         box_index = forward_pass_outs[2]
         LOGGER.info("Detections: %s" % detections)
         if save_detections:
-            write_image('images/results/paz_postprocess.jpg', detection_image)
+            write_image(os.path.join(result_dir, "paz_postprocess.jpg"),
+                        detection_image)
 
         if len(detections):
             if visualize_object_index == 'all':
@@ -188,14 +197,14 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
             df_metrics, df_ap_curve = explain_all_objects(
                 objects_to_analyze, raw_image, image_size, preprocessor_fn,
                 postprocessor_fn, detections, detection_image,
-                interpretation_method, box_index, to_explain,
+                interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
-                model_name, merge_method, image_index, df_metrics, df_ap_curve)
+                model_name, merge_method, image_index, save_explanations,
+                analyze_each_maps, df_metrics, df_ap_curve)
         else:
             LOGGER.info("No detections to analyze.")
-
     excel_writer = pd.ExcelWriter(
-        os.path.join('images/results', "report.xlsx"),
+        os.path.join(result_dir, "report.xlsx"),
         engine="xlsxwriter")
     df_metrics.to_excel(excel_writer, sheet_name="metrics")
     df_ap_curve.to_excel(excel_writer, sheet_name="ap_curve")
