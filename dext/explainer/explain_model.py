@@ -17,7 +17,6 @@ from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
 from dext.explainer.utils import get_images_to_explain
 from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
-from dext.explainer.check_saliency_maps import check_saliency
 from dext.explainer.utils import get_model_class_name
 from dext.explainer.postprocess_saliency import merge_saliency
 from dext.explainer.analyze_saliency_maps import get_object_ap_curve

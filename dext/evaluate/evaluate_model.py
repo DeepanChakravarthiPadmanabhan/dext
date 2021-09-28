@@ -11,13 +11,15 @@ from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.inference_factory import InferenceFactory
 from dext.explainer.utils import get_model
 from dext.evaluate.coco_evaluation import get_coco_metrics
-
+import gin
 
 LOGGER = logging.getLogger(__name__)
 
 
-def evaluate_model(model_name, image_size=512, dataset_path=None,
-                   annotation_file=None, result_file=None):
+@gin.configurable
+def evaluate_model(model_name, image_size=512, result_file=None,
+                   dataset_path=None, annotation_file=None):
+    # TODO: Clean annotation file loading and dataset path
     model = get_model(model_name)
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()

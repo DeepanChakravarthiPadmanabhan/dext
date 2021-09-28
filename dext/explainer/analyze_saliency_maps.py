@@ -5,6 +5,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from copy import deepcopy
+import gin
 
 from paz.backend.image.opencv_image import resize_image
 from dext.explainer.utils import resize_box
@@ -65,10 +66,11 @@ def save_modified_image(raw_image, name, saliency_shape, change_pixels):
                modified_image.astype('uint8'))
 
 
+@gin.configurable
 def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
                         image_size=512, model_name='SSD512', image_index=None,
                         ap_curve_linspace=10, result_file='ap_curve.json',
-                        save_modified_images=False):
+                        save_modified_images=False, coco_annotation_file=None):
     model = get_model(model_name)
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
@@ -104,8 +106,7 @@ def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
                 pass
             with open(result_file, 'w', encoding='utf-8') as f:
                 json.dump(eval_json, f, ensure_ascii=False, indent=4)
-            from dext.utils.constants import COCO_VAL_ANNOTATION_FILE
-            ap_50cent = get_coco_metrics(result_file, COCO_VAL_ANNOTATION_FILE)
+            ap_50cent = get_coco_metrics(result_file, coco_annotation_file)
             ap_50cent = round(ap_50cent, 3)
             LOGGER.info('AP 50 at modification percentage %s: %s' % (
                 round(percent, 2), ap_50cent))

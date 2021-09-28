@@ -1,15 +1,13 @@
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import json
+import gin
 
-from dext.utils.constants import DATASET_PATH
 
+@gin.configurable
 def get_coco_metrics(result_file=None, annotation_file=None):
     if not result_file:
         result_file = 'evaluation_result.json'
-    if not annotation_file:
-        dataset_path = DATASET_PATH
-        annotation_file = dataset_path + '/annotations/instances_val2017.json'
 
     cocoGt = COCO(annotation_file)
     cocoDt = cocoGt.loadRes(result_file)

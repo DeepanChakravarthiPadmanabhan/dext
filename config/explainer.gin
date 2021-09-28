@@ -1,0 +1,15 @@
+import dext.explainer.analyze_saliency_maps
+import dext.explainer.utils
+import dext.model.efficientdet.efficientdet
+
+DATASET_PATH = "/media/deepan/externaldrive1/datasets_project_repos/coco/"
+# DATASET_PATH = "/scratch/dpadma2s/coco/"
+
+COCO_VAL_ANNOTATION_FILE = "/media/deepan/externaldrive1/datasets_project_repos/coco/annotations/instances_val2017.json"
+
+EFFICIENTDET_WEIGHT_PATH = 'weights/paz_efficientdet_weights/'
+# EFFICIENTDET_WEIGHT_PATH = '/scratch/dpadma2s/paz_efficientdet_weights/'
+
+get_object_ap_curve.coco_annotation_file = %COCO_VAL_ANNOTATION_FILE
+get_images_to_explain.dataset_path = %DATASET_PATH
+EFFICIENTDET.weight_path = %EFFICIENTDET_WEIGHT_PATH

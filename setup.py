@@ -21,7 +21,8 @@ dependencies = [
     "xlrd==1.2.0",
     "matplotlib",
     "lime",
-    "shap"
+    "shap",
+    "gin-config==0.3.0",
 ]
 
 setup(
@@ -37,5 +38,14 @@ setup(
             "dext_explainer=dext.explainer:explainer",
         ]
     ),
+    data_files=[
+        (
+            "dext_config",
+            [
+                "config/explainer.gin",
+                "config/evaluator.gin",
+            ],
+        )
+    ],
     python_requires=">=3.6,<=3.9",
 )

@@ -1,14 +1,12 @@
 from dext.model.efficientdet.efficientdet_model import EfficientDet
-from dext.utils.constants import EFFICIENTDET_WEIGHT_PATH
+import gin
 
 
-WEIGHT_PATH = EFFICIENTDET_WEIGHT_PATH
-
-
+@gin.configurable
 def EFFICIENTDET(image_size, num_classes, fpn_num_filters,
                  fpn_cell_repeats, box_class_repeats, anchor_scale,
                  min_level, max_level, fpn_weight_method, return_base,
-                 model_name, BACKBONE):
+                 model_name, BACKBONE, weight_path):
     """ Generates an EfficientDet model with the parameter
     values passed as argument.
     # Arguments
@@ -34,7 +32,7 @@ def EFFICIENTDET(image_size, num_classes, fpn_num_filters,
                          fpn_cell_repeats, box_class_repeats, anchor_scale,
                          min_level, max_level, fpn_weight_method, return_base,
                          model_name, BACKBONE)
-    weights_path = WEIGHT_PATH + model_name + '.h5'
+    weights_path = weight_path + model_name + '.h5'
     model.build((1, image_size, image_size, 3))
     model.summary()
     model.load_weights(weights_path)

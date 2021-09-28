@@ -1,5 +1,6 @@
 import logging
 import click
+import gin
 from dext.explainer.explain_model import explain_model
 from dext.utils import setup_logging
 
@@ -7,6 +8,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @click.command()
+@click.option("--config", "-c", default="config/explainer.gin")
 @click.option("--model_name", "-m", help="Model name to explain.",
               default="EFFICIENTDETD0")
 @click.option("--explain_mode", default="coco")
@@ -19,8 +21,8 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--interpretation_method", default="IntegratedGradients")
 @click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='y_min')
-@click.option("--num_images", default=100)  # 1 <
-@click.option("--merge_method", default='add')
+@click.option("--num_images", default=1)  # 1 <
+@click.option("--merge_method", default='and_add')
 @click.option("--save_detections", default=False)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=False)
@@ -29,13 +31,14 @@ LOGGER = logging.getLogger(__name__)
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))
 @click.option("--log-dir", default="")
-def explainer(model_name, explain_mode, input_image_path, image_size,
+def explainer(config, model_name, explain_mode, input_image_path, image_size,
               class_layer_name, reg_layer_name, to_explain, result_dir,
               interpretation_method, visualize_object_index,
               visualize_box_offset, num_images, merge_method, save_detections,
               save_explanations, analyze_each_maps, ap_curve_linspace,
               log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
+    gin.parse_config_file(config)
     LOGGER.info("Running explainer")
     explain_model(model_name, explain_mode, input_image_path, image_size,
                   class_layer_name, reg_layer_name, to_explain, result_dir,
