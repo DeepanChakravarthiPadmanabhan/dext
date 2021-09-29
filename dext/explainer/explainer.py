@@ -29,8 +29,8 @@ LOGGER = logging.getLogger(__name__)
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
 @click.option("--num_images", default=1)  # 1 <
 @click.option("--merge_method", default='pca',
-              type=click.Choice(["pca", "and_add", "and_average", "or_add",
-                                 "or_average"]))
+              type=click.Choice(["pca", "tsne", "and_add", "and_average",
+                                 "or_add", "or_average"]))
 @click.option("--save_detections", default=False)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=False)
