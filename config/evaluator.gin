@@ -2,13 +2,11 @@ import dext.evaluate.evaluate_model
 import dext.model.efficientdet.efficientdet
 import dext.evaluate.coco_evaluation
 
-DATASET_PATH = "/media/deepan/externaldrive1/datasets_project_repos/coco/"
-# DATASET_PATH = "/scratch/dpadma2s/coco/"
+DATASET_PATH = "/scratch/dpadma2s/coco/"
 
 COCO_VAL_ANNOTATION_FILE = "/media/deepan/externaldrive1/datasets_project_repos/coco/annotations/instances_val2017.json"
 
-EFFICIENTDET_WEIGHT_PATH = 'weights/paz_efficientdet_weights/'
-# EFFICIENTDET_WEIGHT_PATH = '/scratch/dpadma2s/paz_efficientdet_weights/'
+EFFICIENTDET_WEIGHT_PATH = '/scratch/dpadma2s/paz_efficientdet_weights/'
 
 evaluate_model.annotation_file = %COCO_VAL_ANNOTATION_FILE
 evaluate_model.dataset_path = %DATASET_PATH

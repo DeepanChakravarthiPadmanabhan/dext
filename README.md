@@ -5,6 +5,11 @@
 pip install -e .
 ```
 
+## Generate explanations
+```
+dext_explainer -c config/explainer.gin --interpretation_method GuidedBackpropagation
+```
+
 ## Object detectors with weights available
 1. EfficientDet - COCO
 2. SSD512 - COCO

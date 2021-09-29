@@ -35,7 +35,7 @@ setup(
     zip_safe=False,
     entry_points=dict(
         console_scripts=[
-            "dext_explainer=dext.explainer:explainer",
+            "dext_explainer=dext.explainer.explainer:explainer",
         ]
     ),
     data_files=[

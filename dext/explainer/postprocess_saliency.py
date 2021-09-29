@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.decomposition import PCA
 
 
 def normalize_saliency_map(saliency_map):
@@ -52,8 +53,14 @@ def and_average_saliency_maps(saliency_list):
     return new_saliency
 
 
-def tsne_saliency_maps(saliency_list):
-    pass
+def pca_saliency_maps(saliency_list):
+    saliency = np.array(saliency_list)
+    saliency = np.transpose(saliency, [1, 2, 0])
+    saliency = np.reshape(saliency, (-1, len(saliency_list)))
+    new_saliency = PCA(n_components=1).fit_transform(saliency)
+    new_saliency = np.reshape(np.squeeze(new_saliency, axis=-1), (512, 512))
+    new_saliency = normalize_saliency_map(new_saliency)
+    return new_saliency
 
 
 def merge_saliency(saliency_list, merge_method='add'):
@@ -65,8 +72,8 @@ def merge_saliency(saliency_list, merge_method='add'):
         return average_saliency_maps(saliency_list)
     elif merge_method == 'and_average':
         return and_average_saliency_maps(saliency_list)
-    elif merge_method == 'tsne':
-        return tsne_saliency_maps(saliency_list)
+    elif merge_method == 'pca':
+        return pca_saliency_maps(saliency_list)
     else:
         raise ValueError("Saliency merge method not implemented %s"
                          % merge_method)

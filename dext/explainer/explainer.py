@@ -11,18 +11,26 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--config", "-c", default="config/explainer.gin")
 @click.option("--model_name", "-m", help="Model name to explain.",
               default="EFFICIENTDETD0")
-@click.option("--explain_mode", default="coco")
+@click.option("--explain_mode", default="coco",
+              type=click.Choice(["single_image", "coco"]))
 @click.option("--input_image_path", default="images/000000309391.jpg")
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Classification and Box offset")
+@click.option("--to_explain", default="Classification and Box offset",
+              type=click.Choice(["Classification and Box offset",
+                                 "Classification", "Box offset"]))
 @click.option("--result_dir", default="images/results/")
-@click.option("--interpretation_method", default="IntegratedGradients")
+@click.option("--interpretation_method", default="IntegratedGradients",
+              type=click.Choice(["IntegratedGradients",
+                                 "GuidedBackpropagation"]))
 @click.option("--visualize_object_index", default='all')  # 1 <
-@click.option("--visualize_box_offset", default='y_min')
+@click.option("--visualize_box_offset", default='y_min',
+              type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
 @click.option("--num_images", default=1)  # 1 <
-@click.option("--merge_method", default='and_add')
+@click.option("--merge_method", default='pca',
+              type=click.Choice(["pca", "and_add", "and_average", "or_add",
+                                 "or_average"]))
 @click.option("--save_detections", default=False)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=False)
