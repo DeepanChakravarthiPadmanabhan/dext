@@ -23,6 +23,7 @@ dependencies = [
     "lime",
     "shap",
     "gin-config==0.3.0",
+    "jupyter",
 ]
 
 setup(
