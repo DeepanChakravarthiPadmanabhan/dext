@@ -35,6 +35,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=False)
 @click.option("--ap_curve_linspace", default=20)
+@click.option("--merge_saliency_maps", default=False)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))
@@ -44,7 +45,7 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
               interpretation_method, visualize_object_index,
               visualize_box_offset, num_images, merge_method, save_detections,
               save_explanations, analyze_each_maps, ap_curve_linspace,
-              log_level, log_dir):
+              merge_saliency_maps, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -53,7 +54,7 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
                   interpretation_method, visualize_object_index,
                   visualize_box_offset, num_images, merge_method,
                   save_detections, save_explanations, analyze_each_maps,
-                  ap_curve_linspace)
+                  ap_curve_linspace, merge_saliency_maps)
 
 
 if __name__ == "__main__":
