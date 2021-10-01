@@ -13,6 +13,8 @@ from dext.explainer.utils import get_model
 from dext.explainer.utils import get_saliency_mask
 from dext.evaluate.utils import get_evaluation_details
 from dext.evaluate.coco_evaluation import get_coco_metrics
+from paz.backend.boxes import compute_iou
+from dext.evaluate.utils import get_category_id
 
 LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +66,78 @@ def save_modified_image(raw_image, name, saliency_shape, change_pixels):
                                   (raw_image.shape[1], raw_image.shape[0]))
     plt.imsave('modified_image' + str(name) + '.jpg',
                modified_image.astype('uint8'))
+
+
+def check_label_flip(det_boxes, gt_box):
+    iou = compute_iou(gt_box[:4], np.array(det_boxes)[:, :4])
+    max_arg = np.argmax(iou)
+    print("FLIP LABEL: ", 'D: ', det_boxes, 'GT: ', gt_box, "IOU: ", iou,
+          "MAX: ", max_arg)
+    if int(det_boxes[max_arg][4]) == int(gt_box[4]) and iou[max_arg] > 0.4:
+        return False
+    else:
+        return True
+
+
+def get_interest_gt_idx(det_box, gt_boxes):
+    iou = compute_iou(det_box.coordinates[:4], np.array(gt_boxes)[:, :4])
+    max_arg = np.argmax(iou)
+    det_class_id = get_category_id(det_box.class_name)
+    print("GT IDX MATCHING: ", 'D:', det_box, 'GT: ', gt_boxes, "IOU: ",
+          iou, "MAX: ", max_arg)
+    if int(gt_boxes[max_arg][4]) == int(det_class_id) and iou[max_arg] > 0.4:
+        return max_arg
+    else:
+        return None
+
+
+
+def get_num_pixels_flipped(saliency, raw_image, detections, gt_boxes,
+                           preprocessor_fn, postprocessor_fn, image_size=512,
+                           model_name='SSD512', object_index=None,
+                           ap_curve_linspace=10, save_modified_images=True):
+    gt_idx_matching_det = get_interest_gt_idx(detections[object_index],
+                                              gt_boxes)
+    model = get_model(model_name)
+    num_pixels = saliency.size
+    percentage_space = np.linspace(0, 1, ap_curve_linspace)
+    sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
+    sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
+    sorted_indices = np.vstack(sorted_flat_indices).T
+    input_image = deepcopy(raw_image)
+    for n, percent in enumerate(percentage_space):
+        modified_image, image_scales = preprocessor_fn(input_image, image_size)
+        num_pixels_selected = int(num_pixels * percent)
+        change_pixels = sorted_indices[:num_pixels_selected]
+        modified_image = modified_image[0]
+        for pix in change_pixels:
+            modified_image[pix[0], pix[1], :] = 0
+        modified_image = modified_image[np.newaxis]
+        outputs = model(modified_image)
+        detection_image, detections, _ = postprocessor_fn(
+            model, outputs, image_scales, raw_image)
+        if save_modified_images:
+            save_modified_image(input_image, n, saliency.shape, change_pixels)
+            plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
+        # TODO: Check the initial if else condition.
+        #  If no detections are in the image or no detection are matching
+        #  with the gt, returning 0 num pixels is wrong.
+        # TODO: No need gt matching itself. We can match with the detection
+        #  index under study itself directly. See how the pixels flipped
+        #  detections match the initial box or not. No need GT at all.
+        if len(detections) and gt_idx_matching_det:
+            all_boxes = get_evaluation_details(detections, 'corners')
+            flag_label_flip = check_label_flip(all_boxes,
+                                               gt_boxes[gt_idx_matching_det])
+            if flag_label_flip:
+                print('HEY BY FLAG: ', num_pixels_selected)
+                return num_pixels_selected
+            else:
+                continue
+        else:
+            print('HEY BY NO DET: ', num_pixels_selected)
+            return num_pixels_selected
+    return int(saliency.shape[0] * saliency.shape[1])
 
 
 @gin.configurable

@@ -20,6 +20,7 @@ from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
 from dext.explainer.utils import get_model_class_name
 from dext.explainer.postprocess_saliency import merge_saliency
 from dext.explainer.analyze_saliency_maps import get_object_ap_curve
+from dext.explainer.analyze_saliency_maps import get_num_pixels_flipped
 
 
 LOGGER = logging.getLogger(__name__)
@@ -45,8 +46,8 @@ def explain_single_object(
         raw_image, image_size, preprocessor_fn, postprocessor_fn, detections,
         detection_image, interpretation_method, object_arg, box_index,
         to_explain, result_dir, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, ap_curve_linspace, df_metrics,
+        visualize_box_offset, model_name, merge_method, image_index, gt_boxes,
+        save_explanations, analyze_each_maps, ap_curve_linspace, df_class_flip,
         df_ap_curve, merge_saliency_maps):
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain,
@@ -65,7 +66,6 @@ def explain_single_object(
                           explaining_list,
                           layer_name_list,
                           box_offset_list)
-
     for info in explaining_info:
         object_index = info[0]
         explaining = info[1]
@@ -86,7 +86,6 @@ def explain_single_object(
         saliency_list.append(saliency)
         confidence_list.append(class_confidence)
         class_name_list.append(class_name)
-
         # analyze saliency maps
         if analyze_each_maps:
             metrics = analyze_saliency_maps(
@@ -94,17 +93,25 @@ def explain_single_object(
             saliency_iou = metrics[0]
             saliency_centroid = metrics[1]
             saliency_variance = metrics[2]
-            df_metrics_entry = [
+            num_pixels_flipped = get_num_pixels_flipped(
+                saliency, raw_image, detections, gt_boxes, preprocessor_fn,
+                postprocessor_fn, image_size, model_name, object_index,
+                ap_curve_linspace)
+            df_class_flip_entry = [
                 str(image_index), object_index, explaining,
                 detections[object_index], saliency_iou, saliency_centroid,
-                saliency_variance]
-            df_metrics.loc[len(df_metrics)] = df_metrics_entry
+                saliency_variance, num_pixels_flipped]
+            df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
     if merge_saliency_maps:
         combined_saliency = merge_saliency(saliency_list, merge_method)
+        num_pixels_flipped = get_num_pixels_flipped(
+            combined_saliency, raw_image, detections, gt_boxes,
+            preprocessor_fn, postprocessor_fn, image_size, model_name,
+            object_index_list[0], ap_curve_linspace)
         ap_curve = get_object_ap_curve(
             combined_saliency, raw_image, preprocessor_fn, postprocessor_fn,
             image_size, model_name, image_index, ap_curve_linspace)
-        df_ap_curve_entry = [str(image_index), object_arg, ]
+        df_ap_curve_entry = [str(image_index), object_arg, num_pixels_flipped]
         df_ap_curve_entry = df_ap_curve_entry + ap_curve
         df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
 
@@ -120,15 +127,15 @@ def explain_single_object(
                   + str(image_index) + "_" + "obj" + str(object_arg) + '.jpg'))
     LOGGER.info("Box and class labels, after post-processing: %s"
                 % box_index)
-    return df_metrics, df_ap_curve
+    return df_class_flip, df_ap_curve
 
 
 def explain_all_objects(
         objects_to_analyze, raw_image, image_size, preprocessor_fn,
         postprocessor_fn, detections, detection_image, interpretation_method,
         box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, ap_curve_linspace, df_metrics,
+        visualize_box_offset, model_name, merge_method, image_index, gt_boxes,
+        save_explanations, analyze_each_maps, ap_curve_linspace, df_class_flip,
         df_ap_curve, merge_saliency_maps):
     for object_arg in objects_to_analyze:
         df_metrics, df_ap_curve = explain_single_object(
@@ -136,9 +143,9 @@ def explain_all_objects(
             detections, detection_image, interpretation_method,
             object_arg, box_index, to_explain, result_dir, class_layer_name,
             reg_layer_name, visualize_box_offset, model_name, merge_method,
-            image_index, save_explanations, analyze_each_maps,
-            ap_curve_linspace, df_metrics, df_ap_curve, merge_saliency_maps)
-    return df_metrics, df_ap_curve
+            image_index, gt_boxes, save_explanations, analyze_each_maps,
+            ap_curve_linspace, df_class_flip, df_ap_curve, merge_saliency_maps)
+    return df_class_flip, df_ap_curve
 
 
 def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
@@ -158,19 +165,20 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
 
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
                                             num_images)
-    df_metrics_columns = ["image_index", "object_index",
-                          "explaining", "detection", "saliency_iou",
-                          "saliency_centroid", "saliency_variance"]
-    df_ap_curve_columns = ["image_index", "object_index", ]
+    df_class_flip_columns = ["image_index", "object_index", "explaining",
+                             "detection", "saliency_iou", "saliency_centroid",
+                             "saliency_variance", "pixels_flipped"]
+    df_ap_curve_columns = ["image_index", "object_index", "pixels_flipped", ]
     ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
                             for n in np.linspace(0, 1, ap_curve_linspace)]
     df_ap_curve_columns = df_ap_curve_columns + ap_50percent_columns
-    df_metrics = pd.DataFrame(columns=df_metrics_columns)
+    df_class_flip = pd.DataFrame(columns=df_class_flip_columns)
     df_ap_curve = pd.DataFrame(columns=df_ap_curve_columns)
 
     for count, data in enumerate(to_be_explained):
         raw_image = data["image"]
         image_index = data["image_index"]
+        gt_boxes = data["boxes"]
         loader = LoadImage()
         raw_image = loader(raw_image)
         raw_image = raw_image.astype('uint8')
@@ -200,14 +208,14 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                 postprocessor_fn, detections, detection_image,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
-                model_name, merge_method, image_index, save_explanations,
-                analyze_each_maps, ap_curve_linspace, df_metrics, df_ap_curve,
-                merge_saliency_maps)
+                model_name, merge_method, image_index, gt_boxes, save_explanations,
+                analyze_each_maps, ap_curve_linspace, df_class_flip,
+                df_ap_curve, merge_saliency_maps)
         else:
             LOGGER.info("No detections to analyze.")
     excel_writer = pd.ExcelWriter(
         os.path.join(result_dir, "report.xlsx"),
         engine="xlsxwriter")
-    df_metrics.to_excel(excel_writer, sheet_name="metrics")
+    df_class_flip.to_excel(excel_writer, sheet_name="metrics")
     df_ap_curve.to_excel(excel_writer, sheet_name="ap_curve")
     excel_writer.save()

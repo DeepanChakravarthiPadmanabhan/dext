@@ -33,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
                                  "or_add", "or_average"]))
 @click.option("--save_detections", default=False)
 @click.option("--save_explanations", default=True)
-@click.option("--analyze_each_maps", default=False)
+@click.option("--analyze_each_maps", default=True)
 @click.option("--ap_curve_linspace", default=20)
 @click.option("--merge_saliency_maps", default=False)
 @click.option("--log_level", default="INFO",

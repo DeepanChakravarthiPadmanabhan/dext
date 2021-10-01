@@ -24,7 +24,7 @@ def get_category_id(class_name):
     return ids[select]
 
 
-def get_evaluation_box(box):
+def get_evaluation_box(box, box_format):
     """Scales corner box coordinates from normalized values to image dimensions.
 
     # Arguments
@@ -34,14 +34,18 @@ def get_evaluation_box(box):
         returns: List
     """
     x_min, y_min, x_max, y_max = box.coordinates[:4]
-    w = float(x_max - x_min)
-    h = float(y_max - y_min)
     class_id = get_category_id(box.class_name)
-    return [float(x_min), float(y_min), w, h, class_id, box.score]
+    if box_format == 'coco':
+        w = float(x_max - x_min)
+        h = float(y_max - y_min)
+        return [float(x_min), float(y_min), w, h, class_id, box.score]
+    else:
+        return [float(x_min), float(y_min), float(x_max), float(y_max),
+                class_id, box.score]
 
 
-def get_evaluation_details(boxes2d):
+def get_evaluation_details(boxes2d, box_format='coco'):
     all_boxes = []
     for box2d in boxes2d:
-        all_boxes.append(get_evaluation_box(box2d))
+        all_boxes.append(get_evaluation_box(box2d, box_format))
     return all_boxes
