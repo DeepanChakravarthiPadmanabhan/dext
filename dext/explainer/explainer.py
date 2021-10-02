@@ -32,10 +32,10 @@ LOGGER = logging.getLogger(__name__)
               type=click.Choice(["pca", "tsne", "and_add", "and_average",
                                  "or_add", "or_average"]))
 @click.option("--save_detections", default=False)
-@click.option("--save_explanations", default=True)
+@click.option("--save_explanations", default=False)
 @click.option("--analyze_each_maps", default=True)
 @click.option("--ap_curve_linspace", default=20)
-@click.option("--merge_saliency_maps", default=False)
+@click.option("--merge_saliency_maps", default=True)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))

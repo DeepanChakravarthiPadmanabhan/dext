@@ -102,8 +102,31 @@ def explain_single_object(
                 detections[object_index], saliency_iou, saliency_centroid,
                 saliency_variance, num_pixels_flipped]
             df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
+            ap_curve = get_object_ap_curve(
+                saliency, raw_image, preprocessor_fn,
+                postprocessor_fn, image_size, model_name, image_index,
+                ap_curve_linspace)
+            df_ap_curve_entry = [str(image_index), object_arg,
+                                 num_pixels_flipped, explaining, ]
+            df_ap_curve_entry = df_ap_curve_entry + ap_curve
+            df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
+
     if merge_saliency_maps:
         combined_saliency = merge_saliency(saliency_list, merge_method)
+        metrics = analyze_saliency_maps(
+            detections, raw_image, combined_saliency, object_index_list[0])
+        saliency_iou = metrics[0]
+        saliency_centroid = metrics[1]
+        saliency_variance = metrics[2]
+        num_pixels_flipped = get_num_pixels_flipped(
+            combined_saliency, raw_image, detections, gt_boxes, preprocessor_fn,
+            postprocessor_fn, image_size, model_name, object_index_list[0],
+            ap_curve_linspace)
+        df_class_flip_entry = [
+            str(image_index), object_arg, 'combined',
+            detections[object_index_list[0]], saliency_iou, saliency_centroid,
+            saliency_variance, num_pixels_flipped]
+        df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
         num_pixels_flipped = get_num_pixels_flipped(
             combined_saliency, raw_image, detections, gt_boxes,
             preprocessor_fn, postprocessor_fn, image_size, model_name,
@@ -111,7 +134,9 @@ def explain_single_object(
         ap_curve = get_object_ap_curve(
             combined_saliency, raw_image, preprocessor_fn, postprocessor_fn,
             image_size, model_name, image_index, ap_curve_linspace)
-        df_ap_curve_entry = [str(image_index), object_arg, num_pixels_flipped]
+        df_ap_curve_entry = [str(image_index), object_index_list[0],
+                             num_pixels_flipped,
+                             'combined', ]
         df_ap_curve_entry = df_ap_curve_entry + ap_curve
         df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
 
@@ -168,7 +193,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
     df_class_flip_columns = ["image_index", "object_index", "explaining",
                              "detection", "saliency_iou", "saliency_centroid",
                              "saliency_variance", "pixels_flipped"]
-    df_ap_curve_columns = ["image_index", "object_index", "pixels_flipped", ]
+    df_ap_curve_columns = ["image_index", "object_index", "pixels_flipped",
+                           "explaining"]
     ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
                             for n in np.linspace(0, 1, ap_curve_linspace)]
     df_ap_curve_columns = df_ap_curve_columns + ap_50percent_columns
