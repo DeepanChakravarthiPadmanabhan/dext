@@ -209,8 +209,9 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
         raw_image = loader(raw_image)
         raw_image = raw_image.astype('uint8')
         image = deepcopy(raw_image)
-        LOGGER.info("Explanation module input image ID: %s"
-                    % str(image_index))
+        LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
+        LOGGER.info('Explaining image count: %s' % str(count + 1))
+        LOGGER.info("Explanation input image ID: %s" % str(image_index))
 
         # forward pass - get model outputs for input image
         forward_pass_outs = inference_fn(
