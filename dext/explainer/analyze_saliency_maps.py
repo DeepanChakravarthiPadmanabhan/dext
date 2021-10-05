@@ -72,18 +72,22 @@ def check_label_flip(det_boxes, det_interest):
     det_interest_box = det_interest.coordinates[:4]
     iou = compute_iou(det_interest_box, np.array(det_boxes)[:, :4])
     max_arg = np.argmax(iou)
+    max_prob = det_boxes[max_arg][-1]
     interest_class = int(get_category_id(det_interest.class_name))
     selected_class = int(det_boxes[max_arg][4])
-    if (selected_class == interest_class) and iou[max_arg] > 0.4:
-        return False
+    class_match = selected_class == interest_class
+    if class_match and iou[max_arg] > 0.4 and max_prob > 0.4:
+        return False, max_prob
     else:
-        return True
+        return True, max_prob
 
 
-def get_num_pixels_flipped(saliency, raw_image, detections, gt_boxes,
-                           preprocessor_fn, postprocessor_fn, image_size=512,
-                           model_name='SSD512', object_index=None,
-                           ap_curve_linspace=10, save_modified_images=True):
+def get_num_pixels_flipped(saliency, raw_image, detections, preprocessor_fn,
+                           postprocessor_fn, image_size=512,
+                           model_name='EFFICIENTDETD0', object_index=None,
+                           ap_curve_linspace=10,
+                           explain_top5_backgrounds=False,
+                           save_modified_images=True):
     det_interest = detections[object_index]
     model = get_model(model_name)
     num_pixels = saliency.size
@@ -92,6 +96,7 @@ def get_num_pixels_flipped(saliency, raw_image, detections, gt_boxes,
     sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
     sorted_indices = np.vstack(sorted_flat_indices).T
     input_image = deepcopy(raw_image)
+    max_prob_list = [0, ] * len(percentage_space)
     for n, percent in enumerate(percentage_space):
         modified_image, image_scales = preprocessor_fn(input_image, image_size)
         num_pixels_selected = int(num_pixels * percent)
@@ -102,7 +107,7 @@ def get_num_pixels_flipped(saliency, raw_image, detections, gt_boxes,
         modified_image = modified_image[np.newaxis]
         outputs = model(modified_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, raw_image)
+            model, outputs, image_scales, raw_image, explain_top5_backgrounds)
         if save_modified_images:
             save_modified_image(input_image, n, saliency.shape, change_pixels)
             plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
@@ -110,20 +115,25 @@ def get_num_pixels_flipped(saliency, raw_image, detections, gt_boxes,
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections):
             all_boxes = get_evaluation_details(detections, 'corners')
-            flag_label_flip = check_label_flip(all_boxes, det_interest)
+            flag_label_flip, max_prob = check_label_flip(
+                all_boxes, det_interest)
             if flag_label_flip:
-                return percent
+                max_prob_list[n] = 0
+                return percent, max_prob_list
             else:
+                max_prob_list[n] = max_prob
                 continue
         else:
-            return percent
-    return 1
+            max_prob_list[n] = 0
+            return percent, max_prob_list
+    return 1, max_prob_list
 
 
 @gin.configurable
 def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
                         image_size=512, model_name='SSD512', image_index=None,
-                        ap_curve_linspace=10, result_file='ap_curve.json',
+                        ap_curve_linspace=10, explain_top5_backgrounds=False,
+                        result_file='ap_curve.json',
                         save_modified_images=False, coco_annotation_file=None):
     model = get_model(model_name)
     num_pixels = saliency.size
@@ -143,10 +153,12 @@ def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
         modified_image = modified_image[np.newaxis]
         outputs = model(modified_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, raw_image)
+            model, outputs, image_scales, raw_image, explain_top5_backgrounds)
         if save_modified_images:
             save_modified_image(input_image, n, saliency.shape, change_pixels)
             plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
+        if len(detections) == 0 and n == 0:
+            raise ValueError('Detections cannot be zero here for first run')
         if len(detections):
             eval_json = []
             all_boxes = get_evaluation_details(detections)

@@ -163,8 +163,8 @@ def scale_boxes(boxes2d, image_scale):
     return boxes2d
 
 
-def efficientdet_postprocess(model, outputs,
-                             image_scales, raw_images=None):
+def efficientdet_postprocess(model, outputs, image_scales, raw_images=None,
+                             explain_top5_backgrounds=False):
     outputs = process_outputs(outputs)
     postprocessing = SequentialProcessor([
         pr.Squeeze(axis=None),
@@ -177,4 +177,70 @@ def efficientdet_postprocess(model, outputs,
     image = draw_bounding_boxes(raw_images.astype('uint8'),
                                 detections,
                                 get_class_name_efficientdet('COCO'))
+
+    if explain_top5_backgrounds:
+        image, detections, class_map_idx = get_top5_bg_efficientdet(
+            model, outputs, image_scales, raw_images)
     return image, detections, class_map_idx
+
+
+def filterboxes_bg(boxes, class_names, conf_thresh=0.5):
+    arg_to_class = dict(zip(list(range(len(class_names))), class_names))
+    num_classes = boxes.shape[0]
+    boxes2D = []
+    class_map_idx = []
+    for class_arg in range(0, num_classes):
+        class_detections = boxes[class_arg, :]
+        confidence_mask = np.squeeze(class_detections[:, -2] < conf_thresh)
+        confident_class_detections = class_detections[confidence_mask]
+        if len(confident_class_detections) == 0:
+            continue
+        class_name = arg_to_class[class_arg]
+        for confident_class_detection in confident_class_detections:
+            coordinates = confident_class_detection[:4]
+            if (coordinates[0] >= coordinates[2]) and\
+                    (coordinates[1] >= coordinates[3]):
+                continue
+            score = confident_class_detection[4]
+            feature_map_position = confident_class_detection[5]
+            boxes2D.append(Box2D(coordinates, score, class_name))
+            class_map_idx.append([feature_map_position, class_arg, score])
+    return boxes2D, class_map_idx
+
+
+def select_top5_bg_det(detections, class_map_idx, order='top5'):
+    score_list = []
+    for box in detections:
+        score_list.append(box.score)
+    score_list = np.array(score_list)
+    score_list_arg = np.argsort(score_list)
+    if order == 'top5':
+        score_list_arg = score_list_arg[::-1][:5]
+    else:
+        score_list_arg = score_list_arg[:5]
+    detections = np.array(detections)
+    class_map_idx_selected = [class_map_idx[i] for i in score_list_arg]
+    detections_selected = detections[score_list_arg]
+    return detections_selected, class_map_idx_selected
+
+
+def get_bg_dets(detections, image_scales, raw_images):
+    bg_det, class_map_idx = filterboxes_bg(
+        detections, get_class_name_efficientdet('COCO'), 0.4)
+    bg_det = scale_boxes(bg_det, image_scales)
+    bg_det, class_map_idx = select_top5_bg_det(bg_det, class_map_idx, 'top5')
+    image = draw_bounding_boxes(raw_images.astype('uint8'),
+                                bg_det,
+                                get_class_name_efficientdet('COCO'))
+    return image, bg_det, class_map_idx
+
+
+def get_top5_bg_efficientdet(model, outputs, image_scales, raw_image=None):
+    outputs = process_outputs(outputs)
+    postprocessing = SequentialProcessor([
+        pr.Squeeze(axis=None),
+        pr.DecodeBoxes(model.prior_boxes, variances=[1, 1, 1, 1])])
+    detections = postprocessing(outputs)
+    detections = nms_per_class(detections, 0.4)
+    image, bg_det, class_map_idx = get_bg_dets(detections, image_scales, raw_image)
+    return image, bg_det, class_map_idx
