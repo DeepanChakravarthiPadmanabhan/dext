@@ -107,6 +107,7 @@ def explain_single_object(
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name)
+    LOGGER.info('Explaining image index: %s' % str(image_index))
     LOGGER.info("Information used for explanation: %s" %
                 (explaining_info,))
     object_index_list = explaining_info[0]
@@ -128,10 +129,10 @@ def explain_single_object(
         class_name = get_model_class_name(model_name, 'COCO')[
             box_index[object_index][1]]
         class_confidence = box_index[object_index][2]
-        LOGGER.info("Generating saliency: Object - %s, "
+        LOGGER.info("Generating saliency: Image index - %s, Object - %s, "
                     "Confidence - %s, Explaining - %s, Box offset - %s"
-                    % (class_name, class_confidence, explaining,
-                       box_offset))
+                    % (str(image_index), class_name, class_confidence,
+                       explaining, box_offset))
         saliency = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
             box_offset, get_model(model_name), model_name, raw_image,

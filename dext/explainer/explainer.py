@@ -27,7 +27,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='y_min',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
-@click.option("--num_images", default=50)  # 1 <
+@click.option("--num_images", default=5)  # 1 <
 @click.option("--merge_method", default='pca',
               type=click.Choice(["pca", "tsne", "and_add", "and_average",
                                  "or_add", "or_average"]))
@@ -38,8 +38,8 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--merge_saliency_maps", default=True)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--log_level", default="INFO",
-              type=click.Choice(["CRITICAL", "ERROR",
-                                 "WARNING", "INFO", "DEBUG"]))
+              type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
+                                 "DEBUG"]))
 @click.option("--log-dir", default="")
 def explainer(config, model_name, explain_mode, input_image_path, image_size,
               class_layer_name, reg_layer_name, to_explain, result_dir,
