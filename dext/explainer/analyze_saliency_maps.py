@@ -68,27 +68,64 @@ def save_modified_image(raw_image, name, saliency_shape, change_pixels):
                modified_image.astype('uint8'))
 
 
-def check_label_flip(det_boxes, det_interest):
-    det_interest_box = det_interest.coordinates[:4]
-    iou = compute_iou(det_interest_box, np.array(det_boxes)[:, :4])
+def get_regerror(interest_det, interest_gt):
+    det_box = interest_det[:4]
+    gt_box = interest_gt[:4]
+    min_distance = np.sqrt((det_box[0] - gt_box[0]) ** 2 +
+                           (det_box[1] - gt_box[1]) ** 2)
+    max_distance = np.sqrt((det_box[2] - gt_box[2]) ** 2 +
+                           (det_box[3] - gt_box[3]) ** 2)
+    total_distance_error = min_distance + max_distance
+    return total_distance_error
+
+
+def get_flipstatus_maxprob_regerror(all_det_boxes, interest_gt, percent):
+    iou = compute_iou(interest_gt[:4], np.array(all_det_boxes)[:, :4])
     max_arg = np.argmax(iou)
-    max_prob = det_boxes[max_arg][-1]
-    interest_class = int(get_category_id(det_interest.class_name))
-    selected_class = int(det_boxes[max_arg][4])
-    class_match = selected_class == interest_class
-    if class_match and iou[max_arg] > 0.4 and max_prob > 0.4:
-        return False, max_prob
+    interest_gt_class = int(interest_gt[4])
+    interest_det = all_det_boxes[max_arg]
+    interest_det_class = int(interest_det[4])
+    class_match = interest_gt_class == interest_det_class
+
+    if class_match and iou[max_arg] > 0.4:
+        max_prob = all_det_boxes[max_arg][-1]
+        reg_error = get_regerror(interest_det, interest_gt)
+        LOGGER.info('No flip, IoU: %s, Maxprob: %s, Regerror: %s, '
+                    'GT: %s, DET: %s' % (iou, max_prob, reg_error,
+                                         interest_gt, interest_det))
+        return False, max_prob, reg_error
     else:
-        return True, max_prob
+        max_prob = 0
+        reg_error = np.inf
+        LOGGER.info('Flip, IoU: %s, Maxprob: %s, Regerror: %s, '
+                    'GT: %s, DET: %s' % (iou, max_prob, reg_error,
+                                         interest_gt, interest_det))
+        return True, max_prob, reg_error
 
 
-def get_num_pixels_flipped(saliency, raw_image, detections, preprocessor_fn,
-                           postprocessor_fn, image_size=512,
-                           model_name='EFFICIENTDETD0', object_index=None,
-                           ap_curve_linspace=10,
-                           explain_top5_backgrounds=False,
-                           save_modified_images=True):
-    det_interest = detections[object_index]
+def get_interest_gt(interest_det, gt_boxes):
+    iou = compute_iou(interest_det.coordinates[:4], np.array(gt_boxes)[:, :4])
+    max_arg = np.argmax(iou)
+    det_class_id = get_category_id(interest_det.class_name)
+    if int(gt_boxes[max_arg][4] == int(det_class_id)) and iou[max_arg] > 0.4:
+        return int(max_arg)
+    else:
+        return None
+
+
+def eval_numflip_maxprob_regerror(
+        saliency, raw_image, gt_boxes, detections, preprocessor_fn,
+        postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
+        object_index=None, ap_curve_linspace=10,
+        explain_top5_backgrounds=False, save_modified_images=True):
+    gt_idx_matching_interest_det = get_interest_gt(detections[object_index],
+                                                   gt_boxes)
+    if not isinstance(gt_idx_matching_interest_det, int):
+        raise ValueError('In evaluating numflip, maxprob, regerror, '
+                         'no matching with gt boxes.')
+    interest_gt = gt_boxes[gt_idx_matching_interest_det]
+    LOGGER.info('Evaluating numflip, maxprob, regerror on gt box %s: %s' %
+                (gt_idx_matching_interest_det, interest_gt))
     model = get_model(model_name)
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
@@ -97,6 +134,7 @@ def get_num_pixels_flipped(saliency, raw_image, detections, preprocessor_fn,
     sorted_indices = np.vstack(sorted_flat_indices).T
     input_image = deepcopy(raw_image)
     max_prob_list = [0, ] * len(percentage_space)
+    reg_error_list = [np.inf, ] * len(percentage_space)
     for n, percent in enumerate(percentage_space):
         modified_image, image_scales = preprocessor_fn(input_image, image_size)
         num_pixels_selected = int(num_pixels * percent)
@@ -113,28 +151,34 @@ def get_num_pixels_flipped(saliency, raw_image, detections, preprocessor_fn,
             plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
-        if len(detections):
+        if len(detections) and len(interest_gt):
             all_boxes = get_evaluation_details(detections, 'corners')
-            flag_label_flip, max_prob = check_label_flip(
-                all_boxes, det_interest)
+
+            metrics = get_flipstatus_maxprob_regerror(
+                all_boxes, interest_gt, percent)
+            flag_label_flip, max_prob, reg_error = metrics
             if flag_label_flip:
                 max_prob_list[n] = 0
-                return percent, max_prob_list
+                reg_error_list[n] = np.inf
+                return percent, max_prob_list, reg_error_list
             else:
                 max_prob_list[n] = max_prob
+                reg_error_list[n] = reg_error
                 continue
+
         else:
             max_prob_list[n] = 0
-            return percent, max_prob_list
-    return 1, max_prob_list
+            reg_error_list[n] = np.inf
+            return percent, max_prob_list, reg_error_list
+    return 1, max_prob_list, reg_error_list
 
 
 @gin.configurable
-def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
-                        image_size=512, model_name='SSD512', image_index=None,
-                        ap_curve_linspace=10, explain_top5_backgrounds=False,
-                        result_file='ap_curve.json',
-                        save_modified_images=False, coco_annotation_file=None):
+def eval_object_ap_curve(
+        saliency, raw_image, preprocessor_fn, postprocessor_fn, image_size=512,
+        model_name='SSD512', image_index=None, ap_curve_linspace=10,
+        explain_top5_backgrounds=False, result_file='ap_curve.json',
+        save_modified_images=False, coco_annotation_file=None):
     model = get_model(model_name)
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
@@ -160,8 +204,9 @@ def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections):
-            eval_json = []
             all_boxes = get_evaluation_details(detections)
+
+            eval_json = []
             for box in all_boxes:
                 eval_entry = {'image_id': image_index, 'category_id': box[4],
                               'bbox': box[:4], 'score': box[5]}
@@ -177,6 +222,7 @@ def get_object_ap_curve(saliency, raw_image, preprocessor_fn, postprocessor_fn,
             LOGGER.info('AP 50 at modification percentage %s: %s' % (
                 round(percent, 2), ap_50cent))
             ap_curve.append(ap_50cent)
+
         else:
             LOGGER.info('No detections. Mapping AP to 0.')
             ap_curve.append(0)

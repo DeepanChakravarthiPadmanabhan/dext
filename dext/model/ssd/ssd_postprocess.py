@@ -221,8 +221,7 @@ def select_top5_bg_det(detections, class_map_idx, order='top5'):
     return detections_selected, class_map_idx_selected
 
 
-def get_bg_dets(detections, image_scales, raw_images, model,
-                save_top5_image=True):
+def get_bg_dets(detections, image_scales, raw_images, model):
     bg_det, class_map_idx = filterboxes_bg(detections,
                                            get_class_names('COCO'),
                                            conf_thresh=0.4)

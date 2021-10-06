@@ -27,16 +27,16 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='y_min',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
-@click.option("--num_images", default=1)  # 1 <
+@click.option("--num_images", default=50)  # 1 <
 @click.option("--merge_method", default='pca',
               type=click.Choice(["pca", "tsne", "and_add", "and_average",
                                  "or_add", "or_average"]))
 @click.option("--save_detections", default=False)
 @click.option("--save_explanations", default=True)
-@click.option("--analyze_each_maps", default=False)
-@click.option("--ap_curve_linspace", default=20)
+@click.option("--analyze_each_maps", default=True)
+@click.option("--ap_curve_linspace", default=200)
 @click.option("--merge_saliency_maps", default=True)
-@click.option("--explain_top5_backgrounds", default=True)
+@click.option("--explain_top5_backgrounds", default=False)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))

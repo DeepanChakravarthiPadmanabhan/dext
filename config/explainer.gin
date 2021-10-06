@@ -8,6 +8,6 @@ COCO_VAL_ANNOTATION_FILE = "/scratch/dpadma2s/coco/annotations/instances_val2017
 
 EFFICIENTDET_WEIGHT_PATH = '/scratch/dpadma2s/paz_efficientdet_weights/'
 
-get_object_ap_curve.coco_annotation_file = %COCO_VAL_ANNOTATION_FILE
+eval_object_ap_curve.coco_annotation_file = %COCO_VAL_ANNOTATION_FILE
 get_images_to_explain.dataset_path = %DATASET_PATH
 EFFICIENTDET.weight_path = %EFFICIENTDET_WEIGHT_PATH

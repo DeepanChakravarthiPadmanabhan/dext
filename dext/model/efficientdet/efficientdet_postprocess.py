@@ -229,8 +229,7 @@ def get_bg_dets(detections, image_scales, raw_images):
         detections, get_class_name_efficientdet('COCO'), 0.4)
     bg_det = scale_boxes(bg_det, image_scales)
     bg_det, class_map_idx = select_top5_bg_det(bg_det, class_map_idx, 'top5')
-    image = draw_bounding_boxes(raw_images.astype('uint8'),
-                                bg_det,
+    image = draw_bounding_boxes(raw_images.astype('uint8'), bg_det,
                                 get_class_name_efficientdet('COCO'))
     return image, bg_det, class_map_idx
 
