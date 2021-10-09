@@ -1,25 +1,18 @@
 import logging
-import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.models import Model
+import innvestigate
 
 from paz.backend.image import resize_image
 from dext.model.functional_models import get_functional_model
-from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import \
     visualize_saliency_grayscale
 
 LOGGER = logging.getLogger(__name__)
 
 
-@tf.custom_gradient
-def guided_relu(x):
-    def grad(dy):
-        return tf.cast(dy > 0, "float32") * tf.cast(x > 0, "float32") * dy
-    return tf.nn.relu(x), grad
-
-
-class GuidedBackpropagation:
+class OD_LRP:
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512):
@@ -64,49 +57,47 @@ class GuidedBackpropagation:
         else:
             self.model = self.model
 
-        if self.visualize_idx:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.output[self.visualize_idx[0],
-                                           self.visualize_idx[1],
-                                           self.visualize_idx[2]]])
-        else:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output])
-
-        all_layers = get_all_layers(custom_model)
-        all_layers = [act_layer for act_layer in all_layers
-                      if hasattr(act_layer, 'activation')]
-        for layer in all_layers:
-            if layer.activation == tf.keras.activations.relu:
-                layer.activation = guided_relu
-
-        # To get logits without softmax
-        if 'class' in self.layer_name:
-            custom_model.get_layer(self.layer_name).activation = None
+        print(self.visualize_idx, "INDEX SEEING")
+        custom_model = Model(inputs=[self.model.inputs],
+                             outputs=[tf.expand_dims(tf.expand_dims(
+                                 self.model.output[self.visualize_idx[0],
+                                                   self.visualize_idx[1],
+                                                   self.visualize_idx[2]],
+                                 axis=0), axis=0)]
+                             # outputs=[self.model.output]
+                             )
+        if 'SSD' in self.model_name:
+            for i in custom_model.layers:
+                if hasattr(i, 'activation'):
+                    if i.activation == tf.keras.activations.softmax:
+                        i.activation = tf.keras.activations.linear
         return custom_model
 
     def get_saliency_map(self):
-        """Guided backpropagation method for visualizing input saliency."""
-        with tf.GradientTape() as tape:
-            inputs = tf.cast(self.image, tf.float32)
-            tape.watch(inputs)
-            conv_outs = self.custom_model(inputs)
-        LOGGER.info('Conv outs from custom model: %s' % conv_outs)
-        grads = tape.gradient(conv_outs, inputs)
-        saliency = np.asarray(grads)
+        inputs = tf.cast(self.image, tf.float32)
+        out = self.custom_model(inputs)
+        # print("Model out shape: ", out.shape)
+        # /media/deepan/externaldrive1/project_repos/innvestigate/innvestigate/utils/keras/functional.py
+        # print('Out row: ', out[0, :5, 0])
+        # print("Out raw shape: ", out.shape)
+        # sel_idx = [(out.shape[2] * self.visualize_idx[1]) + self.visualize_idx[2]]
+        # print('selected idx: ', sel_idx)
+        # print('Out selected: ', out[0, self.visualize_idx[1], self.visualize_idx[2]])
+        analyzer = innvestigate.create_analyzer('lrp.z', self.custom_model)
+        a = analyzer.analyze(inputs,
+                             # neuron_selection= sel_idx #2018435
+                             )
+        print(a.keys())
+        saliency = a['image']
         return saliency
 
 
-def GuidedBackpropagationExplainer(model, model_name, image,
-                                   interpretation_method,
-                                   layer_name, visualize_index,
-                                   preprocessor_fn, image_size):
-    explainer = GuidedBackpropagation(model, model_name, image,
-                                      interpretation_method,
-                                      layer_name, visualize_index,
-                                      preprocessor_fn, image_size)
+def OD_LRPExplainer(model, model_name, image, interpretation_method,
+                    layer_name, visualize_index, preprocessor_fn, image_size):
+    explainer = OD_LRP(model, model_name, image, interpretation_method,
+                       layer_name, visualize_index, preprocessor_fn,
+                       image_size)
     saliency = explainer.get_saliency_map()
     saliency = visualize_saliency_grayscale(saliency)
+    plt.imsave('saliency.jpg', saliency)
     return saliency

@@ -241,4 +241,3 @@ def get_top5_bg_ssd(model, outputs, image_scales, raw_image=None):
     image, bg_det, class_map_idx = get_bg_dets(
         detections, image_scales, raw_image, model)
     return image, bg_det, class_map_idx
-

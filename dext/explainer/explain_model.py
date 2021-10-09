@@ -73,7 +73,7 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
     df_max_prob_entry = df_max_prob_entry + max_prob_curve
     df_max_prob.loc[len(df_max_prob)] = df_max_prob_entry
     df_reg_error_entry = [str(image_index), object_arg,
-                         num_pixels_flipped, explaining, ]
+                          num_pixels_flipped, explaining, ]
     df_reg_error_entry = df_reg_error_entry + reg_error_curve
     df_reg_error.loc[len(df_reg_error)] = df_reg_error_entry
     return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
@@ -151,7 +151,6 @@ def explain_single_object(
                 df_max_prob, df_reg_error)
             df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
 
-
     if merge_saliency_maps:
         df_class_flip, df_ap_curve, df_max_prob, reg_error = merge_all_maps(
             saliency_list, merge_method, analyze_each_maps, detections,
@@ -172,6 +171,7 @@ def explain_single_object(
                   + str(image_index) + "_" + "obj" + str(object_arg) + '.jpg'))
     LOGGER.info("Box and class labels, after post-processing: %s"
                 % box_index)
+    LOGGER.info("Completed explaining image index: %s" % str(image_index))
     return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
 
 
@@ -258,8 +258,11 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
         box_index = forward_pass_outs[2]
         LOGGER.info("Detections: %s" % detections)
         if save_detections:
-            write_image(os.path.join(result_dir, "paz_postprocess.jpg"),
-                        detection_image)
+            detections_result_dir = os.path.join(result_dir, 'detections')
+            if not os.path.exists(detections_result_dir):
+                os.makedirs(detections_result_dir)
+            write_image(os.path.join(
+                detections_result_dir, "paz_postprocess.jpg"), detection_image)
 
         if len(detections):
             if visualize_object_index == 'all':
@@ -286,3 +289,4 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
     df_max_prob.to_excel(excel_writer, sheet_name="max_prob_curve")
     df_reg_error.to_excel(excel_writer, sheet_name="reg_error_curve")
     excel_writer.save()
+    LOGGER.info('%%% INTERPRETATION DONE %%%')

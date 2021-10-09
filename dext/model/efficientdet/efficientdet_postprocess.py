@@ -241,5 +241,6 @@ def get_top5_bg_efficientdet(model, outputs, image_scales, raw_image=None):
         pr.DecodeBoxes(model.prior_boxes, variances=[1, 1, 1, 1])])
     detections = postprocessing(outputs)
     detections = nms_per_class(detections, 0.4)
-    image, bg_det, class_map_idx = get_bg_dets(detections, image_scales, raw_image)
+    image, bg_det, class_map_idx = get_bg_dets(detections, image_scales,
+                                               raw_image)
     return image, bg_det, class_map_idx

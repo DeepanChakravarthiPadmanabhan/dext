@@ -8,6 +8,7 @@ from dext.interpretation_method.lime_explainer import LimeExplainer
 from dext.interpretation_method.shap_deep_explainer import SHAP_DeepExplainer
 from dext.interpretation_method.shap_gradient_explainer import \
     SHAP_GradientExplainer
+from dext.interpretation_method.relevance_propagation import OD_LRPExplainer
 
 
 class ExplainerFactory:
@@ -29,6 +30,8 @@ class ExplainerFactory:
             return SHAP_DeepExplainer
         elif self.explainer == "SHAP_GradientExplainer":
             return SHAP_GradientExplainer
+        elif self.explainer == "LRP":
+            return OD_LRPExplainer
         else:
             raise ValueError("Explanation method not implemented %s"
                              % self.explainer)
