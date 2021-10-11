@@ -113,19 +113,23 @@ def get_interest_gt(interest_det, gt_boxes):
         return None
 
 
+def get_interest_det(detection):
+    det_interest_box = list(detection.coordinates[:4])
+    det_interest_score = detection.score
+    det_interest_class = int(get_category_id(detection.class_name))
+    det_interest = det_interest_box
+    det_interest += [det_interest_class, det_interest_score]
+    return det_interest
+
+
 def eval_numflip_maxprob_regerror(
         saliency, raw_image, gt_boxes, detections, preprocessor_fn,
         postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
         object_index=None, ap_curve_linspace=10,
         explain_top5_backgrounds=False, save_modified_images=True):
-    gt_idx_matching_interest_det = get_interest_gt(detections[object_index],
-                                                   gt_boxes)
-    if not isinstance(gt_idx_matching_interest_det, int):
-        raise ValueError('In evaluating numflip, maxprob, regerror, '
-                         'no matching with gt boxes.')
-    interest_gt = gt_boxes[gt_idx_matching_interest_det]
-    LOGGER.info('Evaluating numflip, maxprob, regerror on gt box %s: %s' %
-                (gt_idx_matching_interest_det, interest_gt))
+    det_matching_interest_det = get_interest_det(detections[object_index])
+    LOGGER.info('Evaluating numflip, maxprob, regerror on detection: %s'
+                % det_matching_interest_det)
     model = get_model(model_name)
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
@@ -151,11 +155,11 @@ def eval_numflip_maxprob_regerror(
             plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
-        if len(detections) and len(interest_gt):
+        if len(detections) and len(det_matching_interest_det):
             all_boxes = get_evaluation_details(detections, 'corners')
 
             metrics = get_flipstatus_maxprob_regerror(
-                all_boxes, interest_gt, percent)
+                all_boxes, det_matching_interest_det, percent)
             flag_label_flip, max_prob, reg_error = metrics
             if flag_label_flip:
                 max_prob_list[n] = 0

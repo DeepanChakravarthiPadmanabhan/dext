@@ -2,7 +2,7 @@ import logging
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.models import Model
-import innvestigate
+# import innvestigate
 
 from paz.backend.image import resize_image
 from dext.model.functional_models import get_functional_model
@@ -92,8 +92,9 @@ class OD_LRP:
         return saliency
 
 
-def OD_LRPExplainer(model, model_name, image, interpretation_method,
-                    layer_name, visualize_index, preprocessor_fn, image_size):
+def OD_LRPExplainer_WIP(model, model_name, image, interpretation_method,
+                        layer_name, visualize_index, preprocessor_fn,
+                        image_size):
     explainer = OD_LRP(model, model_name, image, interpretation_method,
                        layer_name, visualize_index, preprocessor_fn,
                        image_size)
@@ -101,3 +102,7 @@ def OD_LRPExplainer(model, model_name, image, interpretation_method,
     saliency = visualize_saliency_grayscale(saliency)
     plt.imsave('saliency.jpg', saliency)
     return saliency
+
+def OD_LRPExplainer(model, model_name, image, interpretation_method,
+                    layer_name, visualize_index, preprocessor_fn, image_size):
+    pass
