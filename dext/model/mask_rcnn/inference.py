@@ -23,7 +23,8 @@ def test(images, weights_path):
     config.WINDOW = window
 
     base_model = MaskRCNN(config=config, model_dir='../../mask_rcnn')
-    inference_model = InferenceGraph(model=base_model, config=config)
+    inference_model = InferenceGraph(
+        model=base_model, config=config, include_mask=True)
     base_model.keras_model = inference_model()
     base_model.keras_model.load_weights(weights_path, by_name=True)
     preprocess = SequentialProcessor([ResizeImages(config),
@@ -32,11 +33,3 @@ def test(images, weights_path):
     detect = Detect(base_model, config, preprocess, postprocess)
     results = detect(images)
     return results
-
-import cv2
-file_path = 'images/000000128224.jpg'
-image = cv2.imread(file_path)
-weights_path = 'weights/mask_rcnn_coco.h5'
-result = test([image], weights_path)
-print(result[0].keys(), len(result), result)
-

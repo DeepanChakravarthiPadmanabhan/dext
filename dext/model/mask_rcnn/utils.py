@@ -1690,16 +1690,16 @@ def display_instances(image, boxes, masks, class_ids, class_names,
     captions: (optional) A list of strings to use as captions for each object
     """
     # Number of instances
-    N = boxes.shape[0]
+    N = len(boxes)
     if not N:
         print("\n*** No instances to display *** \n")
-    else:
-        assert boxes.shape[0] == masks.shape[-1] == class_ids.shape[0]
+    # else:
+    #     assert boxes.shape[0] == masks.shape[-1] == class_ids.shape[0]
 
     # If no axis is passed, create one and automatically call show()
     auto_show = False
     if not ax:
-        _, ax = plt.subplots(1, figsize=figsize)
+        fig, ax = plt.subplots(1, figsize=figsize)
         auto_show = True
 
     # Generate random colors
@@ -1737,23 +1737,25 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             caption = captions[i]
         ax.text(x1, y1 + 8, caption,
                 color='w', size=11, backgroundcolor="none")
+        if masks:
+            # Mask
+            mask = masks[:, :, i]
+            if show_mask:
+                masked_image = apply_mask(masked_image, mask, color)
 
-        # Mask
-        mask = masks[:, :, i]
-        if show_mask:
-            masked_image = apply_mask(masked_image, mask, color)
+            # Mask Polygon
+            # Pad to ensure proper polygons for masks that touch image edges.
+            padded_mask = np.zeros(
+                (mask.shape[0] + 2, mask.shape[1] + 2), dtype=np.uint8)
+            padded_mask[1:-1, 1:-1] = mask
+            contours = find_contours(padded_mask, 0.5)
+            for verts in contours:
+                # Subtract the padding and flip (y, x) to (x, y)
+                verts = np.fliplr(verts) - 1
+                p = Polygon(verts, facecolor="none", edgecolor=color)
+                ax.add_patch(p)
 
-        # Mask Polygon
-        # Pad to ensure proper polygons for masks that touch image edges.
-        padded_mask = np.zeros(
-            (mask.shape[0] + 2, mask.shape[1] + 2), dtype=np.uint8)
-        padded_mask[1:-1, 1:-1] = mask
-        contours = find_contours(padded_mask, 0.5)
-        for verts in contours:
-            # Subtract the padding and flip (y, x) to (x, y)
-            verts = np.fliplr(verts) - 1
-            p = Polygon(verts, facecolor="none", edgecolor=color)
-            ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
     if auto_show:
         plt.show()
+        plt.savefig('mask.jpg')

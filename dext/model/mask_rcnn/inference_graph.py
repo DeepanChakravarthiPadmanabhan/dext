@@ -16,13 +16,14 @@ class InferenceGraph():
     # Returns:
         Inference model
     """
-    def __init__(self, model, config):
+    def __init__(self, model, config, include_mask):
         self.model = model
         self.config = config
         self.POST_NMS_ROIS_INFERENCE = config.POST_NMS_ROIS_INFERENCE
         self.RPN_NMS_THRESHOLD = config.RPN_NMS_THRESHOLD
         self.TRAIN_BN = config.TRAIN_BN
         self.FPN_CLASSIF_FC_LAYERS_SIZE = config.FPN_CLASSIF_FC_LAYERS_SIZE
+        self.include_mask = include_mask
 
     def __call__(self):
         keras_model = self.model.keras_model
@@ -45,11 +46,17 @@ class InferenceGraph():
         detections = DetectionLayer(self.config, name='mrcnn_detection')(
             [rpn_rois, classes, mrcnn_bbox])
         detection_boxes = Lambda(lambda x: x[..., :4])(detections)
-        mrcnn_mask = build_fpn_mask_graph(detection_boxes, feature_maps[:-1],
-                                          self.config, train_bn=self.TRAIN_BN)
+        if self.include_mask:
+            mrcnn_mask = build_fpn_mask_graph(
+                detection_boxes, feature_maps[:-1], self.config,
+                train_bn=self.TRAIN_BN)
 
-        inference_model = Model([input_image, anchors],
-                                [detections, classes, mrcnn_bbox,
-                                mrcnn_mask, rpn_rois, rpn_class, rpn_bbox],
-                                name='mask_rcnn')
+            inference_model = Model([input_image, anchors],
+                                    [detections, classes, mrcnn_bbox,
+                                    mrcnn_mask, rpn_rois, rpn_class, rpn_bbox],
+                                    name='mask_rcnn')
+        else:
+            inference_model = Model([input_image, anchors],
+                                    detections,
+                                    name='mask_rcnn')
         return inference_model

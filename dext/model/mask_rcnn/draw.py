@@ -1,6 +1,6 @@
 import numpy as np
 from paz.processors import Processor
-from paz.backend.image import random_colors
+from dext.model.mask_rcnn.utils import random_colors
 
 
 def apply_mask(image, mask, color, alpha=0.5):
