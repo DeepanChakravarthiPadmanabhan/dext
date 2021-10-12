@@ -31,6 +31,7 @@ def mask_rcnn_postprocess(image, normalized_images, windows,
         windows, predicted_masks)
     boxes2D = []
     class_map_idx = []
+    # TODO: Get class map idx
     for box, score, class_name in zip(boxes, scores, class_ids):
         x_min, y_min, x_max, y_max = box[1], box[0], box[3], box[2]
         boxes2D.append(Box2D([x_min, y_min, x_max, y_max], score,
@@ -38,7 +39,6 @@ def mask_rcnn_postprocess(image, normalized_images, windows,
     image = draw_bounding_boxes(image.astype('uint8'),
                                 boxes2D,
                                 class_names)
-    plt.imsave('paz_maskrcnn.jpg', image)
     return boxes2D
 
 
@@ -46,7 +46,6 @@ def postprocess(detections, original_image_shape,
                 image_shape, window, predicted_masks=None):
     zero_index = np.where(detections[:, 4] == 0)[0]
     N = zero_index[0] if zero_index.shape[0] > 0 else detections.shape[0]
-
     boxes, class_ids, scores, masks = unpack_detections(
         N, detections, predicted_masks)
     boxes = normalize_boxes(boxes, window, image_shape,

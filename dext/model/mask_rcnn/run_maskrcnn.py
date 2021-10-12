@@ -12,7 +12,8 @@ from dext.model.mask_rcnn.utils import norm_boxes_graph
 from dext.model.mask_rcnn.mask_rcnn_postprocess import mask_rcnn_postprocess
 from dext.model.mask_rcnn.utils import compute_backbone_shapes, norm_boxes
 from dext.model.mask_rcnn.utils import generate_pyramid_anchors
-
+from dext.interpretation_method.integrated_gradient import \
+    IntegratedGradientExplainer
 
 
 class TestConfig(Config):
@@ -50,6 +51,7 @@ def test(image, weights_path):
                                      include_mask=False)
     base_model.keras_model = inference_model()
     base_model.keras_model.load_weights(weights_path, by_name=True)
+    model = base_model.keras_model
 
     preprocess = SequentialProcessor([ResizeImages(config),
                                       NormalizeImages(config)])
@@ -58,9 +60,10 @@ def test(image, weights_path):
     anchors = get_anchors(image_shape, config)
     anchors = np.broadcast_to(anchors, (config.BATCH_SIZE,) + anchors.shape)
 
-    detections = base_model.keras_model.predict([normalized_images, anchors])
+    detections = model.predict([normalized_images, anchors])
     results = mask_rcnn_postprocess(image[0], normalized_images[0], windows[0],
                                     detections[0])
+    # TODO: Do IG or GBP and see the results after getting interest IDX
     return results
 
 raw_image = "images/000000128224.jpg"
@@ -70,6 +73,7 @@ loader = LoadImage()
 raw_image = loader(raw_image)
 image = raw_image.copy()
 results = test([image], weights_path)
+print(results)
 print("done")
 
 
