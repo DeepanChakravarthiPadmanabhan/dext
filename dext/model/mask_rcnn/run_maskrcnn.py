@@ -55,34 +55,36 @@ class GuidedBackpropagation:
         normalized_images, windows = mask_rcnn_preprocess(self.config, image)
         normalized_images = tf.cast(normalized_images[0], tf.float32)
         normalized_images = tf.expand_dims(normalized_images, axis=0)
+        normalized_images = [normalized_images]
         return normalized_images
 
     def build_custom_model(self):
         custom_model = Model(
             inputs=[self.model.inputs],
             outputs=[self.model.output])
-        all_layers = get_all_layers(custom_model)
-        all_layers = [act_layer for act_layer in all_layers
-                      if hasattr(act_layer, 'activation')]
-        for layer in all_layers:
-            if layer.activation == tf.keras.activations.relu:
-                layer.activation = guided_relu
-
-        # To get logits without softmax
-        if 'class' in self.layer_name:
-            custom_model.get_layer(self.layer_name).activation = None
+        # all_layers = get_all_layers(custom_model)
+        # all_layers = [act_layer for act_layer in all_layers
+        #               if hasattr(act_layer, 'activation')]
+        # for layer in all_layers:
+        #     if layer.activation == tf.keras.activations.relu:
+        #         layer.activation = guided_relu
+        #
+        # # To get logits without softmax
+        # if 'class' in self.layer_name:
+        #     custom_model.get_layer(self.layer_name).activation = None
         return custom_model
 
     def get_saliency_map(self):
         """Guided backpropagation method for visualizing input saliency."""
         with tf.GradientTape() as tape:
             inputs = self.normalized_images
-            conv_outs = self.custom_model.predict(inputs, steps=1)
             tape.watch(inputs)
-        print('Conv outs from custom model: %s' % conv_outs[0])
+            conv_outs = self.custom_model.predict(inputs, steps=1)
+            conv_outs = tf.cast(conv_outs, tf.float32)
+        print('Conv outs from custom model: %s' % type(conv_outs[0]), type(conv_outs))
         grads = tape.gradient(conv_outs, inputs)
-        print(grads)
         saliency = np.asarray(grads)
+        print("Saliency shape: ", saliency.shape)
         return saliency
 
 
@@ -129,5 +131,3 @@ results, det_image = test([image], weights_path)
 print(results)
 plt.imsave('paz_maskrcnn.jpg', det_image)
 print("done")
-
-
