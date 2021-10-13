@@ -39,7 +39,7 @@ visualize_idx = (0,
                  int(class_map_idx[explain_object][1]) + 4)
 print("class map idx: ", class_map_idx)
 print('visualizer: ', visualize_idx)
-saliency = IntegratedGradientExplainer(model, "EFFICIENTDET", raw_image,
+saliency = IntegratedGradientExplainer(model, "EFFICIENTDET", raw_image, "IG",
                                        "boxes", visualize_idx,
                                        efficientdet_preprocess, 512)
 saliency = visualize_saliency_grayscale(saliency)

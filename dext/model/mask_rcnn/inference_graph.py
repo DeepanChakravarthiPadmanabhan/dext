@@ -28,7 +28,7 @@ class InferenceGraph():
     def __call__(self):
         keras_model = self.model.keras_model
         input_image = keras_model.input
-        anchors = Input(shape=[None, 4], name='input_anchors')
+        anchors = self.model.anchors
         feature_maps = keras_model.output
 
         rpn_class_logits, rpn_class, rpn_bbox = self.model.RPN(feature_maps)
@@ -56,7 +56,7 @@ class InferenceGraph():
                                     mrcnn_mask, rpn_rois, rpn_class, rpn_bbox],
                                     name='mask_rcnn')
         else:
-            inference_model = Model([input_image, anchors],
-                                    detections,
+            inference_model = Model([input_image],
+                                    [detections],
                                     name='mask_rcnn')
         return inference_model

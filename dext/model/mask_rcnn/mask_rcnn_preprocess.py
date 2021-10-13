@@ -1,4 +1,6 @@
 from paz.abstract import Processor
+from paz.abstract import SequentialProcessor
+
 from dext.model.mask_rcnn.utils import resize_image, normalize_image
 
 
@@ -34,3 +36,10 @@ class ResizeImages(Processor):
             resized_images.append(resized_image)
             windows.append(window)
         return resized_images, windows
+
+
+def mask_rcnn_preprocess(config, image):
+    preprocess = SequentialProcessor([ResizeImages(config),
+                                      NormalizeImages(config)])
+    normalized_images, windows = preprocess(image)
+    return normalized_images, windows

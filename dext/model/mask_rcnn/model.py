@@ -6,7 +6,7 @@ Copyright (c) 2017 Matterport, Inc.
 Licensed under the MIT License (see LICENSE for details)
 Written by Waleed Abdulla
 """
-
+import numpy as np
 import re
 import tensorflow as tf
 from tensorflow.keras.utils import get_file
@@ -16,6 +16,8 @@ from tensorflow.keras.models import Model
 
 from dext.model.mask_rcnn.utils import log, get_resnet_features, \
     build_rpn_model
+from dext.model.mask_rcnn.utils import compute_backbone_shapes, norm_boxes
+from dext.model.mask_rcnn.utils import generate_pyramid_anchors
 tf.compat.v1.disable_eager_execution()
 
 
@@ -27,7 +29,7 @@ class MaskRCNN():
         model_dir: Directory to save training logs and weights
     """
 
-    def __init__(self, config, model_dir):
+    def __init__(self, config, model_dir, image_size):
         self.config = config
         self.model_dir = model_dir
         self.TRAIN_BN = config.TRAIN_BN
@@ -35,6 +37,7 @@ class MaskRCNN():
         self.get_backbone_features = config.BACKBONE
         self.FPN_SIZE = config.TOP_DOWN_PYRAMID_SIZE
         self.keras_model = self.build()
+        self.anchors = self.get_anchors(image_size, self.config)
 
     def build(self):
         H, W = self.IMAGE_SHAPE[:2]
@@ -76,6 +79,22 @@ class MaskRCNN():
 
         model = Model([input_image], [P2, P3, P4, P5, P6], name='mask_rcnn')
         return model
+
+    def get_anchors(self, image_shape, config):
+        backbone_shapes = compute_backbone_shapes(config, image_shape)
+        anchor_cache = {}
+        anchors = generate_pyramid_anchors(
+            config.RPN_ANCHOR_SCALES,
+            config.RPN_ANCHOR_RATIOS,
+            backbone_shapes,
+            config.BACKBONE_STRIDES,
+            config.RPN_ANCHOR_STRIDE)
+        anchor_cache[tuple(image_shape)] = norm_boxes(
+            anchors, image_shape[:2])
+        anchors = anchor_cache[tuple(image_shape)]
+        anchors = np.broadcast_to(anchors,
+                                  (config.BATCH_SIZE,) + anchors.shape)
+        return anchors
 
     def RPN(self, rpn_feature_maps):
         rpn = build_rpn_model(self.config.RPN_ANCHOR_STRIDE,

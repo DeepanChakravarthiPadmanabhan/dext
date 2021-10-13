@@ -388,9 +388,8 @@ def get_resnet_features(input_image, architecture,
     return [C1, C2, C3, C4, C5]
 
 
-def fpn_classifier_graph(rois, feature_maps,
-                         config, train_bn=True,
-                         fc_layers_size=1024):
+def fpn_classifier_graph(
+        rois, feature_maps, config, train_bn=True, fc_layers_size=1024):
     """Builds the computation graph of the feature pyramid network classifier
        and regressor heads.
 
@@ -415,7 +414,6 @@ def fpn_classifier_graph(rois, feature_maps,
     pool_size = config.POOL_SIZE
     num_classes = config.NUM_CLASSES
     image_shape = (config.IMAGE_MAX_DIM, config.IMAGE_MAX_DIM, 3)
-    #  image_shape = (640, 640, 3)
     image_shape = tf.convert_to_tensor(np.array(image_shape))
     x = PyramidROIAlign([pool_size, pool_size], name='roi_align_classifier')(
         [rois, image_shape] + feature_maps)
