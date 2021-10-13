@@ -36,6 +36,7 @@ class MaskRCNN():
         self.IMAGE_SHAPE = config.IMAGE_SHAPE
         self.get_backbone_features = config.BACKBONE
         self.FPN_SIZE = config.TOP_DOWN_PYRAMID_SIZE
+        self.image_size = image_size
         self.keras_model = self.build()
         self.anchors = self.get_anchors(image_size, self.config)
 
@@ -45,8 +46,7 @@ class MaskRCNN():
             raise Exception('Image size must be dividable by 2 atleast'
                             '6 times')
 
-        input_image = Input(shape=[None, None, self.IMAGE_SHAPE[2]],
-                            name='input_image')
+        input_image = Input(shape=self.image_size, name='input_image')
 
         if callable(self.get_backbone_features):
             _, C2, C3, C4, C5 = self.get_backbone_features(
