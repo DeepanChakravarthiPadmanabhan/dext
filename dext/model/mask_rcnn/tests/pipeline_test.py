@@ -22,7 +22,6 @@ class ShapesConfig(Config):
 
 @pytest.fixture
 def data():
-    config = ShapesConfig()
     size = (320, 320)
     shapes = Shapes(1, size)
     dataset = shapes.load_data()
@@ -66,10 +65,11 @@ def test_pipeline(sequencer, anchors):
     batch = sequencer.__getitem__(0)
     batch_images, batch_boxes = batch[0]['image'], batch[1]['boxes']
     batch_masks = batch[1]['mask']
-    batch_box_deltas, batch_matches = batch[1]['box_deltas'], batch[1]['matches']
+    batch_box_deltas = batch[1]['box_deltas']
+    batch_matches = batch[1]['matches']
     image, boxes, masks = batch_images[0], batch_boxes[0], batch_masks[0]
     assert image.shape == size == masks.shape
     assert boxes.shape == (3, 5)
-    assert batch_box_deltas.shape[1:] == (config.RPN_TRAIN_ANCHORS_PER_IMAGE, 4)
+    assert batch_box_deltas.shape[1:] == (config.RPN_TRAIN_ANCHORS_PER_IMAGE,
+                                          4)
     assert batch_matches.shape[1:][0] == anchors.shape[0]
-

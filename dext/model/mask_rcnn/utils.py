@@ -17,7 +17,6 @@ import urllib.request
 import shutil
 import warnings
 import colorsys
-
 from skimage.measure import find_contours
 import matplotlib.pyplot as plt
 from matplotlib import patches
@@ -33,7 +32,8 @@ from tensorflow.keras.layers import BatchNormalization, Add
 from tensorflow.keras.models import Model
 from dext.model.mask_rcnn.layers import PyramidROIAlign
 
-COCO_MODEL_URL = 'https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5'
+COCO_MODEL_URL = 'https://github.com/matterport/Mask_RCNN/releases/download/' \
+                 'v2.0/mask_rcnn_coco.h5'
 
 
 def extract_bboxes(mask):
@@ -702,7 +702,8 @@ def download_trained_weights(coco_model_path, verbose=1):
     """
     if verbose > 0:
         print("Downloading pretrained model to " + coco_model_path + " ...")
-    with urllib.request.urlopen(COCO_MODEL_URL) as resp, open(coco_model_path, 'wb') as out:
+    with urllib.request.urlopen(COCO_MODEL_URL) as resp,\
+            open(coco_model_path, 'wb') as out:
         shutil.copyfileobj(resp, out)
     if verbose > 0:
         print("... done downloading pretrained model!")
@@ -743,7 +744,8 @@ def denorm_boxes(boxes, shape):
 
 
 def resize(image, output_shape, order=1, mode='constant', cval=0, clip=True,
-           preserve_range=False, anti_aliasing=False, anti_aliasing_sigma=None):
+           preserve_range=False, anti_aliasing=False,
+           anti_aliasing_sigma=None):
     """A wrapper for Scikit-Image resize().
 
     Scikit-Image generates warnings on every call to resize() if it doesn't
@@ -766,7 +768,6 @@ def resize(image, output_shape, order=1, mode='constant', cval=0, clip=True,
             preserve_range=preserve_range)
 
 
-#Utility functions
 class BatchNorm(BatchNormalization):
     """Extends the Keras BatchNormalization class to allow a central place
     to make changes if needed.
@@ -779,9 +780,11 @@ class BatchNorm(BatchNormalization):
         Note about training values:
             None: Train BN layers. This is the normal mode
             False: Freeze BN layers. Good when batch size is small
-            True: (don't use). Set layer in training mode even when making inferences
+            True: (don't use). Set layer in training mode even when making
+            inferences
         """
         return super(self.__class__, self).call(inputs, training=training)
+
 
 def compute_backbone_shapes(config, image_shape):
     """Computes the width and height of each stage of the backbone network.
@@ -798,6 +801,7 @@ def compute_backbone_shapes(config, image_shape):
             int(math.ceil(image_shape[1] / stride))]
             for stride in config.BACKBONE_STRIDES])
 
+
 def log(text, array=None):
     """Prints a text message. And, optionally, if a Numpy array is provided it
     prints it's shape, min, and max values.
@@ -806,14 +810,14 @@ def log(text, array=None):
         text = text.ljust(25)
         text += ("shape: {:20}  ".format(str(array.shape)))
         if array.size:
-            text += ("min: {:10.5f}  max: {:10.5f}".format(array.min(),array.max()))
+            text += ("min: {:10.5f}  max: {:10.5f}".format(array.min(),
+                                                           array.max()))
         else:
-            text += ("min: {:10}  max: {:10}".format("",""))
+            text += ("min: {:10}  max: {:10}".format("", ""))
         text += "  {}".format(array.dtype)
     print(text)
 
 
-#Data formatting
 def compose_image_meta(image_id, original_image_shape, image_shape,
                        window, scale, active_class_ids):
     """Takes attributes of an image and puts them in one 1D array.
@@ -831,7 +835,7 @@ def compose_image_meta(image_id, original_image_shape, image_shape,
         [image_id] +                  # size=1
         list(original_image_shape) +  # size=3
         list(image_shape) +           # size=3
-        list(window) +                # size=4 (y1, x1, y2, x2) in image cooredinates
+        list(window) +        # size=4 (y1, x1, y2, x2) in image cooredinates
         [scale] +                     # size=1
         list(active_class_ids)        # size=num_classes
     )
@@ -910,13 +914,14 @@ def norm_boxes_graph(boxes, shape):
     return tf.divide(boxes - shift, scale)
 
 
-#Data generator
 def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
                   use_mini_mask=False):
-    """Load and return ground truth data for an image (image, mask, bounding boxes).
+    """Load and return ground truth data for an image
+    (image, mask, bounding boxes).
     augment: (deprecated. Use augmentation instead). If true, apply random
         image augmentation. Currently, only horizontal flipping is offered.
-    augmentation: Optional. An imgaug (https://github.com/aleju/imgaug) augmentation.
+    augmentation: Optional. An imgaug (https://github.com/aleju/imgaug)
+    augmentation.
         For example, passing imgaug.augmenters.Fliplr(0.5) flips images
         right/left 50% of the time.
     use_mini_mask: If False, returns full-size masks that are the same height
@@ -942,7 +947,6 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     class_ids = class_ids[image_id]
 
     # mask, class_ids = dataset.load_mask(image_id)
-    original_shape = image.shape
     image, window, scale, padding, crop = resize_image(
         image,
         min_dim=config.IMAGE_MIN_DIM,
@@ -985,13 +989,15 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
         mask = det.augment_image(mask.astype(np.uint8),
                                  hooks=imgaug.HooksImages(activator=hook))
         # Verify that shapes didn't change
-        assert image.shape == image_shape, "Augmentation shouldn't change image size"
-        assert mask.shape == mask_shape, "Augmentation shouldn't change mask size"
+        assert image.shape == image_shape, \
+            "Augmentation shouldn't change image size"
+        assert mask.shape == mask_shape, \
+            "Augmentation shouldn't change mask size"
         # Change mask back to bool
         mask = mask.astype(np.bool)
 
-    # Note that some boxes might be all zeros if the corresponding mask got cropped out.
-    # and here is to filter them out
+    # Note that some boxes might be all zeros if the corresponding mask got
+    # cropped out and here is to filter them out
     _idx = np.sum(mask, axis=(0, 1)) > 0
     mask = mask[:, :, _idx]
     true_class_ids = []
@@ -1009,16 +1015,13 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     # Different datasets have different classes, so track the
     # classes supported in the dataset of this image.
     active_class_ids = np.zeros([dataset.num_classes], dtype=np.int32)
-    source_class_ids = dataset.source_class_ids[dataset.image_info[int(image_id)]["source"]]
+    source_class_ids = dataset.source_class_ids[
+        dataset.image_info[int(image_id)]["source"]]
     active_class_ids[source_class_ids] = 1
 
     # Resize masks to smaller size to reduce memory usage
     if use_mini_mask:
         mask = minimize_mask(bbox, mask, config.MINI_MASK_SHAPE)
-
-    # Image meta data
-    image_meta = compose_image_meta(image_id, original_shape, image.shape,
-                                    window, scale, active_class_ids)
 
     return image, class_ids, bbox, mask
 
@@ -1083,7 +1086,8 @@ def generate_random_rois(image_shape, count, gt_class_ids, gt_boxes):
                     threshold][:remaining_count]
         x1x2 = x1x2[np.abs(x1x2[:, 0] - x1x2[:, 1]) >=
                     threshold][:remaining_count]
-        if y1y2.shape[0] == remaining_count and x1x2.shape[0] == remaining_count:
+        if (y1y2.shape[0] == remaining_count) and \
+                (x1x2.shape[0] == remaining_count):
             break
 
     # Sort on axis 1 to ensure x1 <= x2 and y1 <= y2 and then reshape
@@ -1095,7 +1099,8 @@ def generate_random_rois(image_shape, count, gt_class_ids, gt_boxes):
     return rois
 
 
-def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
+def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes,
+                            gt_masks, config):
     """Generate targets for training Stage 2 classifier and mask heads.
     This is not used in normal training. It's useful for debugging or to train
     the Mask RCNN heads without using the RPN head.
@@ -1108,10 +1113,11 @@ def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
     Returns:
     rois: [TRAIN_ROIS_PER_IMAGE, (y1, x1, y2, x2)]
     class_ids: [TRAIN_ROIS_PER_IMAGE]. Integer class IDs.
-    bboxes: [TRAIN_ROIS_PER_IMAGE, NUM_CLASSES, (y, x, log(h), log(w))]. Class-specific
-            bbox refinements.
-    masks: [TRAIN_ROIS_PER_IMAGE, height, width, NUM_CLASSES). Class specific masks cropped
-           to bbox boundaries and resized to neural network output size.
+    bboxes: [TRAIN_ROIS_PER_IMAGE, NUM_CLASSES, (y, x, log(h), log(w))].
+    Class-specific bbox refinements.
+    masks: [TRAIN_ROIS_PER_IMAGE, height, width, NUM_CLASSES).
+    Class specific masks cropped to bbox boundaries and resized to neural
+    network output size.
     """
     assert rpn_rois.shape[0] > 0
     assert gt_class_ids.dtype == np.int32, "Expected int but got {}".format(
@@ -1156,7 +1162,8 @@ def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
     fg_ids = np.where(rpn_roi_iou_max > 0.5)[0]
 
     # Negative ROIs are those with max IoU 0.1-0.5 (hard example mining)
-    # TODO: To hard example mine or not to hard example mine, that's the question
+    # TODO: To hard example mine or not to hard example mine,
+    #  that's the question
     # bg_ids = np.where((rpn_roi_iou_max >= 0.1) & (rpn_roi_iou_max < 0.5))[0]
     bg_ids = np.where(rpn_roi_iou_max < 0.5)[0]
 
@@ -1203,7 +1210,8 @@ def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
     rpn_roi_gt_boxes[keep_bg_ids, :] = 0
     rpn_roi_gt_class_ids[keep_bg_ids] = 0
 
-    # For each kept ROI, assign a class_id, and for FG ROIs also add bbox refinement.
+    # For each kept ROI, assign a class_id, and for FG ROIs also add
+    # bbox refinement.
     rois = rpn_rois[keep]
     roi_gt_boxes = rpn_roi_gt_boxes[keep]
     roi_gt_class_ids = rpn_roi_gt_class_ids[keep]
@@ -1219,7 +1227,8 @@ def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
     bboxes /= config.BBOX_STD_DEV
 
     # Generate class-specific target masks
-    masks = np.zeros((config.TRAIN_ROIS_PER_IMAGE, config.MASK_SHAPE[0], config.MASK_SHAPE[1], config.NUM_CLASSES),
+    masks = np.zeros((config.TRAIN_ROIS_PER_IMAGE, config.MASK_SHAPE[0],
+                      config.MASK_SHAPE[1], config.NUM_CLASSES),
                      dtype=np.float32)
     for i in pos_ids:
         class_id = roi_gt_class_ids[i]
@@ -1247,6 +1256,7 @@ def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
         masks[i, :, :, class_id] = mask
 
     return rois, roi_gt_class_ids, bboxes, masks
+
 
 def build_rpn_targets(image_shape, anchors, gt_class_ids, gt_boxes, config):
     """Given the anchors and GT boxes, compute overlaps and identify positive
@@ -1300,7 +1310,7 @@ def build_rpn_targets(image_shape, anchors, gt_class_ids, gt_boxes, config):
     rpn_match[(anchor_iou_max < 0.3) & (no_crowd_bool)] = -1
     # 2. Set an anchor for each GT box (regardless of IoU value).
     # If multiple anchors have the same IoU match all of them
-    gt_iou_argmax = np.argwhere(overlaps == np.max(overlaps, axis=0))[:,0]
+    gt_iou_argmax = np.argwhere(overlaps == np.max(overlaps, axis=0))[:, 0]
     rpn_match[gt_iou_argmax] = 1
     # 3. Set anchors with high overlap as positive.
     rpn_match[anchor_iou_max >= 0.7] = 1
@@ -1357,197 +1367,13 @@ def build_rpn_targets(image_shape, anchors, gt_class_ids, gt_boxes, config):
     return rpn_match, rpn_bbox
 
 
-def data_generator(dataset, config, shuffle=True, augment=False, augmentation=None,
-                   random_rois=0, batch_size=1, detection_targets=False,
-                   no_augmentation_sources=None):
-    """A generator that returns images and corresponding target class ids,
-    bounding box deltas, and masks.
-    dataset: The Dataset object to pick data from
-    config: The model config object
-    shuffle: If True, shuffles the samples before every epoch
-    augment: (deprecated. Use augmentation instead). If true, apply random
-        image augmentation. Currently, only horizontal flipping is offered.
-    augmentation: Optional. An imgaug (https://github.com/aleju/imgaug) augmentation.
-        For example, passing imgaug.augmenters.Fliplr(0.5) flips images
-        right/left 50% of the time.
-    random_rois: If > 0 then generate proposals to be used to train the
-                 network classifier and mask heads. Useful if training
-                 the Mask RCNN part without the RPN.
-    batch_size: How many images to return in each call
-    detection_targets: If True, generate detection targets (class IDs, bbox
-        deltas, and masks). Typically for debugging or visualizations because
-        in trainig detection targets are generated by DetectionTargetLayer.
-    no_augmentation_sources: Optional. List of sources to exclude for
-        augmentation. A source is string that identifies a dataset and is
-        defined in the Dataset class.
-    Returns a Python generator. Upon calling next() on it, the
-    generator returns two lists, inputs and outputs. The contents
-    of the lists differs depending on the received arguments:
-    inputs list:
-    - images: [batch, H, W, C]
-    - image_meta: [batch, (meta data)] Image details. See compose_image_meta()
-    - rpn_match: [batch, N] Integer (1=positive anchor, -1=negative, 0=neutral)
-    - rpn_bbox: [batch, N, (dy, dx, log(dh), log(dw))] Anchor bbox deltas.
-    - gt_class_ids: [batch, MAX_GT_INSTANCES] Integer class IDs
-    - gt_boxes: [batch, MAX_GT_INSTANCES, (y1, x1, y2, x2)]
-    - gt_masks: [batch, height, width, MAX_GT_INSTANCES]. The height and width
-                are those of the image unless use_mini_mask is True, in which
-                case they are defined in MINI_MASK_SHAPE.
-    outputs list: Usually empty in regular training. But if detection_targets
-        is True then the outputs list contains target class_ids, bbox deltas,
-        and masks.
-    """
-    b = 0  # batch item index
-    image_index = -1
-    image_data = dataset.data['image']
-    image_ids = list(image_data.keys())
-    error_count = 0
-    no_augmentation_sources = no_augmentation_sources or []
-
-    # Anchors
-    # [anchor_count, (y1, x1, y2, x2)]
-    backbone_shapes = compute_backbone_shapes(config, config.IMAGE_SHAPE)
-    anchors = generate_pyramid_anchors(config.RPN_ANCHOR_SCALES,
-                                       config.RPN_ANCHOR_RATIOS,
-                                       backbone_shapes,
-                                       config.BACKBONE_STRIDES,
-                                       config.RPN_ANCHOR_STRIDE)
-
-    # Keras requires a generator to run indefinitely.
-    while True:
-        try:
-            # Increment index to pick next image. Shuffle if at the start of an epoch.
-            image_index = (image_index + 1) % len(image_ids)
-            if shuffle and image_index == 0:
-                np.random.shuffle(image_ids)
-
-            # Get GT bounding boxes and masks for image.
-            image_id = image_ids[image_index]
-
-            # If the image source is not to be augmented pass None as augmentation
-            if dataset.image_info[int(image_id)]['source'] in no_augmentation_sources:
-                image, gt_class_ids, gt_boxes, gt_masks = load_image_gt(
-                                dataset, config, image_id, augment=augment,
-                                augmentation=None,
-                                use_mini_mask=config.USE_MINI_MASK)
-            else:
-                image, gt_class_ids, gt_boxes, gt_masks = load_image_gt(
-                    dataset, config, image_id, augment=augment,
-                    augmentation=augmentation,
-                    use_mini_mask=config.USE_MINI_MASK)
-            gt_class_ids = np.array(gt_class_ids)
-            # Skip images that have no instances. This can happen in cases
-            # where we train on a subset of classes and the image doesn't
-            # have any of the classes we care about.
-            if not np.any(gt_class_ids > 0):
-                continue
-
-            # RPN Targets
-            rpn_match, rpn_bbox = build_rpn_targets(image.shape, anchors,
-                                                    gt_class_ids, gt_boxes, config)
-
-            # Mask R-CNN Targets
-            if random_rois:
-                rpn_rois = generate_random_rois(
-                    image.shape, random_rois, gt_class_ids, gt_boxes)
-                if detection_targets:
-                    rois, mrcnn_class_ids, mrcnn_bbox, mrcnn_mask =\
-                        build_detection_targets(
-                            rpn_rois, gt_class_ids.astype(np.int32), gt_boxes, gt_masks, config)
-
-            # Init batch arrays
-            if b == 0:
-                batch_image_meta = np.zeros(
-                    (batch_size,) + image_meta.shape, dtype=image_meta.dtype)
-                batch_rpn_match = np.zeros(
-                    [batch_size, anchors.shape[0], 1], dtype=rpn_match.dtype)
-                batch_rpn_bbox = np.zeros(
-                    [batch_size, config.RPN_TRAIN_ANCHORS_PER_IMAGE, 4], dtype=rpn_bbox.dtype)
-                batch_images = np.zeros(
-                    (batch_size,) + image.shape, dtype=np.float32)
-                batch_gt_class_ids = np.zeros(
-                    (batch_size, config.MAX_GT_INSTANCES), dtype=np.int32)
-                batch_gt_boxes = np.zeros(
-                    (batch_size, config.MAX_GT_INSTANCES, 4), dtype=np.int32)
-                batch_gt_masks = np.zeros(
-                    (batch_size, gt_masks.shape[0], gt_masks.shape[1],
-                     config.MAX_GT_INSTANCES), dtype=gt_masks.dtype)
-                if random_rois:
-                    batch_rpn_rois = np.zeros(
-                        (batch_size, rpn_rois.shape[0], 4), dtype=rpn_rois.dtype)
-                    if detection_targets:
-                        batch_rois = np.zeros(
-                            (batch_size,) + rois.shape, dtype=rois.dtype)
-                        batch_mrcnn_class_ids = np.zeros(
-                            (batch_size,) + mrcnn_class_ids.shape, dtype=mrcnn_class_ids.dtype)
-                        batch_mrcnn_bbox = np.zeros(
-                            (batch_size,) + mrcnn_bbox.shape, dtype=mrcnn_bbox.dtype)
-                        batch_mrcnn_mask = np.zeros(
-                            (batch_size,) + mrcnn_mask.shape, dtype=mrcnn_mask.dtype)
-
-            # If more instances than fits in the array, sub-sample from them.
-            if gt_boxes.shape[0] > config.MAX_GT_INSTANCES:
-                ids = np.random.choice(
-                    np.arange(gt_boxes.shape[0]), config.MAX_GT_INSTANCES, replace=False)
-                gt_class_ids = gt_class_ids[ids]
-                gt_boxes = gt_boxes[ids]
-                gt_masks = gt_masks[:, :, ids]
-
-            # Add to batch
-            batch_image_meta[b] = image_meta
-            batch_rpn_match[b] = rpn_match[:, np.newaxis]
-            batch_rpn_bbox[b] = rpn_bbox
-            batch_images[b] = normalize_image(image.astype(np.float32), config)
-            batch_gt_class_ids[b, :gt_class_ids.shape[0]] = gt_class_ids
-            batch_gt_boxes[b, :gt_boxes.shape[0]] = gt_boxes
-            batch_gt_masks[b, :, :, :gt_masks.shape[-1]] = gt_masks
-            if random_rois:
-                batch_rpn_rois[b] = rpn_rois
-                if detection_targets:
-                    batch_rois[b] = rois
-                    batch_mrcnn_class_ids[b] = mrcnn_class_ids
-                    batch_mrcnn_bbox[b] = mrcnn_bbox
-                    batch_mrcnn_mask[b] = mrcnn_mask
-            b += 1
-
-            # Batch full?
-            if b >= batch_size:
-                inputs = [batch_images, batch_rpn_match, batch_rpn_bbox,
-                          batch_gt_class_ids, batch_gt_boxes, batch_gt_masks]
-                outputs = []
-
-                if random_rois:
-                    inputs.extend([batch_rpn_rois])
-                    if detection_targets:
-                        inputs.extend([batch_rois])
-                        # Keras requires that output and targets have the same number of dimensions
-                        batch_mrcnn_class_ids = np.expand_dims(
-                            batch_mrcnn_class_ids, -1)
-                        outputs.extend(
-                            [batch_mrcnn_class_ids, batch_mrcnn_bbox, batch_mrcnn_mask])
-
-                yield inputs, outputs
-
-                # start a new batch
-                b = 0
-        except (GeneratorExit, KeyboardInterrupt):
-            raise
-        except:
-            # Log it and skip the image
-            logging.exception("Error processing image {}".format(
-                dataset.image_info[int(image_id)]))
-            error_count += 1
-            if error_count > 5:
-                raise
-
-
-#Resnet graph
 def identity_block(input_tensor, kernel_size, filters, stage, block,
                    use_bias=True, train_bn=True):
     """The identity_block is the block that has no conv layer at shortcut
     # Arguments
         input_tensor: input tensor
-        kernel_size: default 3, the kernel size of middle conv layer at main path
+        kernel_size: default 3, the kernel size of middle conv layer at main
+        path
         filters: list of integers, the nb_filters of 3 conv layer at main path
         stage: integer, current stage label, used for generating layer names
         block: 'a','b'..., current block label, used for generating layer names
@@ -1559,17 +1385,17 @@ def identity_block(input_tensor, kernel_size, filters, stage, block,
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
     x = Conv2D(nb_filter1, (1, 1), name=conv_name_base + '2a',
-                  use_bias=use_bias)(input_tensor)
+               use_bias=use_bias)(input_tensor)
     x = BatchNorm(name=bn_name_base + '2a')(x, training=train_bn)
     x = Activation('relu')(x)
 
     x = Conv2D(nb_filter2, (kernel_size, kernel_size), padding='same',
-                  name=conv_name_base + '2b', use_bias=use_bias)(x)
+               name=conv_name_base + '2b', use_bias=use_bias)(x)
     x = BatchNorm(name=bn_name_base + '2b')(x, training=train_bn)
     x = Activation('relu')(x)
 
     x = Conv2D(nb_filter3, (1, 1), name=conv_name_base + '2c',
-                  use_bias=use_bias)(x)
+               use_bias=use_bias)(x)
     x = BatchNorm(name=bn_name_base + '2c')(x, training=train_bn)
 
     x = Add()([x, input_tensor])
@@ -1582,35 +1408,37 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
     """conv_block is the block that has a conv layer at shortcut
     # Arguments
         input_tensor: input tensor
-        kernel_size: default 3, the kernel size of middle conv layer at main path
+        kernel_size: default 3, the kernel size of middle conv layer at main
+        path
         filters: list of integers, the nb_filters of 3 conv layer at main path
         stage: integer, current stage label, used for generating layer names
         block: 'a','b'..., current block label, used for generating layer names
         use_bias: Boolean. To use or not use a bias in conv layers.
         train_bn: Boolean. Train or freeze Batch Norm layers
-    Note that from stage 3, the first conv layer at main path is with subsample=(2,2)
-    And the shortcut should have subsample=(2,2) as well
+    Note that from stage 3, the first conv layer at main path is with
+    subsample=(2,2) And the shortcut should have subsample=(2,2) as well
     """
     nb_filter1, nb_filter2, nb_filter3 = filters
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
     x = Conv2D(nb_filter1, (1, 1), strides=strides,
-                  name=conv_name_base + '2a', use_bias=use_bias)(input_tensor)
+               name=conv_name_base + '2a', use_bias=use_bias)(input_tensor)
     x = BatchNorm(name=bn_name_base + '2a')(x, training=train_bn)
     x = Activation('relu')(x)
 
     x = Conv2D(nb_filter2, (kernel_size, kernel_size), padding='same',
-                  name=conv_name_base + '2b', use_bias=use_bias)(x)
+               name=conv_name_base + '2b', use_bias=use_bias)(x)
     x = BatchNorm(name=bn_name_base + '2b')(x, training=train_bn)
     x = Activation('relu')(x)
 
     x = Conv2D(nb_filter3, (1, 1), name=conv_name_base +
-                  '2c', use_bias=use_bias)(x)
+               '2c', use_bias=use_bias)(x)
     x = BatchNorm(name=bn_name_base + '2c')(x, training=train_bn)
 
     shortcut = Conv2D(nb_filter3, (1, 1), strides=strides,
-                         name=conv_name_base + '1', use_bias=use_bias)(input_tensor)
+                      name=conv_name_base + '1',
+                      use_bias=use_bias)(input_tensor)
     shortcut = BatchNorm(name=bn_name_base + '1')(shortcut, training=train_bn)
 
     x = Add()([x, shortcut])
@@ -1721,8 +1549,8 @@ def display_instances(image, boxes, masks, class_ids, class_names,
         y1, x1, y2, x2 = boxes[i]
         if show_bbox:
             p = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=2,
-                                alpha=0.7, linestyle="dashed",
-                                edgecolor=color, facecolor='none')
+                                  alpha=0.7, linestyle="dashed",
+                                  edgecolor=color, facecolor='none')
             ax.add_patch(p)
 
         # Label

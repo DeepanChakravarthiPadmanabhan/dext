@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from dext.model.mask_rcnn.utils import unmold_mask
 from dext.model.mask_rcnn.utils import norm_boxes

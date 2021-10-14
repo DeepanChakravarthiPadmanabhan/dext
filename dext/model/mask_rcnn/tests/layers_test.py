@@ -117,4 +117,3 @@ def test_pyramid_ROI_align(proposal_layer, feature_maps, shape):
     ROI_align = PyramidROIAlign([7, 7])(
                                 [proposal_layer, shape] + feature_maps)
     assert K.int_shape(ROI_align) == (1, None, 7, 7, 256)
-

@@ -1,18 +1,15 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow.keras.models import Model
-
-from paz.backend.image import resize_image
 from paz.processors.image import LoadImage
-
-from dext.model.mask_rcnn.mask_rcnn_preprocess import  mask_rcnn_preprocess
-from dext.model.mask_rcnn.model import MaskRCNN
-from dext.model.mask_rcnn.config import Config
+from paz.processors.image import resize_image
+from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
 from dext.model.mask_rcnn.utils import norm_boxes_graph
+from dext.model.mask_rcnn.config import Config
 from dext.model.mask_rcnn.mask_rcnn_postprocess import mask_rcnn_postprocess
-from dext.model.utils import get_all_layers
-from dext.model.mask_rcnn.mask_rcnn_inference_model import inference
-from dext.model.mask_rcnn.inference_graph import InferenceGraph
+from dext.model.mask_rcnn.mask_rcnn_detection_model import mask_rcnn_detection
+from dext.postprocessing.saliency_visualization import \
+    visualize_saliency_grayscale
 
 
 @tf.custom_gradient
@@ -55,13 +52,14 @@ class GuidedBackpropagation:
         normalized_images, windows = mask_rcnn_preprocess(self.config, image)
         normalized_images = tf.cast(normalized_images[0], tf.float32)
         normalized_images = tf.expand_dims(normalized_images, axis=0)
-        normalized_images = [normalized_images]
         return normalized_images
 
     def build_custom_model(self):
-        custom_model = Model(
-            inputs=[self.model.inputs],
-            outputs=[self.model.output])
+        custom_model = tf.keras.models.Model(
+            inputs=self.model.inputs,
+            outputs=self.model.output[self.visualize_idx[0],
+                                      self.visualize_idx[1],
+                                      self.visualize_idx[2]])
         # all_layers = get_all_layers(custom_model)
         # all_layers = [act_layer for act_layer in all_layers
         #               if hasattr(act_layer, 'activation')]
@@ -79,12 +77,12 @@ class GuidedBackpropagation:
         with tf.GradientTape() as tape:
             inputs = self.normalized_images
             tape.watch(inputs)
-            conv_outs = self.custom_model.predict(inputs, steps=1)
+            conv_outs = self.custom_model(inputs)
             conv_outs = tf.cast(conv_outs, tf.float32)
-        print('Conv outs from custom model: %s' % type(conv_outs[0]), type(conv_outs))
+        print('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         saliency = np.asarray(grads)
-        print("Saliency shape: ", saliency.shape)
+        print("Saliency shape: ", saliency.shape, saliency)
         return saliency
 
 
@@ -103,31 +101,29 @@ def test(image, weights_path):
     config_window = norm_boxes_graph(window[0], image_size[:2])
     config.WINDOW = config_window
 
-    base_model = MaskRCNN(config=config, model_dir=weights_path,
-                          image_size=image_size)
-    inference_model = InferenceGraph(model=base_model, config=config,
-                                     include_mask=False)
-    base_model.keras_model = inference_model()
-    base_model.keras_model.load_weights(weights_path, by_name=True)
-    model = base_model.keras_model
+    model = mask_rcnn_detection(config=config, image_size=image_size)
+    model.load_weights(weights_path)
+    input_image = tf.expand_dims(normalized_images[0], axis=0)
+    out = model(input_image)
+    out = out.numpy()
+    detections, det_image = mask_rcnn_postprocess(
+        image[0], normalized_images[0], window[0], out[0])
+    print("Detections are here: ", detections)
+    gbp = GuidedBackpropagation(model, "Mask_RCNN", image,
+                                "GBP", "boxes", (0, 0, 0),
+                                mask_rcnn_preprocess, config)
+    saliency = gbp.get_saliency_map()
 
-    detections = model.predict([normalized_images])
-    results = mask_rcnn_postprocess(image[0], normalized_images[0],
-                                    window[0], detections[0])
-    # gbp = GuidedBackpropagation(model, "Mask_RCNN", image,
-    #                             "GBP", "boxes", (0, 0, 1),
-    #                             mask_rcnn_preprocess, config)
-    # saliency = gbp.get_saliency_map()
-    return results
+    saliency = visualize_saliency_grayscale(saliency)
+    plt.imsave('saliency_mask.jpg', saliency)
+    return detections, det_image
+
 
 raw_image = "images/000000128224.jpg"
-weights_path = '/media/deepan/externaldrive1/project_repos/DEXT_versions/weights/mask_rcnn_coco.h5'
-
-import matplotlib.pyplot as plt
+weights_path = 'new_weights_maskrcnn.h5'
 loader = LoadImage()
 raw_image = loader(raw_image)
 image = raw_image.copy()
-results, det_image = test([image], weights_path)
-print(results)
+detections, det_image = test([image], weights_path)
 plt.imsave('paz_maskrcnn.jpg', det_image)
 print("done")

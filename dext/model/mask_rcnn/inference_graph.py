@@ -1,4 +1,4 @@
-from tensorflow.keras.layers import Input, Lambda
+from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model
 
 from dext.model.mask_rcnn.utils import fpn_classifier_graph, \

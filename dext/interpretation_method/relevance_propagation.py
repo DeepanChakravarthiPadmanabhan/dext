@@ -2,7 +2,7 @@ import logging
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.models import Model
-# import innvestigate
+import innvestigate
 
 from paz.backend.image import resize_image
 from dext.model.functional_models import get_functional_model
@@ -75,14 +75,15 @@ class OD_LRP:
 
     def get_saliency_map(self):
         inputs = tf.cast(self.image, tf.float32)
-        out = self.custom_model(inputs)
+        # out = self.custom_model(inputs)
         # print("Model out shape: ", out.shape)
-        # /media/deepan/externaldrive1/project_repos/innvestigate/innvestigate/utils/keras/functional.py
         # print('Out row: ', out[0, :5, 0])
         # print("Out raw shape: ", out.shape)
-        # sel_idx = [(out.shape[2] * self.visualize_idx[1]) + self.visualize_idx[2]]
+        # sel_idx = [
+        # (out.shape[2] * self.visualize_idx[1]) + self.visualize_idx[2]]
         # print('selected idx: ', sel_idx)
-        # print('Out selected: ', out[0, self.visualize_idx[1], self.visualize_idx[2]])
+        # print('Out selected: ', out[0, self.visualize_idx[1],
+        # self.visualize_idx[2]])
         analyzer = innvestigate.create_analyzer('lrp.z', self.custom_model)
         a = analyzer.analyze(inputs,
                              # neuron_selection= sel_idx #2018435
@@ -102,6 +103,7 @@ def OD_LRPExplainer_WIP(model, model_name, image, interpretation_method,
     saliency = visualize_saliency_grayscale(saliency)
     plt.imsave('saliency.jpg', saliency)
     return saliency
+
 
 def OD_LRPExplainer(model, model_name, image, interpretation_method,
                     layer_name, visualize_index, preprocessor_fn, image_size):

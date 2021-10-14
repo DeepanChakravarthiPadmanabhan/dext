@@ -14,8 +14,8 @@ from tensorflow.keras.layers import Input, Add, Conv2D, Concatenate
 from tensorflow.keras.layers import UpSampling2D, MaxPooling2D
 from tensorflow.keras.models import Model
 
-from dext.model.mask_rcnn.utils import log, get_resnet_features, \
-    build_rpn_model
+from dext.model.mask_rcnn.utils import log, get_resnet_features
+from dext.model.mask_rcnn.utils import build_rpn_model
 from dext.model.mask_rcnn.utils import compute_backbone_shapes, norm_boxes
 from dext.model.mask_rcnn.utils import generate_pyramid_anchors
 tf.compat.v1.disable_eager_execution()
