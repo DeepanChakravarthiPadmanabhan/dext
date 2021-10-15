@@ -389,7 +389,8 @@ def get_resnet_features(input_image, architecture,
 
 
 def fpn_classifier_graph(
-        rois, feature_maps, config, train_bn=True, fc_layers_size=1024):
+        rois, feature_maps, pool_size, num_classes, image_max_dim,
+        train_bn=True, fc_layers_size=1024):
     """Builds the computation graph of the feature pyramid network classifier
        and regressor heads.
 
@@ -411,9 +412,9 @@ def fpn_classifier_graph(
         bbox_deltas: [batch, num_rois, NUM_CLASSES, (dy, dx, log(dh), log(dw))]
                      Deltas to apply to proposal boxes
     """
-    pool_size = config.POOL_SIZE
-    num_classes = config.NUM_CLASSES
-    image_shape = (config.IMAGE_MAX_DIM, config.IMAGE_MAX_DIM, 3)
+    pool_size = pool_size
+    num_classes = num_classes
+    image_shape = (image_max_dim, image_max_dim, 3)
     image_shape = tf.convert_to_tensor(np.array(image_shape))
     x = PyramidROIAlign([pool_size, pool_size], name='roi_align_classifier')(
         [rois, image_shape] + feature_maps)
@@ -786,20 +787,21 @@ class BatchNorm(BatchNormalization):
         return super(self.__class__, self).call(inputs, training=training)
 
 
-def compute_backbone_shapes(config, image_shape):
+def compute_backbone_shapes(image_shape, backbone, compute_backbone_shape,
+                            backbone_strides):
     """Computes the width and height of each stage of the backbone network.
     Returns:
         [N, (height, width)]. Where N is the number of stages
     """
-    if callable(config.BACKBONE):
-        return config.COMPUTE_BACKBONE_SHAPE(image_shape)
+    if callable(backbone):
+        return compute_backbone_shape(image_shape)
 
     # Currently supports ResNet only
-    assert config.BACKBONE in ["resnet50", "resnet101"]
+    assert backbone in ["resnet50", "resnet101"]
     return np.array(
         [[int(math.ceil(image_shape[0] / stride)),
             int(math.ceil(image_shape[1] / stride))]
-            for stride in config.BACKBONE_STRIDES])
+            for stride in backbone_strides])
 
 
 def log(text, array=None):
@@ -886,12 +888,12 @@ def parse_image_meta_graph(meta):
     }
 
 
-def normalize_image(images, config):
+def normalize_image(images, mean_pixel):
     """Expects an RGB image (or array of images) and subtracts
     the mean pixel and converts it to float. Expects image
     colors in RGB order.
     """
-    return images.astype(np.float32) - config.MEAN_PIXEL
+    return images.astype(np.float32) - mean_pixel
 
 
 def unmold_image(normalized_images, config):

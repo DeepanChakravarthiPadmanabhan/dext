@@ -133,6 +133,7 @@ def explain_single_object(
                     "Confidence - %s, Explaining - %s, Box offset - %s"
                     % (str(image_index), class_name, class_confidence,
                        explaining, box_offset))
+        print("BEFORE SINGLE SALIENCY: ", box_index, object_index, box_offset)
         saliency = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
             box_offset, get_model(model_name), model_name, raw_image,

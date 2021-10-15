@@ -1,6 +1,7 @@
 from dext.model.efficientdet.efficientdet_postprocess \
     import efficientdet_postprocess
 from dext.model.ssd.ssd_postprocess import ssd_postprocess
+from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
 
 
 class PostprocessorFactory:
@@ -12,6 +13,8 @@ class PostprocessorFactory:
             return efficientdet_postprocess
         elif "SSD" in self.model_name:
             return ssd_postprocess
+        elif "FasterRCNN" in self.model_name:
+            return mask_rcnn_preprocess
         else:
             raise ValueError(
                 "Preprocessor not implemented %s" % self.model_name)

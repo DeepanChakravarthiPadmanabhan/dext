@@ -19,15 +19,17 @@ class DetectionLayer(Layer):
          class_score)] where coordinates are normalized.
     """
 
-    def __init__(self, config=None, **kwargs):
+    def __init__(self, batch_size, window, bbox_std_dev, images_per_gpu,
+                 detection_max_instances, detection_min_confidence,
+                 detection_nms_threshold, **kwargs):
         super(DetectionLayer, self).__init__(**kwargs)
-        self.BATCH_SIZE = config.BATCH_SIZE
-        self.WINDOW = config.WINDOW
-        self.BBOX_STD_DEV = config.BBOX_STD_DEV
-        self.IMAGES_PER_GPU = config.IMAGES_PER_GPU
-        self.DETECTION_MAX_INSTANCES = config.DETECTION_MAX_INSTANCES
-        self.DETECTION_MIN_CONFIDENCE = config.DETECTION_MIN_CONFIDENCE
-        self.DETECTION_NMS_THRESHOLD = config.DETECTION_NMS_THRESHOLD
+        self.BATCH_SIZE = batch_size
+        self.WINDOW = window
+        self.BBOX_STD_DEV = bbox_std_dev
+        self.IMAGES_PER_GPU = images_per_gpu
+        self.DETECTION_MAX_INSTANCES = detection_max_instances
+        self.DETECTION_MIN_CONFIDENCE = detection_min_confidence
+        self.DETECTION_NMS_THRESHOLD = detection_nms_threshold
 
     def call(self, inputs):
         ROIs, mrcnn_class, mrcnn_bbox = inputs
@@ -138,11 +140,12 @@ class ProposalLayer(Layer):
         Normalized proposals [batch, rois, (y_min, x_min, y_max, x_max)]
     """
 
-    def __init__(self, proposal_count, nms_threshold, config=None, **kwargs):
+    def __init__(self, proposal_count, nms_threshold, rpn_bbox_std_dev,
+                 pre_nms_limit, images_per_gpu, **kwargs):
         super(ProposalLayer, self).__init__(**kwargs)
-        self.RPN_BBOX_STD_DEV = config.RPN_BBOX_STD_DEV
-        self.PRE_NMS_LIMIT = config.PRE_NMS_LIMIT
-        self.IMAGES_PER_GPU = config.IMAGES_PER_GPU
+        self.RPN_BBOX_STD_DEV = rpn_bbox_std_dev
+        self.PRE_NMS_LIMIT = pre_nms_limit
+        self.IMAGES_PER_GPU = images_per_gpu
         self.proposal_count = proposal_count
         self.nms_threshold = nms_threshold
 

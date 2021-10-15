@@ -17,14 +17,14 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Classification and Box offset",
+@click.option("--to_explain", default="Classification",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
 @click.option("--result_dir", default="images/results/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", ]))
-@click.option("--visualize_object_index", default='all')  # 1 <
+@click.option("--visualize_object_index", default=1)  # 1 <
 @click.option("--visualize_box_offset", default='y_min',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
 @click.option("--num_images", default=1)  # 1 <
@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--save_detections", default=True)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=True)
-@click.option("--ap_curve_linspace", default=200)
+@click.option("--ap_curve_linspace", default=2)
 @click.option("--merge_saliency_maps", default=True)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--log_level", default="INFO",

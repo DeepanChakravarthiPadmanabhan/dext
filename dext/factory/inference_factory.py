@@ -1,5 +1,6 @@
 from dext.inference.inference import inference_image_ssd
 from dext.inference.inference import inference_image_efficientdet
+from dext.inference.inference import inference_image_faster_rcnn
 
 
 class InferenceFactory:
@@ -11,6 +12,8 @@ class InferenceFactory:
             return inference_image_efficientdet
         elif "SSD" in self.model_name:
             return inference_image_ssd
+        elif "FasterRCNN" in self.model_name:
+            return inference_image_faster_rcnn
         else:
             raise ValueError(
                 "Preprocessor not implemented %s" % self.model_name)

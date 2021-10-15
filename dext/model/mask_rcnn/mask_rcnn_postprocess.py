@@ -1,7 +1,10 @@
 import numpy as np
+
 from dext.model.mask_rcnn.utils import unmold_mask
 from dext.model.mask_rcnn.utils import norm_boxes
 from dext.model.mask_rcnn.utils import denorm_boxes
+from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
+
 from paz.abstract import Box2D
 from dext.postprocessing.detection_visualization import draw_bounding_boxes
 
@@ -23,18 +26,20 @@ class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                'teddy bear', 'hair drier', 'toothbrush']
 
 
-def mask_rcnn_postprocess(image, normalized_images, windows,
-                          detections, predicted_masks=None):
+def mask_rcnn_postprocess(model, outputs, image_scales, image,
+                          explain_top5_background=False):
+    normalized_image, window = mask_rcnn_preprocess(image)
     boxes, class_ids, scores, masks = postprocess(
-        detections, image.shape, normalized_images.shape,
-        windows, predicted_masks)
-    boxes2D = []
+        outputs, image.shape, normalized_image.shape,
+        window, None)
+    detections = []
     for box, score, class_name in zip(boxes, scores, class_ids):
         x_min, y_min, x_max, y_max = box[1], box[0], box[3], box[2]
-        boxes2D.append(Box2D([x_min, y_min, x_max, y_max], score,
+        detections.append(Box2D([x_min, y_min, x_max, y_max], score,
                              class_names[class_name]))
-    image = draw_bounding_boxes(image.astype('uint8'), boxes2D, class_names)
-    return boxes2D, image
+    image = draw_bounding_boxes(image.astype('uint8'), detections, class_names)
+    box_index = None
+    return image, detections, box_index
 
 
 def postprocess(detections, original_image_shape,

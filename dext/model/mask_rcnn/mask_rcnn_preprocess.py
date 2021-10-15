@@ -1,3 +1,4 @@
+import numpy as np
 from paz.abstract import Processor
 from paz.abstract import SequentialProcessor
 
@@ -5,41 +6,39 @@ from dext.model.mask_rcnn.utils import resize_image, normalize_image
 
 
 class NormalizeImages(Processor):
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, mean_pixel):
+        self.mean_pixel = mean_pixel
         super(NormalizeImages, self).__init__()
 
-    def call(self, images, windows):
-        normalized_images = []
-        for image in images:
-            molded_image = normalize_image(image, self.config)
-            normalized_images.append(molded_image)
-        return normalized_images, windows
+    def call(self, image, window):
+        normalized_image = normalize_image(image, self.mean_pixel)
+        return normalized_image, window
 
 
 class ResizeImages(Processor):
-    def __init__(self, config):
-        self.IMAGE_MIN_DIM = config.IMAGE_MIN_DIM
-        self.IMAGE_MIN_SCALE = config.IMAGE_MIN_SCALE
-        self.IMAGE_MAX_DIM = config.IMAGE_MAX_DIM
-        self.IMAGE_RESIZE_MODE = config.IMAGE_RESIZE_MODE
+    def __init__(self, image_min_dim, image_min_scale, image_max_dim,
+                 image_resize_mode):
+        self.IMAGE_MIN_DIM = image_min_dim
+        self.IMAGE_MIN_SCALE = image_min_scale
+        self.IMAGE_MAX_DIM = image_max_dim
+        self.IMAGE_RESIZE_MODE = image_resize_mode
 
-    def call(self, images):
-        resized_images, windows = [], []
-        for image in images:
-            resized_image, window, _, _, _ = resize_image(
-                image,
-                min_dim=self.IMAGE_MIN_DIM,
-                min_scale=self.IMAGE_MIN_SCALE,
-                max_dim=self.IMAGE_MAX_DIM,
-                mode=self.IMAGE_RESIZE_MODE)
-            resized_images.append(resized_image)
-            windows.append(window)
-        return resized_images, windows
+    def call(self, image):
+        resized_image, window, _, _, _ = resize_image(
+            image,
+            min_dim=self.IMAGE_MIN_DIM,
+            min_scale=self.IMAGE_MIN_SCALE,
+            max_dim=self.IMAGE_MAX_DIM,
+            mode=self.IMAGE_RESIZE_MODE)
+        return resized_image, window
 
 
-def mask_rcnn_preprocess(config, image):
-    preprocess = SequentialProcessor([ResizeImages(config),
-                                      NormalizeImages(config)])
-    normalized_images, windows = preprocess(image)
-    return normalized_images, windows
+def mask_rcnn_preprocess(image, image_min_dim=800, image_min_scale=0,
+                         image_max_dim=1024, image_resize_mode='square',
+                         mean_pixel=np.array([123.7, 116.8, 103.9])):
+    preprocess = SequentialProcessor([
+        ResizeImages(image_min_dim, image_min_scale, image_max_dim,
+                     image_resize_mode),
+        NormalizeImages(mean_pixel)])
+    normalized_image, window = preprocess(image)
+    return normalized_image, window

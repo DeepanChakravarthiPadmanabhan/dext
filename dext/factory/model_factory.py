@@ -6,6 +6,7 @@ from dext.model.efficientdet.efficientdet import EFFICIENTDETD7x
 from dext.model.ssd.ssd300_no_pool_model import SSD300NoPool
 from paz.models.detection.ssd512 import SSD512
 from paz.models.detection.ssd300 import SSD300
+from dext.model.mask_rcnn.mask_rcnn_detection_model import mask_rcnn_detection
 
 
 class ModelFactory:
@@ -37,5 +38,7 @@ class ModelFactory:
             return SSD300
         elif self.model_name == 'SSD300NoPool':
             return SSD300NoPool
+        elif self.model_name == 'FasterRCNN':
+            return mask_rcnn_detection
         else:
             raise ValueError("Model not implemented %s" % self.model_name)
