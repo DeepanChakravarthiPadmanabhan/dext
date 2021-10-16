@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
+from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 from dext.abstract.explanation import Explainer
 from dext.model.functional_models import get_functional_model
 from dext.postprocessing.saliency_visualization import \
@@ -44,7 +45,11 @@ class IntegratedGradients(Explainer):
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def generate_baseline(self):
@@ -101,7 +106,7 @@ class IntegratedGradients(Explainer):
             inputs = tf.cast(image, tf.float32)
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
-        LOGGER.debug('Conv outs from custom model: %s' % conv_outs)
+        LOGGER.info('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         return grads
 
@@ -129,6 +134,7 @@ class IntegratedGradients(Explainer):
         # Iterate alphas range and batch computation for speed,
         # memory efficient, and scaling to larger m_steps
         for alpha in tf.range(0, len(alphas), self.batch_size):
+            LOGGER.info('Performing IG for alpha: %s' % alpha)
             from_ = alpha
             to = tf.minimum(from_ + self.batch_size, len(alphas))
             alpha_batch = alphas[from_: to]
@@ -191,7 +197,7 @@ class IntegratedGradients(Explainer):
 
 def IntegratedGradientExplainer(model_name, image, interpretation_method,
                                 layer_name, visualize_index, preprocessor_fn,
-                                image_size, steps=5, batch_size=1):
+                                image_size, steps=2, batch_size=1):
     model = get_model(model_name, image, image_size)
     ig = IntegratedGradients(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,

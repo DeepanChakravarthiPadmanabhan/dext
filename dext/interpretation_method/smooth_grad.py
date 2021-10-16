@@ -2,6 +2,7 @@ import logging
 import numpy as np
 
 from paz.backend.image import resize_image
+from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 from dext.explainer.utils import get_model
 from dext.abstract.explanation import Explainer
 from dext.interpretation_method.integrated_gradient \
@@ -44,7 +45,11 @@ class SmoothGrad(Explainer):
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def get_saliency_map(self):

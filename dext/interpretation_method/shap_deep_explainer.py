@@ -7,6 +7,7 @@ import shap
 # tf.compat.v1.disable_v2_behavior()
 
 from paz.backend.image import resize_image
+from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 from paz.backend.image.opencv_image import load_image
 from dext.model.functional_models import get_functional_model
 from dext.dataset.coco import COCODataset
@@ -41,7 +42,11 @@ class DeepSHAP:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def find_target_layer(self):
