@@ -33,9 +33,9 @@ LOGGER = logging.getLogger(__name__)
                                  "or_add", "or_average"]))
 @click.option("--save_detections", default=True)
 @click.option("--save_explanations", default=True)
-@click.option("--analyze_each_maps", default=True)
+@click.option("--analyze_each_maps", default=False)
 @click.option("--ap_curve_linspace", default=2)
-@click.option("--merge_saliency_maps", default=True)
+@click.option("--merge_saliency_maps", default=False)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",

@@ -8,6 +8,7 @@ from dext.model.functional_models import get_functional_model
 from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import \
     visualize_saliency_grayscale
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,7 +82,6 @@ class GuidedBackpropagation:
         for layer in all_layers:
             if layer.activation == tf.keras.activations.relu:
                 layer.activation = guided_relu
-
         # To get logits without softmax
         if 'class' in self.layer_name:
             custom_model.get_layer(self.layer_name).activation = None
@@ -99,14 +99,14 @@ class GuidedBackpropagation:
         return saliency
 
 
-def GuidedBackpropagationExplainer(model, model_name, image,
-                                   interpretation_method,
+def GuidedBackpropagationExplainer(model_name, image, interpretation_method,
                                    layer_name, visualize_index,
                                    preprocessor_fn, image_size):
+    model = get_model(model_name, image, image_size)
     explainer = GuidedBackpropagation(model, model_name, image,
-                                      interpretation_method,
-                                      layer_name, visualize_index,
-                                      preprocessor_fn, image_size)
+                                      interpretation_method, layer_name,
+                                      visualize_index, preprocessor_fn,
+                                      image_size)
     saliency = explainer.get_saliency_map()
     saliency = visualize_saliency_grayscale(saliency)
     return saliency

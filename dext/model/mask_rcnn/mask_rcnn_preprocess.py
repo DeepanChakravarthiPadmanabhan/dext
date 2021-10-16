@@ -33,12 +33,19 @@ class ResizeImages(Processor):
         return resized_image, window
 
 
-def mask_rcnn_preprocess(image, image_min_dim=800, image_min_scale=0,
-                         image_max_dim=1024, image_resize_mode='square',
-                         mean_pixel=np.array([123.7, 116.8, 103.9])):
+def mask_rcnn_preprocess(image, image_size):
+    image_min_dim = 800
+    image_min_scale = 0
+    image_max_dim = 1024
+    image_resize_mode = 'square'
+    mean_pixel = np.array([123.7, 116.8, 103.9])
+    if image_size < image_max_dim:
+        image_max_dim = image_size
+        image_min_dim = image_size
     preprocess = SequentialProcessor([
         ResizeImages(image_min_dim, image_min_scale, image_max_dim,
                      image_resize_mode),
         NormalizeImages(mean_pixel)])
     normalized_image, window = preprocess(image)
+    normalized_image = normalized_image[np.newaxis]
     return normalized_image, window

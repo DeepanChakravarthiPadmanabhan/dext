@@ -26,19 +26,25 @@ class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                'teddy bear', 'hair drier', 'toothbrush']
 
 
-def mask_rcnn_postprocess(model, outputs, image_scales, image,
+def get_box_index_mask_rcnn(outputs, num_detections):
+    box_index = []
+    for i in range(num_detections):
+        box_index.append([i, int(outputs[i, 4]), outputs[i, 5]])
+    return box_index
+
+def mask_rcnn_postprocess(model, outputs, image_scales, image, image_size=512,
                           explain_top5_background=False):
-    normalized_image, window = mask_rcnn_preprocess(image)
+    outputs = outputs.numpy()[0]
     boxes, class_ids, scores, masks = postprocess(
-        outputs, image.shape, normalized_image.shape,
-        window, None)
+        outputs, image.shape, (image_size, image_size, 3),
+        image_scales)
     detections = []
     for box, score, class_name in zip(boxes, scores, class_ids):
         x_min, y_min, x_max, y_max = box[1], box[0], box[3], box[2]
         detections.append(Box2D([x_min, y_min, x_max, y_max], score,
                              class_names[class_name]))
     image = draw_bounding_boxes(image.astype('uint8'), detections, class_names)
-    box_index = None
+    box_index = get_box_index_mask_rcnn(outputs, len(detections))
     return image, detections, box_index
 
 

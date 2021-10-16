@@ -10,6 +10,7 @@ from dext.interpretation_method.guided_backpropagation \
     import GuidedBackpropagationExplainer
 from dext.postprocessing.saliency_visualization import \
     visualize_saliency_grayscale
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,11 +82,12 @@ class SmoothGrad(Explainer):
         return total_gradients / self.nsamples
 
 
-def SmoothGradExplainer(model, model_name, image, interpretation_method,
+def SmoothGradExplainer(model_name, image, interpretation_method,
                         layer_name, visualize_index,
                         preprocessor_fn, image_size,
                         standard_deviation=0.15,
                         nsamples=1, magnitude=True, steps=5, batch_size=1):
+    model = get_model(model_name, image, image_size)
     sg = SmoothGrad(model, model_name, image,
                     interpretation_method,
                     layer_name, visualize_index, preprocessor_fn,

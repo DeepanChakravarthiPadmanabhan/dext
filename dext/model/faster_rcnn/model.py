@@ -21,14 +21,3 @@ layer_out = out_layer(image)
 print(layer_out.keys())
 for i in layer_out.keys():
     print(layer_out[i].shape)
-
-
-# model = tf.keras.Model(inputs=input_layer,
-#                        outputs=[boxes])
-# # https://github.com/tensorflow/hub/issues/678
-# # https://github.com/tensorflow/hub/issues/756
-# out = model(image)
-# print("new model out: ", out)
-# print(class_ids)
-# boxes = detector_output['detection_boxes']
-# print(boxes)

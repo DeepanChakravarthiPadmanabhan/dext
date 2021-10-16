@@ -161,7 +161,7 @@ def scale_boxes(boxes2D, image_scale):
     return boxes2D
 
 
-def ssd_postprocess(model, outputs, image_scale, raw_image,
+def ssd_postprocess(model, outputs, image_scale, raw_image, image_size=512,
                     explain_top5_backgrounds=False):
     postprocess = SequentialProcessor([pr.Squeeze(axis=None),
                                        pr.DecodeBoxes(model.prior_boxes)])

@@ -164,7 +164,7 @@ def scale_boxes(boxes2d, image_scale):
 
 
 def efficientdet_postprocess(model, outputs, image_scales, raw_images=None,
-                             explain_top5_backgrounds=False):
+                             image_size=512, explain_top5_backgrounds=False):
     outputs = process_outputs(outputs)
     postprocessing = SequentialProcessor([
         pr.Squeeze(axis=None),

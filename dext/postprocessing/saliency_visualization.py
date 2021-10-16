@@ -69,13 +69,18 @@ def plot_and_save_detection(image):
     fig.savefig("detections_only.jpg", bbox_inches='tight')
 
 
-def check_overlay_image_shape(image, saliency):
+def check_overlay_image_shape(image, saliency, model_name):
     saliency_h = saliency.shape[0]
     saliency_w = saliency.shape[1]
     image_h = image.shape[0]
     image_w = image.shape[1]
     if (image_w != saliency_w) or (image_h != saliency_h):
-        image = resize_image(image, (saliency_h, saliency_w))
+        if model_name == 'FasterRCNN':
+            from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+            resizer = ResizeImages(saliency_h, 0, saliency_w, "square")
+            image = resizer(image)[0]
+        else:
+            image = resize_image(image, (saliency_h, saliency_w))
     return image
 
 
@@ -106,7 +111,7 @@ def plot_all(detection_image, image, saliency_list,
              explaining_list, box_offset_list, to_explain,
              interpretation_method="Integrated Gradients",
              model_name="EfficientDet", mode="subplot"):
-    image = check_overlay_image_shape(image, saliency_list[0])
+    image = check_overlay_image_shape(image, saliency_list[0], model_name)
     if mode == "subplot":
         return plot_all_subplot(detection_image, image, saliency_list,
                                 confidence, class_name, explaining_list,

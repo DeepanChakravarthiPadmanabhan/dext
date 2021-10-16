@@ -1,3 +1,4 @@
+import gin
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Add, Conv2D, Concatenate
@@ -8,6 +9,8 @@ from dext.model.mask_rcnn.utils import generate_pyramid_anchors, norm_boxes
 from dext.model.mask_rcnn.utils import fpn_classifier_graph
 from dext.model.mask_rcnn.utils import compute_backbone_shapes
 from dext.model.mask_rcnn.layers import DetectionLayer, ProposalLayer
+from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
+from dext.model.mask_rcnn.utils import norm_boxes_graph
 
 
 def get_anchors(image_shape, backbone='resnet101', batch_size=1,
@@ -61,12 +64,9 @@ def mask_rcnn_detection(image_size, window, train_bn=False,
                         detection_nms_threshold=0.3):
     input_image = tf.keras.layers.Input(shape=image_size,
                                         name='input_image')
-    if callable(backbone):
-        _, C2, C3, C4, C5 = backbone(
-            input_image, stage5=True, train_bn=train_bn)
-    else:
-        _, C2, C3, C4, C5 = get_resnet_features(
-            input_image, backbone, True, train_bn)
+
+    _, C2, C3, C4, C5 = get_resnet_features(
+        input_image, backbone, True, train_bn)
     P5 = Conv2D(top_down_pyramid_size, (1, 1), name='fpn_c5p5')(C5)
     upsample_P5 = UpSampling2D(size=(2, 2), name='fpn_p5upsampled')(P5)
     conv2d_P4 = Conv2D(top_down_pyramid_size, (1, 1),
@@ -116,4 +116,14 @@ def mask_rcnn_detection(image_size, window, train_bn=False,
         name='mrcnn_detection')([rpn_rois, classes, mrcnn_bbox])
     model = tf.keras.models.Model(
         inputs=input_image, outputs=detections, name='mask_rcnn')
+    return model
+
+@gin.configurable
+def get_maskrcnn_model(image, image_size, weight_path):
+    normalized_images, image_scales = mask_rcnn_preprocess(image, image_size)
+    normalized_image_size = normalized_images[0].shape
+    config_window = norm_boxes_graph(image_scales, (image_size, image_size))
+    model = mask_rcnn_detection(image_size=normalized_image_size,
+                                window=config_window)
+    model.load_weights(weight_path + 'mask_rcnn.h5')
     return model

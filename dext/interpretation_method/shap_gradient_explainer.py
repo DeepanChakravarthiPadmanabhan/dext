@@ -12,6 +12,7 @@ from paz.backend.image.opencv_image import load_image
 from dext.utils.class_names import get_class_name_efficientdet
 from dext.model.functional_models import get_functional_model
 from dext.dataset.coco import COCODataset
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 COCO_DATASET_PATH = '/media/deepan/externaldrive1/datasets_project_repos/coco'
@@ -118,9 +119,10 @@ class GradientSHAP:
         return 1
 
 
-def SHAP_GradientExplainer(model, model_name, image, interpretation_method,
+def SHAP_GradientExplainer(model_name, image, interpretation_method,
                            layer_name, visualize_index, preprocessor_fn,
                            image_size, num_background_images=5):
+    model = get_model(model_name, image, image_size)
     explainer = GradientSHAP(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
                              image_size, num_background_images)

@@ -130,7 +130,6 @@ def eval_numflip_maxprob_regerror(
     det_matching_interest_det = get_interest_det(detections[object_index])
     LOGGER.info('Evaluating numflip, maxprob, regerror on detection: %s'
                 % det_matching_interest_det)
-    model = get_model(model_name)
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
@@ -146,10 +145,12 @@ def eval_numflip_maxprob_regerror(
         modified_image = modified_image[0]
         for pix in change_pixels:
             modified_image[pix[0], pix[1], :] = 0
+        model = get_model(model_name, modified_image, image_size)
         modified_image = modified_image[np.newaxis]
         outputs = model(modified_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, raw_image, explain_top5_backgrounds)
+            model, outputs, image_scales, raw_image, image_size,
+            explain_top5_backgrounds)
         if save_modified_images:
             save_modified_image(input_image, n, saliency.shape, change_pixels)
             plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
@@ -183,7 +184,6 @@ def eval_object_ap_curve(
         model_name='SSD512', image_index=None, ap_curve_linspace=10,
         explain_top5_backgrounds=False, result_file='ap_curve.json',
         save_modified_images=False, coco_annotation_file=None):
-    model = get_model(model_name)
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
@@ -198,10 +198,12 @@ def eval_object_ap_curve(
         modified_image = modified_image[0]
         for pix in change_pixels:
             modified_image[pix[0], pix[1], :] = 0
+        model = get_model(model_name, modified_image, image_size)
         modified_image = modified_image[np.newaxis]
         outputs = model(modified_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, raw_image, explain_top5_backgrounds)
+            model, outputs, image_scales, raw_image, image_size,
+            explain_top5_backgrounds)
         if save_modified_images:
             save_modified_image(input_image, n, saliency.shape, change_pixels)
             plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
@@ -209,11 +211,10 @@ def eval_object_ap_curve(
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections):
             all_boxes = get_evaluation_details(detections)
-
             eval_json = []
             for box in all_boxes:
                 eval_entry = {'image_id': image_index, 'category_id': box[4],
-                              'bbox': box[:4], 'score': box[5]}
+                              'bbox': box[:4], 'score': float(box[5])}
                 eval_json.append(eval_entry)
             try:
                 os.remove(result_file)
