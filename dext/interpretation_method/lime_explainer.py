@@ -59,12 +59,6 @@ class LIME:
         return input_image
 
     def build_custom_model(self):
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
-
         custom_model = Model(inputs=[self.model.inputs],
                              outputs=[self.model.output])
         return custom_model

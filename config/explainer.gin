@@ -1,6 +1,5 @@
 import dext.explainer.analyze_saliency_maps
 import dext.explainer.utils
-import dext.model.efficientdet.efficientdet
 
 DATASET_PATH = "/scratch/dpadma2s/coco/"
 
@@ -11,5 +10,5 @@ MASK_RCNN_WEIGHT_PATH = "/scratch/dpadma2s/paz_mask_rcnn_weights/"
 
 eval_object_ap_curve.coco_annotation_file = %COCO_VAL_ANNOTATION_FILE
 get_images_to_explain.dataset_path = %DATASET_PATH
-EFFICIENTDET.weight_path = %EFFICIENTDET_WEIGHT_PATH
+EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH
 get_maskrcnn_model.weight_path = %MASK_RCNN_WEIGHT_PATH

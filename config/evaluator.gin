@@ -1,5 +1,4 @@
 import dext.evaluate.evaluate_model
-import dext.model.efficientdet.efficientdet
 import dext.evaluate.coco_evaluation
 
 DATASET_PATH = "/scratch/dpadma2s/coco/"
@@ -12,4 +11,4 @@ MASK_RCNN_WEIGHT_PATH = '/scratch/dpadma2s/paz_mask_rcnn_weights/'
 evaluate_model.annotation_file = %COCO_VAL_ANNOTATION_FILE
 evaluate_model.dataset_path = %DATASET_PATH
 get_coco_metrics.annotation_file = %COCO_VAL_ANNOTATION_FILE
-EFFICIENTDET.weight_path = %EFFICIENTDET_WEIGHT_PATH
+EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH

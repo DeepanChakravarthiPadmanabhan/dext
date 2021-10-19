@@ -18,11 +18,6 @@ class GradCAM:
                  grad_cam_layer=None, guided_grad_cam=True):
         self.model = model
         self.model_name = model_name
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
         self.image = image
         self.explainer = explainer
         self.layer_name = layer_name

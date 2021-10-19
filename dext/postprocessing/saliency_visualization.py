@@ -89,7 +89,7 @@ def plot_single_saliency(detection_image, image, saliency,
                          explaining="Classification",
                          interpretation_method="Integrated Gradients",
                          model_name="EfficientDet"):
-    image = check_overlay_image_shape(image, saliency)
+    image = check_overlay_image_shape(image, saliency, model_name)
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes
     plot_detection_image(detection_image, ax1)

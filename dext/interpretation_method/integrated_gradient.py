@@ -72,11 +72,6 @@ class IntegratedGradients(Explainer):
         return input_image
 
     def build_custom_model(self):
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
         if self.visualize_index:
             custom_model = Model(
                 inputs=[self.model.inputs],

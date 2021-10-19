@@ -79,11 +79,6 @@ class DeepSHAP:
         return background_images
 
     def build_custom_model(self):
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
         if self.visualize_idx[2] <= 3:
             custom_model = Model(inputs=[self.model.inputs],
                                  outputs=[self.model.output[:,

@@ -51,12 +51,6 @@
 #         return input_image
 #
 #     def build_custom_model(self):
-#         if "EFFICIENTDET" in self.model_name:
-#             self.model = get_functional_model(
-#                 self.model_name, self.model)
-#         else:
-#             self.model = self.model
-#
 #         print(self.visualize_idx, "INDEX SEEING")
 #         custom_model = Model(inputs=[self.model.inputs],
 #                              outputs=[tf.expand_dims(tf.expand_dims(
