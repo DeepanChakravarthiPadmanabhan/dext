@@ -179,11 +179,31 @@ def eval_numflip_maxprob_regerror(
 
 
 @gin.configurable
+def coco_eval_ap50(image_index, all_boxes, result_file, percent,
+                   coco_annotation_file):
+    eval_json = []
+    for box in all_boxes:
+        eval_entry = {'image_id': image_index, 'category_id': box[4],
+                      'bbox': box[:4], 'score': float(box[5])}
+        eval_json.append(eval_entry)
+    try:
+        os.remove(result_file)
+    except OSError:
+        pass
+    with open(result_file, 'w', encoding='utf-8') as f:
+        json.dump(eval_json, f, ensure_ascii=False, indent=4)
+    ap_50cent = get_coco_metrics(result_file, coco_annotation_file)
+    ap_50cent = round(ap_50cent, 3)
+    LOGGER.info('AP 50 at modification percentage %s: %s' % (
+        round(percent, 2), ap_50cent))
+    return ap_50cent
+
+
 def eval_object_ap_curve(
         saliency, raw_image, preprocessor_fn, postprocessor_fn, image_size=512,
         model_name='SSD512', image_index=None, ap_curve_linspace=10,
         explain_top5_backgrounds=False, result_file='ap_curve.json',
-        save_modified_images=False, coco_annotation_file=None):
+        save_modified_images=False):
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
@@ -211,23 +231,9 @@ def eval_object_ap_curve(
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections):
             all_boxes = get_evaluation_details(detections)
-            eval_json = []
-            for box in all_boxes:
-                eval_entry = {'image_id': image_index, 'category_id': box[4],
-                              'bbox': box[:4], 'score': float(box[5])}
-                eval_json.append(eval_entry)
-            try:
-                os.remove(result_file)
-            except OSError:
-                pass
-            with open(result_file, 'w', encoding='utf-8') as f:
-                json.dump(eval_json, f, ensure_ascii=False, indent=4)
-            ap_50cent = get_coco_metrics(result_file, coco_annotation_file)
-            ap_50cent = round(ap_50cent, 3)
-            LOGGER.info('AP 50 at modification percentage %s: %s' % (
-                round(percent, 2), ap_50cent))
+            ap_50cent = coco_eval_ap50(image_index, all_boxes, result_file,
+                                       percent)
             ap_curve.append(ap_50cent)
-
         else:
             LOGGER.info('No detections. Mapping AP to 0.')
             ap_curve.append(0)
