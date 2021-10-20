@@ -5,10 +5,9 @@ from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
 from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
-from dext.model.functional_models import get_functional_model
 from dext.model.utils import get_all_layers
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
+from dext.postprocessing.saliency_visualization import (
+    visualize_saliency_grayscale)
 from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)

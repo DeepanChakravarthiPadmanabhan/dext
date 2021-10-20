@@ -6,8 +6,10 @@ from paz.processors.image import resize_image
 from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
 from dext.model.mask_rcnn.mask_rcnn_postprocess import mask_rcnn_postprocess
 from dext.model.utils import get_all_layers
-from dext.postprocessing.saliency_visualization import visualize_saliency_grayscale
+from dext.postprocessing.saliency_visualization import (
+    visualize_saliency_grayscale)
 from dext.model.mask_rcnn.mask_rcnn_detection_model import get_maskrcnn_model
+
 
 @tf.custom_gradient
 def guided_relu(x):
@@ -94,7 +96,6 @@ def run_simple(image, weight_path, image_size):
     saliency = visualize_saliency_grayscale(saliency)
     plt.imsave('saliency_mask.jpg', saliency)
     return detections, det_image
-
 
 
 raw_image = "images/000000347456.jpg"

@@ -4,11 +4,9 @@ from tensorflow.keras.models import Model
 from lime import lime_image
 # import matplotlib.pyplot as plt
 # from skimage.segmentation import  mark_boundaries
-# import tensorflow as tf
 
 from paz.backend.image import resize_image
 from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
-from dext.model.functional_models import get_functional_model
 
 LOGGER = logging.getLogger(__name__)
 

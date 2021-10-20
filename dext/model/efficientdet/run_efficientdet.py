@@ -1,4 +1,3 @@
-import tensorflow as tf
 import matplotlib.pyplot as plt
 from dext.model.efficientdet.efficientdet import EFFICIENTDETD0
 from paz.processors.image import LoadImage
@@ -10,9 +9,6 @@ from dext.model.efficientdet.efficientdet_postprocess import \
 from dext.interpretation_method.integrated_gradient import \
     IntegratedGradientExplainer
 from dext.postprocessing.saliency_visualization import plot_single_saliency
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
-from dext.model.functional_models import get_functional_model
 from dext.model.utils import get_all_layers
 
 

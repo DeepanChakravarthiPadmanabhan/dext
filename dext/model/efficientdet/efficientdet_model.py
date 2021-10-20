@@ -8,6 +8,7 @@ from dext.model.efficientdet.efficientdet_blocks import FPNCells
 from dext.model.efficientdet.efficientdet_blocks import ClassNet, BoxNet
 from dext.model.efficientdet.utils import create_multibox_head
 
+
 @gin.configurable
 def EfficientDet(num_classes, base_weights, head_weights, input_shape,
                  fpn_num_filters, fpn_cell_repeats, box_class_repeats,

@@ -3,7 +3,6 @@ import numpy as np
 from dext.model.mask_rcnn.utils import unmold_mask
 from dext.model.mask_rcnn.utils import norm_boxes
 from dext.model.mask_rcnn.utils import denorm_boxes
-from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
 
 from paz.abstract import Box2D
 from dext.postprocessing.detection_visualization import draw_bounding_boxes
@@ -32,6 +31,7 @@ def get_box_index_mask_rcnn(outputs, num_detections):
         box_index.append([i, int(outputs[i, 4]), outputs[i, 5]])
     return box_index
 
+
 def mask_rcnn_postprocess(model, outputs, image_scales, image, image_size=512,
                           explain_top5_background=False):
     outputs = outputs.numpy()[0]
@@ -42,7 +42,7 @@ def mask_rcnn_postprocess(model, outputs, image_scales, image, image_size=512,
     for box, score, class_name in zip(boxes, scores, class_ids):
         x_min, y_min, x_max, y_max = box[1], box[0], box[3], box[2]
         detections.append(Box2D([x_min, y_min, x_max, y_max], score,
-                             class_names[class_name]))
+                                class_names[class_name]))
     image = draw_bounding_boxes(image.astype('uint8'), detections, class_names)
     box_index = get_box_index_mask_rcnn(outputs, len(detections))
     return image, detections, box_index

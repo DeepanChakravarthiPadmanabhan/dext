@@ -118,6 +118,7 @@ def mask_rcnn_detection(image_size, window, train_bn=False,
         inputs=input_image, outputs=detections, name='mask_rcnn')
     return model
 
+
 @gin.configurable
 def get_maskrcnn_model(image, image_size, weight_path):
     normalized_images, image_scales = mask_rcnn_preprocess(image, image_size)
