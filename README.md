@@ -30,7 +30,7 @@ dext_explainer -c config/explainer.gin -i GuidedBackpropagation -m SSD512
 
 [2] Maximilian Alber, Sebastian Lapuschkin, Philipp Seegerer, Miriam Hägele, Kristof T. Schütt, Grégoire Montavon, Wojciech Samek, Klaus-Robert Müller, Sven Dähne, and Pieter-Jan Kindermans. "iNNvestigate neural networks!." Journal of Machine Learning Research 20, No. 93, pp. 1-8. 2019.
 
-[3] Marco Tulio Ribeiro, Sameer Singh, and Carlos Guestrin. ""Why should i trust you?" Explaining the predictions of any classifier." In Proceedings of the 22nd ACM SIGKDD international conference on knowledge discovery and data mining, pp. 1135-1144. 2016.
+[3] Marco Tulio Ribeiro, Sameer Singh, and Carlos Guestrin. ""Why should I trust you?" Explaining the predictions of any classifier." In Proceedings of the 22nd ACM SIGKDD international conference on knowledge discovery and data mining, pp. 1135-1144. 2016.
 
 [4] Scott M. Lundberg and Su-In Lee. "A unified approach to interpreting model predictions." In Proceedings of the 31st international conference on neural information processing systems, pp. 4768-4777. 2017.
 
@@ -40,18 +40,18 @@ dext_explainer -c config/explainer.gin -i GuidedBackpropagation -m SSD512
 
 [7] Vincent Kao, "Visualize output of CNN filter by gradient ascent", Kaggle, Available at: https://www.kaggle.com/vincentman0403/visualize-output-of-cnn-filter-by-gradient-ascent, Accessed on: 03. 05. 2021.
 
-[8] Sicara, "tf-explain", Available at: https://github.com/sicara/tf-explain#available-methods, Accessed on: 03. 05. 2021.
+[8] Sicara, "tf-explain", GitHub, Available at: https://github.com/sicara/tf-explain#available-methods, Accessed on: 03. 05. 2021.
 
 [9] Cristian Vasta, Deep Learning Models with Tensorflow 2.0, Available at: https://morioh.com/p/64064daff26c, Accessed on: 03. 05. 2021.
 
 [10] Hoa Nguyen, CNN Visualization Keras TF2, GitHub, Available at: https://github.com/nguyenhoa93/cnn-visualization-keras-tf2, Accessed on: 03. 05. 2021.
 
-[11] People + AI Research, Google Research, "Saliency Methods", Available at: https://github.com/PAIR-code/saliency, Accessed on: 01. 06. 2021.
+[11] People + AI Research, Google Research, "saliency", GitHub, Available at: https://github.com/PAIR-code/saliency, Accessed on: 01. 06. 2021.
 
-[12] Marco Ancona, "DeepExplain", Available at: https://github.com/marcoancona/DeepExplain, Accessed on: 01. 06. 2021.
+[12] Marco Ancona, "DeepExplain", GitHub, Available at: https://github.com/marcoancona/DeepExplain, Accessed on: 01. 06. 2021.
 
 [13] Maximilian Alber, "Innvestigate", GitHub, Available at: https://github.com/albermax/innvestigate, Accessed on: 03. 05. 2021.
 
-[14] Marco Tulio Correia, "lime", Available at: https://github.com/marcotcr/lime, Accessed on: 01. 06. 2021.
+[14] Marco Tulio Correia, "lime", GitHub, Available at: https://github.com/marcotcr/lime, Accessed on: 01. 06. 2021.
 
-[15] Scott M. Lundberg, "shap", Available at: https://github.com/slundberg/shap, Accessed on: 01. 06. 2021.
+[15] Scott M. Lundberg, "shap", GitHub, Available at: https://github.com/slundberg/shap, Accessed on: 01. 06. 2021.
