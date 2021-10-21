@@ -5,16 +5,16 @@ import tensorflow as tf
 from tensorflow.keras.layers import Add, Conv2D, Concatenate
 from tensorflow.keras.layers import UpSampling2D, MaxPooling2D
 
-from dext.model.mask_rcnn.utils import get_resnet_features, build_rpn_model
+from dext.model.faster_rcnn.utils import get_resnet_features, build_rpn_model
 from paz.processors.image import LoadImage
-from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
-from dext.model.mask_rcnn.utils import generate_pyramid_anchors
-from dext.model.mask_rcnn.utils import norm_boxes_graph, norm_boxes
-from dext.model.mask_rcnn.utils import fpn_classifier_graph
-from dext.model.mask_rcnn.utils import compute_backbone_shapes
-from dext.model.mask_rcnn.layers import DetectionLayer, ProposalLayer
-from dext.model.mask_rcnn.config import Config
-from dext.model.mask_rcnn.mask_rcnn_postprocess import mask_rcnn_postprocess
+from dext.model.faster_rcnn.faster_rcnn_preprocess import mask_rcnn_preprocess
+from dext.model.faster_rcnn.utils import generate_pyramid_anchors
+from dext.model.faster_rcnn.utils import norm_boxes_graph, norm_boxes
+from dext.model.faster_rcnn.utils import fpn_classifier_graph
+from dext.model.faster_rcnn.utils import compute_backbone_shapes
+from dext.model.faster_rcnn.layers import DetectionLayer, ProposalLayer
+from dext.model.faster_rcnn.config import Config
+from dext.model.faster_rcnn.faster_rcnn_postprocess import mask_rcnn_postprocess
 
 
 def read_hdf5(path):

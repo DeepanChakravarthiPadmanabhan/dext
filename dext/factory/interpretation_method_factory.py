@@ -1,13 +1,13 @@
-from dext.interpretation_method.integrated_gradient import \
-    IntegratedGradientExplainer
-from dext.interpretation_method.guided_backpropagation import \
-    GuidedBackpropagationExplainer
+from dext.interpretation_method.integrated_gradient import (
+    IntegratedGradientExplainer)
+from dext.interpretation_method.guided_backpropagation import (
+    GuidedBackpropagationExplainer)
 from dext.interpretation_method.grad_cam import GradCAMExplainer
 from dext.interpretation_method.smooth_grad import SmoothGradExplainer
 from dext.interpretation_method.lime_explainer import LimeExplainer
 from dext.interpretation_method.shap_deep_explainer import SHAP_DeepExplainer
-from dext.interpretation_method.shap_gradient_explainer import \
-    SHAP_GradientExplainer
+from dext.interpretation_method.shap_gradient_explainer import (
+    SHAP_GradientExplainer)
 # from dext.interpretation_method.relevance_propagation import OD_LRPExplainer
 
 

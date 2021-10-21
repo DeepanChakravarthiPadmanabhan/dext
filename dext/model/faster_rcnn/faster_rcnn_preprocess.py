@@ -2,7 +2,7 @@ import numpy as np
 from paz.abstract import Processor
 from paz.abstract import SequentialProcessor
 
-from dext.model.mask_rcnn.utils import resize_image, normalize_image
+from dext.model.faster_rcnn.utils import resize_image, normalize_image
 
 
 class NormalizeImages(Processor):
@@ -33,7 +33,7 @@ class ResizeImages(Processor):
         return resized_image, window
 
 
-def mask_rcnn_preprocess(image, image_size):
+def faster_rcnn_preprocess(image, image_size):
     image_min_dim = 800
     image_min_scale = 0
     image_max_dim = 1024

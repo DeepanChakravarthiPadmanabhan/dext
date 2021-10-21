@@ -1,6 +1,6 @@
 from dext.model.efficientdet.utils import efficientdet_preprocess
 from dext.model.ssd.utils import ssd_preprocess
-from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
+from dext.model.faster_rcnn.faster_rcnn_preprocess import faster_rcnn_preprocess
 
 
 class PreprocessorFactory:
@@ -13,7 +13,7 @@ class PreprocessorFactory:
         elif "SSD" in self.model_name:
             return ssd_preprocess
         elif "FasterRCNN" in self.model_name:
-            return mask_rcnn_preprocess
+            return faster_rcnn_preprocess
         else:
             raise ValueError(
                 "Preprocessor not implemented %s" % self.model_name)

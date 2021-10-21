@@ -3,7 +3,7 @@ DATASET_PATH = "/scratch/dpadma2s/coco/"
 COCO_VAL_ANNOTATION_FILE = "/scratch/dpadma2s/coco/annotations/instances_val2017.json"
 
 EFFICIENTDET_WEIGHT_PATH = '/scratch/dpadma2s/paz_efficientdet_weights/'
-MASK_RCNN_WEIGHT_PATH = '/scratch/dpadma2s/paz_mask_rcnn_weights/'
+FASTER_RCNN_WEIGHT_PATH = '/scratch/dpadma2s/paz_faster_rcnn_weights/'
 
 evaluate_model.annotation_file = %COCO_VAL_ANNOTATION_FILE
 evaluate_model.dataset_path = %DATASET_PATH

@@ -3,12 +3,15 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from paz.processors.image import LoadImage
 from paz.processors.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import mask_rcnn_preprocess
-from dext.model.mask_rcnn.mask_rcnn_postprocess import mask_rcnn_postprocess
+from dext.model.faster_rcnn.faster_rcnn_preprocess import (
+    faster_rcnn_preprocess)
+from dext.model.faster_rcnn.faster_rcnn_postprocess import (
+    faster_rcnn_postprocess)
 from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
-from dext.model.mask_rcnn.mask_rcnn_detection_model import get_maskrcnn_model
+from dext.model.faster_rcnn.faster_rcnn_detection_model import (
+    get_faster_rcnn_model)
 
 
 @tf.custom_gradient
@@ -48,8 +51,8 @@ class GuidedBackpropagation:
             "Could not find 4D layer. Cannot apply guided backpropagation.")
 
     def preprocess_image(self, image):
-        normalized_images, windows = mask_rcnn_preprocess(image,
-                                                          self.image_size)
+        normalized_images, windows = faster_rcnn_preprocess(image,
+                                                            self.image_size)
         normalized_images = tf.cast(normalized_images, tf.float32)
         return normalized_images
 
@@ -83,28 +86,28 @@ class GuidedBackpropagation:
 
 
 def run_simple(image, weight_path, image_size):
-    model = get_maskrcnn_model(image, image_size, weight_path)
-    input_image, image_scales = mask_rcnn_preprocess(image, image_size)
+    model = get_faster_rcnn_model(image, image_size, weight_path)
+    input_image, image_scales = faster_rcnn_preprocess(image, image_size)
     out = model(input_image)
-    det_image, detections, class_map_idx = mask_rcnn_postprocess(
+    det_image, detections, class_map_idx = faster_rcnn_postprocess(
         model, out, image_scales, image, image_size)
     print("Detections are here: ", detections)
-    gbp = GuidedBackpropagation(model, "Mask_RCNN", image,
+    gbp = GuidedBackpropagation(model, "Faster_RCNN", image,
                                 "GBP", "boxes", (0, 0, 0),
-                                mask_rcnn_preprocess)
+                                faster_rcnn_preprocess)
     saliency = gbp.get_saliency_map()
     saliency = visualize_saliency_grayscale(saliency)
     plt.imsave('saliency_mask.jpg', saliency)
     return detections, det_image
 
 
-raw_image = "images/000000347456.jpg"
+raw_image = "images/000000117156.jpg"
 weight_path = "/media/deepan/externaldrive1/project_repos/"
-folder = "DEXT_versions/weights/paz_mask_rcnn_weights/"
+folder = "DEXT_versions/weights/paz_faster_rcnn_weights/"
 weight_path = weight_path + folder
 loader = LoadImage()
 raw_image = loader(raw_image)
 image = raw_image.copy()
 detections, det_image = run_simple(image, weight_path, 512)
-plt.imsave('paz_maskrcnn.jpg', det_image)
+plt.imsave('paz_faster_rcnn.jpg', det_image)
 print("done")
