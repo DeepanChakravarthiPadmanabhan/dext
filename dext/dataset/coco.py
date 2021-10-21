@@ -100,7 +100,10 @@ class COCOParser(object):
             self.image_ids = [114540, 117156, 128224, 130733,
                               253710, 438751, 487851, 581929]
         elif "val" in self.dataset_name:
-            self.image_ids = [191672, 309391, 344611, 347456, 459954, 397133]
+            self.image_ids = [37777,
+                              191672, 309391, 344611, 347456, 459954, 397133,
+                              252219,
+                              ]
         else:
             self.image_ids = [347456, 459954]
         self.evaluate = evaluate

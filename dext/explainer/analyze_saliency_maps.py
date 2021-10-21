@@ -126,7 +126,7 @@ def eval_numflip_maxprob_regerror(
         saliency, raw_image, gt_boxes, detections, preprocessor_fn,
         postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
         object_index=None, ap_curve_linspace=10,
-        explain_top5_backgrounds=False, save_modified_images=True):
+        explain_top5_backgrounds=False, save_modified_images=False):
     det_matching_interest_det = get_interest_det(detections[object_index])
     LOGGER.info('Evaluating numflip, maxprob, regerror on detection: %s'
                 % det_matching_interest_det)
@@ -149,7 +149,7 @@ def eval_numflip_maxprob_regerror(
         modified_image = modified_image[np.newaxis]
         outputs = model(modified_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, raw_image, image_size,
+            model, outputs, image_scales, deepcopy(raw_image), image_size,
             explain_top5_backgrounds)
         if save_modified_images:
             save_modified_image(input_image, n, saliency.shape, change_pixels)
@@ -222,7 +222,7 @@ def eval_object_ap_curve(
         modified_image = modified_image[np.newaxis]
         outputs = model(modified_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, raw_image, image_size,
+            model, outputs, image_scales, deepcopy(raw_image), image_size,
             explain_top5_backgrounds)
         if save_modified_images:
             save_modified_image(input_image, n, saliency.shape, change_pixels)

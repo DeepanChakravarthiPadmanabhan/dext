@@ -51,7 +51,7 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
     saliency_iou, saliency_centroid, saliency_variance = analyze_saliency_maps(
         detections, raw_image, saliency, object_arg)
     eval_metrics = eval_numflip_maxprob_regerror(
-        saliency, raw_image, gt_boxes, detections, preprocessor_fn,
+        saliency, deepcopy(raw_image), gt_boxes, detections, preprocessor_fn,
         postprocessor_fn, image_size, model_name, object_arg,
         ap_curve_linspace, explain_top5_backgrounds)
     num_pixels_flipped, max_prob_curve, reg_error_curve = eval_metrics
@@ -61,7 +61,7 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
         saliency_variance, num_pixels_flipped]
     df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
     ap_curve = eval_object_ap_curve(
-        saliency, raw_image, preprocessor_fn, postprocessor_fn,
+        saliency, deepcopy(raw_image), preprocessor_fn, postprocessor_fn,
         image_size, model_name, image_index, ap_curve_linspace,
         explain_top5_backgrounds)
     df_ap_curve_entry = [str(image_index), object_arg,
