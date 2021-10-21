@@ -2,7 +2,7 @@ import logging
 import numpy as np
 
 from paz.backend.image import resize_image
-from dext.explainer.utils import get_model
+from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 from dext.abstract.explanation import Explainer
 from dext.interpretation_method.integrated_gradient \
     import IntegratedGradientExplainer
@@ -10,6 +10,7 @@ from dext.interpretation_method.guided_backpropagation \
     import GuidedBackpropagationExplainer
 from dext.postprocessing.saliency_visualization import \
     visualize_saliency_grayscale
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +44,11 @@ class SmoothGrad(Explainer):
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def get_saliency_map(self):
@@ -81,11 +86,12 @@ class SmoothGrad(Explainer):
         return total_gradients / self.nsamples
 
 
-def SmoothGradExplainer(model, model_name, image, interpretation_method,
+def SmoothGradExplainer(model_name, image, interpretation_method,
                         layer_name, visualize_index,
                         preprocessor_fn, image_size,
                         standard_deviation=0.15,
                         nsamples=1, magnitude=True, steps=5, batch_size=1):
+    model = get_model(model_name, image, image_size)
     sg = SmoothGrad(model, model_name, image,
                     interpretation_method,
                     layer_name, visualize_index, preprocessor_fn,

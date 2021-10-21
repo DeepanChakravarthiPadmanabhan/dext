@@ -1,3 +1,4 @@
+import gin
 import logging
 import numpy as np
 from tensorflow.keras.models import Model
@@ -7,20 +8,19 @@ import shap
 # tf.compat.v1.disable_v2_behavior()
 
 from paz.backend.image import resize_image
+from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 from paz.backend.image.opencv_image import load_image
-from dext.model.functional_models import get_functional_model
 from dext.dataset.coco import COCODataset
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
-COCO_DATASET_PATH = '/media/deepan/externaldrive1/datasets_project_repos/coco'
-# COCO_DATASET_PATH = '/scratch/dpadma2s/coco/'
 
 
 class DeepSHAP:
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512,
-                 num_background_images=5):
+                 num_background_images=5, dataset_path=None):
         self.model = model
         self.model_name = model_name
         self.image = image
@@ -30,6 +30,7 @@ class DeepSHAP:
         self.preprocessor_fn = preprocessor_fn
         self.image_size = image_size
         self.num_background_images = num_background_images
+        self.dataset_path = dataset_path
         self.image = self.check_image_size(self.image, self.image_size)
         if self.layer_name is None:
             self.layer_name = self.find_target_layer()
@@ -40,7 +41,11 @@ class DeepSHAP:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def find_target_layer(self):
@@ -59,7 +64,7 @@ class DeepSHAP:
         return input_image
 
     def get_background_images(self, image_size, num_background_images):
-        data_manager = COCODataset(COCO_DATASET_PATH, 'train', 'train2017')
+        data_manager = COCODataset(self.dataset_path, 'train', 'train2017')
         dataset = data_manager.load_data()
         images = []
         if len(dataset) >= num_background_images:
@@ -73,11 +78,6 @@ class DeepSHAP:
         return background_images
 
     def build_custom_model(self):
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
         if self.visualize_idx[2] <= 3:
             custom_model = Model(inputs=[self.model.inputs],
                                  outputs=[self.model.output[:,
@@ -98,17 +98,19 @@ class DeepSHAP:
             shap.explainers._deep.deep_tf.passthrough
         e = shap.DeepExplainer(self.custom_model, self.background_images)
         shap_values = e.shap_values(image)
-        print(shap_values)
+        LOGGER.info("Shap values: %s" % shap_values)
         shap.image_plot(shap_values, -image)
         plt.savefig('DeepExplainer_shap_image_plot.jpg')
         return 1
 
-
-def SHAP_DeepExplainer(model, model_name, image, interpretation_method,
+@gin.configurable
+def SHAP_DeepExplainer(model_name, image, interpretation_method,
                        layer_name, visualize_index, preprocessor_fn,
-                       image_size, num_background_images=5):
+                       image_size, num_background_images=5,
+                       dataset_path=None):
+    model = get_model(model_name, image, image_size)
     explainer = DeepSHAP(model, model_name, image, interpretation_method,
                          layer_name, visualize_index, preprocessor_fn,
-                         image_size, num_background_images)
+                         image_size, num_background_images, dataset_path)
     saliency = explainer.get_saliency_map()
     return saliency

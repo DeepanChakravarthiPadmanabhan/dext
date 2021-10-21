@@ -7,27 +7,6 @@ import paz.processors as pr
 from paz.abstract import SequentialProcessor
 
 
-def get_activation(features, activation):
-    """Apply non-linear activation function to features provided.
-
-    # Arguments
-        features: Tensor, representing an input feature map
-        to be pass through an activation function.
-        activation: A string specifying the activation function
-        type.
-
-    # Returns
-        activation function: features transformed by the
-        activation function.
-    """
-    if activation in ('silu', 'swish'):
-        return tf.nn.swish(features)
-    elif activation == 'relu':
-        return tf.nn.relu(features)
-    else:
-        raise ValueError('Unsupported activation fn {}'.format(activation))
-
-
 def get_drop_connect(features, is_training, survival_rate):
     """Drop the entire conv with given survival probability.
     Deep Networks with Stochastic Depth, https://arxiv.org/pdf/1603.09382.pdf
@@ -94,9 +73,10 @@ def efficientdet_preprocess(image, image_size):
     return image, image_scale
 
 
-def create_multibox_head(class_outputs, box_outputs, model, num_regressions=4):
-    num_levels = model.num_levels
-    num_classes = model.num_classes
+def create_multibox_head(branch_tensors, num_levels, num_classes,
+                         num_regressions=4):
+    class_outputs = branch_tensors[0]
+    box_outputs = branch_tensors[1]
     classification_layers, regression_layers = [], []
     for level in range(0, num_levels):
         class_leaf = class_outputs[level]

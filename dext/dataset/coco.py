@@ -100,7 +100,10 @@ class COCOParser(object):
         #     self.image_ids = [114540, 117156, 128224, 130733,
         #                       253710, 438751, 487851, 581929]
         # elif "val" in self.dataset_name:
-        #     self.image_ids = [191672, 309391, 344611, 347456, 459954]
+        #     self.image_ids = [37777,
+        #                       191672, 309391, 344611, 347456, 459954, 397133,
+        #                       252219,
+        #                       ]
         # else:
         #     self.image_ids = [347456, 459954]
         self.evaluate = evaluate
@@ -141,17 +144,27 @@ class COCOParser(object):
         image = self.coco.loadImgs(image_index)[0]
         return float(image['width']), float(image['height'])
 
-    def get_box_coordinates(self, annotations, image_index):
+    def get_box_coordinates(self, annotations, image_index, training=False):
         box_data = []
         width, height = self.get_image_size(image_index)
         for idx, annotation in enumerate(annotations):
             if annotation['bbox'][2] < 1 or annotation['bbox'][3] < 1:
                 continue
-            x_min = annotation['bbox'][0] / width
-            y_min = annotation['bbox'][1] / height
-            x_max = (annotation['bbox'][0] + annotation['bbox'][2]) / width
-            y_max = (annotation['bbox'][1] + annotation['bbox'][3]) / height
-            class_arg = self.coco_label_to_label(annotation['category_id'])
+            if training:
+                x_min = annotation['bbox'][0] / width
+                y_min = annotation['bbox'][1] / height
+                x_max = (annotation['bbox'][0] +
+                         annotation['bbox'][2]) / width
+                y_max = (annotation['bbox'][1] +
+                         annotation['bbox'][3]) / height
+                class_arg = self.coco_label_to_label(annotation['category_id'])
+            else:
+                x_min = annotation['bbox'][0]
+                y_min = annotation['bbox'][1]
+                x_max = (annotation['bbox'][0] + annotation['bbox'][2])
+                y_max = (annotation['bbox'][1] + annotation['bbox'][3])
+                class_arg = annotation['category_id']
+
             box_data.append([x_min, y_min, x_max, y_max, class_arg])
         return box_data
 

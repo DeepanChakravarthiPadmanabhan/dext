@@ -17,7 +17,13 @@ dependencies = [
     "click",
     "pandas",
     "pycocotools",
-    "xlsxwriter"
+    "xlsxwriter",
+    "xlrd==1.2.0",
+    "matplotlib",
+    "lime",
+    "shap",
+    "gin-config==0.3.0",
+    "jupyter",
 ]
 
 setup(
@@ -30,8 +36,17 @@ setup(
     zip_safe=False,
     entry_points=dict(
         console_scripts=[
-            "dext_explainer=dext.explainer:explainer",
+            "dext_explainer=dext.explainer.explainer:explainer",
         ]
     ),
+    data_files=[
+        (
+            "dext_config",
+            [
+                "config/explainer.gin",
+                "config/evaluator.gin",
+            ],
+        )
+    ],
     python_requires=">=3.6,<=3.9",
 )

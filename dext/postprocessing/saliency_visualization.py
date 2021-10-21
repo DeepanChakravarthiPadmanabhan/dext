@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 from paz.backend.image import resize_image
+from dext.explainer.utils import get_box_index_to_arg
 
 
 def visualize_saliency_grayscale(image_3d, percentile=99):
@@ -68,13 +69,18 @@ def plot_and_save_detection(image):
     fig.savefig("detections_only.jpg", bbox_inches='tight')
 
 
-def check_overlay_image_shape(image, saliency):
+def check_overlay_image_shape(image, saliency, model_name):
     saliency_h = saliency.shape[0]
     saliency_w = saliency.shape[1]
     image_h = image.shape[0]
     image_w = image.shape[1]
     if (image_w != saliency_w) or (image_h != saliency_h):
-        image = resize_image(image, (saliency_h, saliency_w))
+        if model_name == 'FasterRCNN':
+            from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+            resizer = ResizeImages(saliency_h, 0, saliency_w, "square")
+            image = resizer(image)[0]
+        else:
+            image = resize_image(image, (saliency_h, saliency_w))
     return image
 
 
@@ -83,7 +89,7 @@ def plot_single_saliency(detection_image, image, saliency,
                          explaining="Classification",
                          interpretation_method="Integrated Gradients",
                          model_name="EfficientDet"):
-    image = check_overlay_image_shape(image, saliency)
+    image = check_overlay_image_shape(image, saliency, model_name)
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes
     plot_detection_image(detection_image, ax1)
@@ -105,7 +111,7 @@ def plot_all(detection_image, image, saliency_list,
              explaining_list, box_offset_list, to_explain,
              interpretation_method="Integrated Gradients",
              model_name="EfficientDet", mode="subplot"):
-    image = check_overlay_image_shape(image, saliency_list[0])
+    image = check_overlay_image_shape(image, saliency_list[0], model_name)
     if mode == "subplot":
         return plot_all_subplot(detection_image, image, saliency_list,
                                 confidence, class_name, explaining_list,
@@ -131,12 +137,10 @@ def get_plot_params(num_axes):
     return rows, cols, fig_width, fig_height
 
 
-BOX_OFFSET_ID = {0: 'x_min', 1: 'y_min', 2: 'x_max', 3: 'y_max'}
-
-
-def get_saliency_title(explaining, box_offset):
+def get_saliency_title(explaining, box_offset, box_index_to_arg):
     if explaining == 'Box offset':
-        saliency_title = explaining + ', ' + BOX_OFFSET_ID[box_offset]
+        box_name = box_index_to_arg[box_offset]
+        saliency_title = explaining + ', ' + box_name
     else:
         saliency_title = explaining
     return saliency_title
@@ -145,7 +149,8 @@ def get_saliency_title(explaining, box_offset):
 def plot_all_subplot(detection_image, image, saliency_list, confidence,
                      class_name, explaining_list, box_offset_list, to_explain,
                      interpretation_method="Integrated Gradients",
-                     model_name="EfficientDet"):
+                     model_name="EFFICIENTDETD0"):
+    box_index_to_arg = get_box_index_to_arg(model_name)
     num_axes = len(saliency_list) + 1
     rows, cols, fig_width, fig_height = get_plot_params(num_axes)
     fig, ax = plt.subplots(rows, cols, figsize=(fig_width, fig_height))
@@ -153,7 +158,7 @@ def plot_all_subplot(detection_image, image, saliency_list, confidence,
     plot_detection_image(detection_image, ax[0])
     for obj, ax in enumerate(ax[1:num_axes]):
         saliency_title = get_saliency_title(
-            explaining_list[obj], box_offset_list[obj])
+            explaining_list[obj], box_offset_list[obj], box_index_to_arg)
         plot_saliency(saliency_list[obj], ax, saliency_title)
         ax.imshow(image, alpha=0.4)
         text = 'Object: {:0.2f}, {}'.format(confidence[obj], class_name[obj])

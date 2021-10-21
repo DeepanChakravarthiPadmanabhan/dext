@@ -4,9 +4,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
-from dext.model.functional_models import get_functional_model
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
+from dext.postprocessing.saliency_visualization import (
+    visualize_saliency_grayscale)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -18,11 +17,6 @@ class GradCAM:
                  grad_cam_layer=None, guided_grad_cam=True):
         self.model = model
         self.model_name = model_name
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
         self.image = image
         self.explainer = explainer
         self.layer_name = layer_name

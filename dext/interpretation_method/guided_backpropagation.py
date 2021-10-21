@@ -4,10 +4,11 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
-from dext.model.functional_models import get_functional_model
+from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 from dext.model.utils import get_all_layers
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
+from dext.postprocessing.saliency_visualization import (
+    visualize_saliency_grayscale)
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +40,11 @@ class GuidedBackpropagation:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def find_target_layer(self):
@@ -58,12 +63,6 @@ class GuidedBackpropagation:
         return input_image
 
     def build_custom_model(self):
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
-
         if self.visualize_idx:
             custom_model = Model(
                 inputs=[self.model.inputs],
@@ -81,7 +80,6 @@ class GuidedBackpropagation:
         for layer in all_layers:
             if layer.activation == tf.keras.activations.relu:
                 layer.activation = guided_relu
-
         # To get logits without softmax
         if 'class' in self.layer_name:
             custom_model.get_layer(self.layer_name).activation = None
@@ -93,20 +91,20 @@ class GuidedBackpropagation:
             inputs = tf.cast(self.image, tf.float32)
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
-        LOGGER.debug('Conv outs from custom model: %s' % conv_outs)
+        LOGGER.info('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         saliency = np.asarray(grads)
         return saliency
 
 
-def GuidedBackpropagationExplainer(model, model_name, image,
-                                   interpretation_method,
+def GuidedBackpropagationExplainer(model_name, image, interpretation_method,
                                    layer_name, visualize_index,
                                    preprocessor_fn, image_size):
+    model = get_model(model_name, image, image_size)
     explainer = GuidedBackpropagation(model, model_name, image,
-                                      interpretation_method,
-                                      layer_name, visualize_index,
-                                      preprocessor_fn, image_size)
+                                      interpretation_method, layer_name,
+                                      visualize_index, preprocessor_fn,
+                                      image_size)
     saliency = explainer.get_saliency_map()
     saliency = visualize_saliency_grayscale(saliency)
     return saliency

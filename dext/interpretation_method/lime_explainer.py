@@ -4,10 +4,9 @@ from tensorflow.keras.models import Model
 from lime import lime_image
 # import matplotlib.pyplot as plt
 # from skimage.segmentation import  mark_boundaries
-# import tensorflow as tf
 
 from paz.backend.image import resize_image
-from dext.model.functional_models import get_functional_model
+from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +34,11 @@ class LIME:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def find_target_layer(self):
@@ -54,12 +57,6 @@ class LIME:
         return input_image
 
     def build_custom_model(self):
-        if "EFFICIENTDET" in self.model_name:
-            self.model = get_functional_model(
-                self.model_name, self.model)
-        else:
-            self.model = self.model
-
         custom_model = Model(inputs=[self.model.inputs],
                              outputs=[self.model.output])
         return custom_model
