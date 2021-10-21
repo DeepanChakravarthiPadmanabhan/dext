@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.abstract.explanation import Explainer
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)

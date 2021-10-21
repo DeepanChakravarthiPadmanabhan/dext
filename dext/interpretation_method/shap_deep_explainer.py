@@ -8,7 +8,7 @@ import shap
 # tf.compat.v1.disable_v2_behavior()
 
 from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from paz.backend.image.opencv_image import load_image
 from dext.dataset.coco import COCODataset
 from dext.explainer.utils import get_model

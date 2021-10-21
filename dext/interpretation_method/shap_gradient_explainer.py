@@ -9,7 +9,7 @@ import shap
 from tensorflow.compat.v1.keras.backend import get_session
 
 from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from paz.backend.image.opencv_image import load_image
 from dext.utils.class_names import get_class_name_efficientdet
 from dext.dataset.coco import COCODataset

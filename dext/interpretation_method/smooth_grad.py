@@ -2,7 +2,7 @@ import logging
 import numpy as np
 
 from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.abstract.explanation import Explainer
 from dext.interpretation_method.integrated_gradient \
     import IntegratedGradientExplainer

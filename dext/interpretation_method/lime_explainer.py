@@ -6,7 +6,7 @@ from lime import lime_image
 # from skimage.segmentation import  mark_boundaries
 
 from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 
 LOGGER = logging.getLogger(__name__)
 

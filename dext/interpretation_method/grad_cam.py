@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
+from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
 
@@ -39,7 +40,11 @@ class GradCAM:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            if self.model_name == 'FasterRCNN':
+                resizer = ResizeImages(image_size, 0, image_size, "square")
+                image = resizer(image)[0]
+            else:
+                image = resize_image(image, (image_size, image_size))
         return image
 
     def find_target_layer(self):
