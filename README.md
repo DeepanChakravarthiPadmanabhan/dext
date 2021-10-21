@@ -44,13 +44,13 @@ dext_explainer -c config/explainer.gin -i GuidedBackpropagation -m SSD512
 
 [9] Cristian Vasta, Deep Learning Models with Tensorflow 2.0, Available at: https://morioh.com/p/64064daff26c, Accessed on: 03. 05. 2021.
 
-[10] Hoa Nguyen, CNN Visualization Keras TF2, GitHub, Available at: https://github.com/nguyenhoa93/cnn-visualization-keras-tf2, Accessed on: 03. 05. 2021.
+[10] Hoa Nguyen, "CNN Visualization Keras TF2", GitHub, Available at: https://github.com/nguyenhoa93/cnn-visualization-keras-tf2, Accessed on: 03. 05. 2021.
 
-[11] People + AI Research, Google Research, "saliency", GitHub, Available at: https://github.com/PAIR-code/saliency, Accessed on: 01. 06. 2021.
+[11] People + AI Research, Google Research, "Saliency Methods", GitHub, Available at: https://github.com/PAIR-code/saliency, Accessed on: 01. 06. 2021.
 
-[12] Marco Ancona, "DeepExplain", GitHub, Available at: https://github.com/marcoancona/DeepExplain, Accessed on: 01. 06. 2021.
+[12] Marco Ancona, "DeepExplain: attribution methods for Deep Learning", GitHub, Available at: https://github.com/marcoancona/DeepExplain, Accessed on: 01. 06. 2021.
 
-[13] Maximilian Alber, "Innvestigate", GitHub, Available at: https://github.com/albermax/innvestigate, Accessed on: 03. 05. 2021.
+[13] Maximilian Alber, "iNNvestigate neural networks!", GitHub, Available at: https://github.com/albermax/innvestigate, Accessed on: 03. 05. 2021.
 
 [14] Marco Tulio Correia, "lime", GitHub, Available at: https://github.com/marcotcr/lime, Accessed on: 01. 06. 2021.
 
