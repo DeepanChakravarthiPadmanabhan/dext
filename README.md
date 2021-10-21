@@ -40,7 +40,7 @@ dext_explainer -c config/explainer.gin -i GuidedBackpropagation -m SSD512
 
 [7] Vincent Kao, "Visualize output of CNN filter by gradient ascent", Kaggle, Available at: https://www.kaggle.com/vincentman0403/visualize-output-of-cnn-filter-by-gradient-ascent, Accessed on: 03. 05. 2021.
 
-[8] Sicara, "tf-explain", GitHub, Available at: https://github.com/sicara/tf-explain#available-methods, Accessed on: 03. 05. 2021.
+[8] Sicara, "tf-explain", GitHub, Available at: https://github.com/sicara/tf-explain, Accessed on: 03. 05. 2021.
 
 [9] Cristian Vasta, Deep Learning Models with Tensorflow 2.0, Available at: https://morioh.com/p/64064daff26c, Accessed on: 03. 05. 2021.
 
