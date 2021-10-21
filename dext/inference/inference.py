@@ -1,4 +1,4 @@
-from dext.model.mask_rcnn.utils import norm_boxes_graph
+from dext.model.faster_rcnn.utils import norm_boxes_graph
 
 
 def inference_image_efficientdet(model, raw_image, preprocessor_fn,

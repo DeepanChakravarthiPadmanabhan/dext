@@ -7,6 +7,7 @@ from paz.backend.image import resize_image
 from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 
@@ -108,9 +109,11 @@ class GradCAM:
         return saliency
 
 
-def GradCAMExplainer(model, model_name, image, interpretation_method,
+def GradCAMExplainer(model_name, image, interpretation_method,
                      layer_name, visualize_index, preprocessor_fn,
                      image_size, grad_cam_layer=None, guided_grad_cam=False):
+    model = get_model(model_name, image, image_size)
+    model.summary()
     if 'SSD' in model_name:
         if visualize_index[-1] <= 3:
             grad_cam_layer = 45

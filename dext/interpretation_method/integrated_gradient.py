@@ -16,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 class IntegratedGradients(Explainer):
     def __init__(self, model, model_name, image,
-                 explainer="IntegreatedGradients",
+                 explainer="IntegratedGradients",
                  layer_name=None, visualize_index=None,
                  preprocessor_fn=None, image_size=512,
                  steps=5, batch_size=1):
@@ -137,9 +137,9 @@ class IntegratedGradients(Explainer):
             interpolated_path_input_batch = self.interpolate_images(
                 image=self.image, alphas=alpha_batch)
 
-            interpolated_path_input_batch = \
+            interpolated_path_input_batch = (
                 self.get_normalized_interpolated_images(
-                    interpolated_path_input_batch)
+                    interpolated_path_input_batch))
             # 3. Compute gradients between model outputs
             # and interpolated inputs.
             gradient_batch = self.compute_gradients(

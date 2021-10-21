@@ -23,8 +23,8 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--result_dir", default="images/results/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
-                                 "GuidedBackpropagation", ]))
-@click.option("--visualize_object_index", default='all')  # 1 <
+                                 "GuidedBackpropagation", "GradCAM"]))
+@click.option("--visualize_object_index", default=1)  # 1 <
 @click.option("--visualize_box_offset", default='y_min',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
 @click.option("--num_images", default=1)  # 1 <
