@@ -98,7 +98,7 @@ class DeepSHAP:
             shap.explainers._deep.deep_tf.passthrough
         e = shap.DeepExplainer(self.custom_model, self.background_images)
         shap_values = e.shap_values(image)
-        print(shap_values)
+        LOGGER.info("Shap values: %s" % shap_values)
         shap.image_plot(shap_values, -image)
         plt.savefig('DeepExplainer_shap_image_plot.jpg')
         return 1

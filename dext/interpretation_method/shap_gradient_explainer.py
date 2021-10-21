@@ -112,7 +112,7 @@ class GradientSHAP:
 
         index_names = np.vectorize(
             lambda x: get_class_name_efficientdet("COCO")[x])(indexes)
-        print(shap_values)
+        LOGGER.info("Shap values: %s" % shap_values)
         shap.image_plot(shap_values, image, index_names)
         plt.savefig('GradientExplainer_shap_image_plot.jpg')
         return 1

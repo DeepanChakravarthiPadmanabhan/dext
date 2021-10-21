@@ -96,16 +96,16 @@ class COCOParser(object):
         self.images_path = os.path.join(self.dataset_path, self.dataset_name)
         self.coco = COCO(self.annotations_path)
         self.image_ids = self.coco.getImgIds()
-        if "train" in self.dataset_name:
-            self.image_ids = [114540, 117156, 128224, 130733,
-                              253710, 438751, 487851, 581929]
-        elif "val" in self.dataset_name:
-            self.image_ids = [37777,
-                              191672, 309391, 344611, 347456, 459954, 397133,
-                              252219,
-                              ]
-        else:
-            self.image_ids = [347456, 459954]
+        # if "train" in self.dataset_name:
+        #     self.image_ids = [114540, 117156, 128224, 130733,
+        #                       253710, 438751, 487851, 581929]
+        # elif "val" in self.dataset_name:
+        #     self.image_ids = [37777,
+        #                       191672, 309391, 344611, 347456, 459954, 397133,
+        #                       252219,
+        #                       ]
+        # else:
+        #     self.image_ids = [347456, 459954]
         self.evaluate = evaluate
         self.class_names = class_names
         if self.class_names == 'all':
