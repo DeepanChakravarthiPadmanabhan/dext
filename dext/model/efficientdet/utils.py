@@ -5,6 +5,7 @@ from tensorflow.keras.layers import Reshape, Concatenate, Flatten, Activation
 
 import paz.processors as pr
 from paz.abstract import SequentialProcessor
+from dext.model.utils import ResizeImage
 
 
 def get_drop_connect(features, is_training, survival_rate):
@@ -40,7 +41,7 @@ def find_image_scale(input_image_shape, processed_image_shape):
     return 1/image_scale_y, 1/image_scale_x
 
 
-def efficientdet_preprocess(image, image_size):
+def efficientdet_preprocess(image, image_size, only_resize=False):
     """
     Preprocess image for EfficientDet model.
 
@@ -59,14 +60,20 @@ def efficientdet_preprocess(image, image_size):
     input_image_shape = image.shape
     if type(image_size) == int:
         image_size = (image_size, image_size)
-    preprocessing = SequentialProcessor([
-        pr.ResizeImage(image_size),
-        pr.SubtractMeanImage(mean=pr.RGB_IMAGENET_MEAN),
-        pr.DivideStandardDeviationImage(
-            standard_deviation=pr.RGB_IMAGENET_STDEV),
-        pr.CastImage(float),
-        pr.ExpandDims(axis=0)
-        ])
+    if only_resize:
+        preprocessing = SequentialProcessor([
+            ResizeImage(image_size),
+            pr.CastImage(float),
+            pr.ExpandDims(axis=0)])
+    else:
+        preprocessing = SequentialProcessor([
+            ResizeImage(image_size),
+            pr.SubtractMeanImage(mean=pr.RGB_IMAGENET_MEAN),
+            pr.DivideStandardDeviationImage(
+                standard_deviation=pr.RGB_IMAGENET_STDEV),
+            pr.CastImage(float),
+            pr.ExpandDims(axis=0)
+            ])
     image = preprocessing(image)
     processed_image_shape = image.shape
     image_scale = find_image_scale(input_image_shape, processed_image_shape)

@@ -24,28 +24,41 @@ class ResizeImages(Processor):
         self.IMAGE_RESIZE_MODE = image_resize_mode
 
     def call(self, image):
-        resized_image, window, _, _, _ = resize_image(
-            image,
-            min_dim=self.IMAGE_MIN_DIM,
-            min_scale=self.IMAGE_MIN_SCALE,
-            max_dim=self.IMAGE_MAX_DIM,
-            mode=self.IMAGE_RESIZE_MODE)
+        if (image.shape[0] != self.IMAGE_MIN_DIM
+            or image.shape[0] != self.IMAGE_MAX_DIM) and (
+                image.shape[1] != self.IMAGE_MIN_DIM or
+                image.shape[1] != self.IMAGE_MAX_DIM):
+            resized_image, window, _, _, _ = resize_image(
+                image, min_dim=self.IMAGE_MIN_DIM,
+                min_scale=self.IMAGE_MIN_SCALE, max_dim=self.IMAGE_MAX_DIM,
+                mode=self.IMAGE_RESIZE_MODE)
+        else:
+            resized_image, window = image, None
         return resized_image, window
 
 
-def faster_rcnn_preprocess(image, image_size):
-    image_min_dim = 800
+def get_preprocess_params(image_size):
     image_min_scale = 0
-    image_max_dim = 1024
     image_resize_mode = 'square'
     mean_pixel = np.array([123.7, 116.8, 103.9])
-    if image_size < image_max_dim:
-        image_max_dim = image_size
-        image_min_dim = image_size
-    preprocess = SequentialProcessor([
-        ResizeImages(image_min_dim, image_min_scale, image_max_dim,
-                     image_resize_mode),
-        NormalizeImages(mean_pixel)])
+    # Hard code to image size
+    image_max_dim = image_size
+    image_min_dim = image_size
+    return (image_min_dim, image_min_scale, image_max_dim,
+            image_resize_mode, mean_pixel)
+
+
+def faster_rcnn_preprocess(image, image_size, only_resize=False):
+    (image_min_dim, image_min_scale,
+     image_max_dim, image_resize_mode,
+     mean_pixel) = get_preprocess_params(image_size)
+    if only_resize:
+        preprocess = SequentialProcessor([ResizeImages(
+            image_min_dim, image_min_scale, image_max_dim, image_resize_mode)])
+    else:
+        preprocess = SequentialProcessor([ResizeImages(
+            image_min_dim, image_min_scale, image_max_dim, image_resize_mode),
+            NormalizeImages(mean_pixel)])
     normalized_image, window = preprocess(image)
     normalized_image = normalized_image[np.newaxis]
     return normalized_image, window

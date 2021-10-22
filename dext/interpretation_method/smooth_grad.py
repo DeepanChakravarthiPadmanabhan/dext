@@ -1,15 +1,13 @@
 import logging
 import numpy as np
 
-from paz.backend.image import resize_image
-from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.abstract.explanation import Explainer
-from dext.interpretation_method.integrated_gradient \
-    import IntegratedGradientExplainer
-from dext.interpretation_method.guided_backpropagation \
-    import GuidedBackpropagationExplainer
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
+from dext.interpretation_method.integrated_gradient import (
+    IntegratedGradientExplainer)
+from dext.interpretation_method.guided_backpropagation import (
+    GuidedBackpropagationExplainer)
+from dext.postprocessing.saliency_visualization import (
+    visualize_saliency_grayscale)
 from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
@@ -17,15 +15,10 @@ LOGGER = logging.getLogger(__name__)
 
 class SmoothGrad(Explainer):
     def __init__(self, model, model_name, image,
-                 explainer="SmoothGrad_IntegreatedGradients",
-                 layer_name=None, visualize_index=None,
-                 preprocessor_fn=None, image_size=512, standard_deviation=0.15,
-                 nsamples=5, magnitude=1, steps=5, batch_size=1):
-        """
-        Model: pre-softmax layer (logit layer)
-        :param model:
-        :param layer_name:
-        """
+                 explainer="SmoothGrad_IntegreatedGradients", layer_name=None,
+                 visualize_index=None, preprocessor_fn=None, image_size=512,
+                 standard_deviation=0.15, nsamples=5, magnitude=1, steps=5,
+                 batch_size=1):
         super().__init__(model, model_name, image, explainer)
         self.model = model
         self.model_name = model_name
@@ -44,11 +37,9 @@ class SmoothGrad(Explainer):
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            if self.model_name == 'FasterRCNN':
-                resizer = ResizeImages(image_size, 0, image_size, "square")
-                image = resizer(image)[0]
-            else:
-                image = resize_image(image, (image_size, image_size))
+            image, _ = self.preprocessor_fn(image, image_size, True)
+            if len(image.shape) != 3:
+                image = image[0]
         return image
 
     def get_saliency_map(self):
@@ -64,15 +55,15 @@ class SmoothGrad(Explainer):
             if self.explainer == "SmoothGrad_IntegratedGradients":
                 LOGGER.info('Explanation method %s' % self.explainer)
                 saliency = IntegratedGradientExplainer(
-                    get_model(self.model_name), self.model_name, image_noise,
-                    self.explainer, self.layer_name, self.visualize_index,
+                    self.model_name, image_noise, self.explainer,
+                    self.layer_name, self.visualize_index,
                     self.preprocessor_fn, self.image_size, self.steps,
                     self.batch_size)
             elif self.explainer == 'SmoothGrad_GuidedBackpropagation':
                 LOGGER.info('Explanation method %s' % self.explainer)
                 saliency = GuidedBackpropagationExplainer(
-                    get_model(self.model_name), self.model_name, image_noise,
-                    self.explainer, self.layer_name, self.visualize_index,
+                    self.model_name, image_noise, self.explainer,
+                    self.layer_name, self.visualize_index,
                     self.preprocessor_fn, self.image_size)
             else:
                 raise ValueError("Explanation method not implemented %s"

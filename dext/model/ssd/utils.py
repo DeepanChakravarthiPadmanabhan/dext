@@ -2,6 +2,7 @@ import numpy as np
 from paz import processors as pr
 from paz.abstract import SequentialProcessor
 from paz.backend.image import resize_image
+from dext.model.utils import ResizeImage
 
 
 def find_image_scale(input_image_shape, processed_image_shape):
@@ -12,16 +13,19 @@ def find_image_scale(input_image_shape, processed_image_shape):
     return 1/image_scale_y, 1/image_scale_x
 
 
-def ssd_preprocess(image, image_size):
+def ssd_preprocess(image, image_size, only_resize=False):
     input_image_shape = image.shape
     if type(image_size) == int:
         image_size = (image_size, image_size)
-    preprocessing = SequentialProcessor([
-        pr.ResizeImage(image_size),
-        pr.SubtractMeanImage(mean=pr.RGB_IMAGENET_MEAN),
-        pr.CastImage(float),
-        pr.ExpandDims(axis=0)
-        ])
+    if only_resize:
+        preprocessing = SequentialProcessor([ResizeImage(image_size),
+                                             pr.CastImage(float),
+                                             pr.ExpandDims(axis=0)])
+    else:
+        preprocessing = SequentialProcessor([
+            ResizeImage(image_size),
+            pr.SubtractMeanImage(mean=pr.RGB_IMAGENET_MEAN),
+            pr.CastImage(float), pr.ExpandDims(axis=0)])
     image = preprocessing(image)
     processed_image_shape = image.shape
     image_scale = find_image_scale(input_image_shape, processed_image_shape)

@@ -3,8 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 
-from paz.backend.image import resize_image
-from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
+from dext.abstract.explanation import Explainer
 from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
@@ -20,10 +19,12 @@ def guided_relu(x):
     return tf.nn.relu(x), grad
 
 
-class GuidedBackpropagation:
+class GuidedBackpropagation(Explainer):
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512):
+        super().__init__(model, model_name, image, explainer)
+        LOGGER.info('STARTING GUIDED BACKPROPAGATION')
         self.model = model
         self.model_name = model_name
         self.image = image
@@ -40,11 +41,9 @@ class GuidedBackpropagation:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            if self.model_name == 'FasterRCNN':
-                resizer = ResizeImages(image_size, 0, image_size, "square")
-                image = resizer(image)[0]
-            else:
-                image = resize_image(image, (image_size, image_size))
+            image, _ = self.preprocessor_fn(image, image_size, True)
+            if len(image.shape) != 3:
+                image = image[0]
         return image
 
     def find_target_layer(self):
@@ -55,11 +54,7 @@ class GuidedBackpropagation:
             "Could not find 4D layer. Cannot apply guided backpropagation.")
 
     def preprocess_image(self, image, image_size):
-        preprocessed_image = self.preprocessor_fn(image, image_size)
-        if type(preprocessed_image) == tuple:
-            input_image, image_scales = preprocessed_image
-        else:
-            input_image = preprocessed_image
+        input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
     def build_custom_model(self):

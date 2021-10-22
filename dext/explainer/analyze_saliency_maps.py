@@ -58,16 +58,6 @@ def analyze_saliency_maps(detections, image, saliency_map,
     return iou, centroid, variance
 
 
-def save_modified_image(raw_image, name, saliency_shape, change_pixels):
-    image = resize_image(raw_image, saliency_shape)
-    for pix in change_pixels:
-        image[pix[0], pix[1], :] = 0
-    modified_image = resize_image(image,
-                                  (raw_image.shape[1], raw_image.shape[0]))
-    plt.imsave('modified_image' + str(name) + '.jpg',
-               modified_image.astype('uint8'))
-
-
 def get_regerror(interest_det, interest_gt):
     det_box = interest_det[:4]
     gt_box = interest_gt[:4]
@@ -126,7 +116,7 @@ def eval_numflip_maxprob_regerror(
         saliency, raw_image, gt_boxes, detections, preprocessor_fn,
         postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
         object_index=None, ap_curve_linspace=10,
-        explain_top5_backgrounds=False, save_modified_images=False):
+        explain_top5_backgrounds=False, save_modified_images=True):
     det_matching_interest_det = get_interest_det(detections[object_index])
     LOGGER.info('Evaluating numflip, maxprob, regerror on detection: %s'
                 % det_matching_interest_det)
@@ -135,25 +125,28 @@ def eval_numflip_maxprob_regerror(
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
     sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
     sorted_indices = np.vstack(sorted_flat_indices).T
-    input_image = deepcopy(raw_image)
     max_prob_list = [0, ] * len(percentage_space)
     reg_error_list = [np.inf, ] * len(percentage_space)
-    for n, percent in enumerate(percentage_space):
-        modified_image, image_scales = preprocessor_fn(input_image, image_size)
+    for n, percent in enumerate(percentage_space[:-1]):
+        resized_image, image_scales = preprocessor_fn(
+            deepcopy(raw_image), image_size, True)
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
-        modified_image = modified_image[0]
-        for pix in change_pixels:
-            modified_image[pix[0], pix[1], :] = 0
-        model = get_model(model_name, modified_image, image_size)
-        modified_image = modified_image[np.newaxis]
-        outputs = model(modified_image)
+        resized_image = resized_image[0].astype('uint8')
+        mask = np.zeros(saliency.shape).astype('uint8')
+        mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
+        modified_image = cv2.inpaint(resized_image, mask, 3, cv2.INPAINT_TELEA)
+        input_image, _ = preprocessor_fn(modified_image, image_size)
+        model = get_model(model_name, deepcopy(raw_image), image_size)
+        outputs = model(input_image)
         detection_image, detections, _ = postprocessor_fn(
             model, outputs, image_scales, deepcopy(raw_image), image_size,
             explain_top5_backgrounds)
         if save_modified_images:
-            save_modified_image(input_image, n, saliency.shape, change_pixels)
-            plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
+            plt.imsave("images/results/modified_images/modified_flip" +
+                       str(n) + ".jpg", modified_image)
+            plt.imsave("images/results/modified_images/detection_flip" +
+                       str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections) and len(det_matching_interest_det):
@@ -202,40 +195,42 @@ def coco_eval_ap50(image_index, all_boxes, result_file, percent,
 def eval_object_ap_curve(
         saliency, raw_image, preprocessor_fn, postprocessor_fn, image_size=512,
         model_name='SSD512', image_index=None, ap_curve_linspace=10,
-        explain_top5_backgrounds=False, result_file='ap_curve.json',
-        save_modified_images=False):
+        explain_top5_backgrounds=False, save_modified_images=False,
+        result_file='ap_curve.json',):
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
     sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
     sorted_indices = np.vstack(sorted_flat_indices).T
-    ap_curve = []
-    input_image = deepcopy(raw_image)
-    for n, percent in enumerate(percentage_space):
-        modified_image, image_scales = preprocessor_fn(input_image, image_size)
+    ap_curve = [0, ] * len(percentage_space)
+    for n, percent in enumerate(percentage_space[:-1]):
+        resized_image, image_scales = preprocessor_fn(
+            deepcopy(raw_image), image_size, True)
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
-        modified_image = modified_image[0]
-        for pix in change_pixels:
-            modified_image[pix[0], pix[1], :] = 0
-        model = get_model(model_name, modified_image, image_size)
-        modified_image = modified_image[np.newaxis]
-        outputs = model(modified_image)
+        resized_image = resized_image[0].astype('uint8')
+        mask = np.zeros(saliency.shape).astype('uint8')
+        mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
+        modified_image = cv2.inpaint(resized_image, mask, 3, cv2.INPAINT_TELEA)
+        input_image, _ = preprocessor_fn(modified_image, image_size)
+        model = get_model(model_name, deepcopy(raw_image), image_size)
+        outputs = model(input_image)
         detection_image, detections, _ = postprocessor_fn(
             model, outputs, image_scales, deepcopy(raw_image), image_size,
             explain_top5_backgrounds)
         if save_modified_images:
-            save_modified_image(input_image, n, saliency.shape, change_pixels)
-            plt.imsave("detection_image" + str(n) + '.jpg', detection_image)
+            plt.imsave("images/results/modified_images/modified_ap" +
+                       str(n) + ".jpg", modified_image)
+            plt.imsave("images/results/modified_images/detection_ap" +
+                       str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections):
             all_boxes = get_evaluation_details(detections)
             ap_50cent = coco_eval_ap50(image_index, all_boxes, result_file,
                                        percent)
-            ap_curve.append(ap_50cent)
+            ap_curve[n] = ap_50cent
         else:
             LOGGER.info('No detections. Mapping AP to 0.')
-            ap_curve.append(0)
     LOGGER.info('AP curve: %s' % ap_curve)
     return ap_curve

@@ -4,8 +4,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 
-from paz.backend.image import resize_image
-from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.abstract.explanation import Explainer
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
@@ -20,12 +18,8 @@ class IntegratedGradients(Explainer):
                  layer_name=None, visualize_index=None,
                  preprocessor_fn=None, image_size=512,
                  steps=5, batch_size=1):
-        """
-        Model: pre-softmax layer (logit layer)
-        :param model:
-        :param layer_name:
-        """
         super().__init__(model, model_name, image, explainer)
+        LOGGER.info('STARTING INTEGRATED GRADIENTS')
         self.model = model
         self.model_name = model_name
         self.image = image
@@ -44,11 +38,9 @@ class IntegratedGradients(Explainer):
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            if self.model_name == 'FasterRCNN':
-                resizer = ResizeImages(image_size, 0, image_size, "square")
-                image = resizer(image)[0]
-            else:
-                image = resize_image(image, (image_size, image_size))
+            image, _ = self.preprocessor_fn(image, image_size, True)
+            if len(image.shape) != 3:
+                image = image[0]
         return image
 
     def generate_baseline(self):
@@ -63,11 +55,7 @@ class IntegratedGradients(Explainer):
             "Could not find 4D layer. Cannot apply Integrated Gradients.")
 
     def preprocess_image(self, image, image_size):
-        preprocessed_image = self.preprocessor_fn(image, image_size)
-        if type(preprocessed_image) == tuple:
-            input_image, image_scales = preprocessed_image
-        else:
-            input_image = preprocessed_image
+        input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
     def build_custom_model(self):

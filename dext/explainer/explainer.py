@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Classification and Box offset",
+@click.option("--to_explain", default="Classification",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
 @click.option("--result_dir", default="images/results/")
@@ -34,9 +34,10 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--save_detections", default=True)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=True)
-@click.option("--ap_curve_linspace", default=2)
+@click.option("--ap_curve_linspace", default=5)
 @click.option("--merge_saliency_maps", default=True)
 @click.option("--explain_top5_backgrounds", default=False)
+@click.option("--save_modified_images", default=True)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
                                  "DEBUG"]))
@@ -46,8 +47,8 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
               interpretation_method, visualize_object_index,
               visualize_box_offset, num_images, merge_method, save_detections,
               save_explanations, analyze_each_maps, ap_curve_linspace,
-              merge_saliency_maps, explain_top5_backgrounds, log_level,
-              log_dir):
+              merge_saliency_maps, explain_top5_backgrounds,
+              save_modified_images, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -57,7 +58,7 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
                   visualize_box_offset, num_images, merge_method,
                   save_detections, save_explanations, analyze_each_maps,
                   ap_curve_linspace, merge_saliency_maps,
-                  explain_top5_backgrounds)
+                  explain_top5_backgrounds, save_modified_images)
 
 
 if __name__ == "__main__":
