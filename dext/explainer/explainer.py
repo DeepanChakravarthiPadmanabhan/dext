@@ -24,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
-@click.option("--visualize_object_index", default=1)  # 1 <
+@click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='y_min',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
 @click.option("--num_images", default=1)  # 1 <
@@ -38,6 +38,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--merge_saliency_maps", default=True)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--save_modified_images", default=True)
+@click.option("--evaluate_random_map", default=True)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
                                  "DEBUG"]))
@@ -48,7 +49,7 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
               visualize_box_offset, num_images, merge_method, save_detections,
               save_explanations, analyze_each_maps, ap_curve_linspace,
               merge_saliency_maps, explain_top5_backgrounds,
-              save_modified_images, log_level, log_dir):
+              save_modified_images, evaluate_random_map, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -58,7 +59,8 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
                   visualize_box_offset, num_images, merge_method,
                   save_detections, save_explanations, analyze_each_maps,
                   ap_curve_linspace, merge_saliency_maps,
-                  explain_top5_backgrounds, save_modified_images)
+                  explain_top5_backgrounds, save_modified_images,
+                  evaluate_random_map)
 
 
 if __name__ == "__main__":
