@@ -14,6 +14,7 @@ from dext.postprocessing.saliency_visualization import (
 from dext.postprocessing.saliency_visualization import plot_single_saliency
 from dext.model.utils import get_all_layers
 
+
 @tf.custom_gradient
 def guided_relu(x):
     def grad(dy):
@@ -84,6 +85,7 @@ class GuidedBackpropagation:
         saliency = np.asarray(grads)
         return saliency
 
+
 class_names = get_class_name_efficientdet('COCO')
 raw_image = "images/000000128224.jpg"
 loader = LoadImage()
@@ -93,11 +95,12 @@ image, image_scales = efficientdet_preprocess(image, 512)
 weights_path = "/media/deepan/externaldrive1/project_repos/" \
                "DEXT_versions/weights/paz_efficientdet_weights/"
 model = EfficientDet(num_classes=90, base_weights='COCO', head_weights='COCO',
-                   input_shape=(512, 512, 3), fpn_num_filters=64,
-                   fpn_cell_repeats=3, box_class_repeats=3, anchor_scale=4.0,
-                   min_level=3, max_level=7, fpn_weight_method='fastattention',
-                   return_base=False, model_name='efficientdet-d0',
-                   backbone='efficientnet-b0', weights_path=weights_path)
+                     input_shape=(512, 512, 3), fpn_num_filters=64,
+                     fpn_cell_repeats=3, box_class_repeats=3, anchor_scale=4.0,
+                     min_level=3, max_level=7,
+                     fpn_weight_method='fastattention', return_base=False,
+                     model_name='efficientdet-d0', backbone='efficientnet-b0',
+                     weights_path=weights_path)
 all_layers = get_all_layers(model)
 outputs = model(image)
 detection_image, detections, class_map_idx = efficientdet_postprocess(

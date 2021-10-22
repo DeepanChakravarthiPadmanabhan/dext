@@ -98,6 +98,7 @@ class DeepSHAP(Explainer):
         plt.savefig('DeepExplainer_shap_image_plot.jpg')
         return 1
 
+
 @gin.configurable
 def SHAP_DeepExplainer(model_name, image, interpretation_method,
                        layer_name, visualize_index, preprocessor_fn,

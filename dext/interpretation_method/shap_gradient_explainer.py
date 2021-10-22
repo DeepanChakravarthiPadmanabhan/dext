@@ -112,6 +112,7 @@ class GradientSHAP(Explainer):
         plt.savefig('GradientExplainer_shap_image_plot.jpg')
         return 1
 
+
 @gin.configurable
 def SHAP_GradientExplainer(model_name, image, interpretation_method,
                            layer_name, visualize_index, preprocessor_fn,

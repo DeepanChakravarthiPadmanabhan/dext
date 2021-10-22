@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from paz.abstract.processor import Processor
 
+
 def get_layers_and_length(layer):
     if hasattr(layer, 'layers'):
         block_length = len(layer.layers)

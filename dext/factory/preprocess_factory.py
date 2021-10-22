@@ -1,6 +1,7 @@
 from dext.model.efficientdet.utils import efficientdet_preprocess
 from dext.model.ssd.utils import ssd_preprocess
-from dext.model.faster_rcnn.faster_rcnn_preprocess import faster_rcnn_preprocess
+from dext.model.faster_rcnn.faster_rcnn_preprocess import (
+    faster_rcnn_preprocess)
 
 
 class PreprocessorFactory:

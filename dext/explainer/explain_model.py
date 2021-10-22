@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from copy import deepcopy
 import pandas as pd
 import numpy as np
@@ -46,41 +47,46 @@ def get_single_saliency(
 def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
                 preprocessor_fn, postprocessor_fn, model_name, image_size,
                 explaining, ap_curve_linspace, image_index,
-                explain_top5_backgrounds, save_modified_images, df_class_flip,
-                df_ap_curve, df_max_prob, df_reg_error):
-    saliency_iou, saliency_centroid, saliency_variance = analyze_saliency_maps(
-        detections, raw_image, saliency, object_arg)
-    LOGGER.info('Extracting metrics for the explanation %s' % explaining)
-    LOGGER.info('Performing max probability and regression error')
-    eval_metrics = eval_numflip_maxprob_regerror(
-        saliency, deepcopy(raw_image), gt_boxes, detections, preprocessor_fn,
-        postprocessor_fn, image_size, model_name, object_arg,
-        ap_curve_linspace, explain_top5_backgrounds, save_modified_images)
-    num_pixels_flipped, max_prob_curve, reg_error_curve = eval_metrics
-    df_class_flip_entry = [
-        str(image_index), object_arg, explaining,
-        detections[object_arg], saliency_iou, saliency_centroid,
-        saliency_variance, num_pixels_flipped]
-    df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
-    LOGGER.info('Extracting metrics for the explanation %s' % explaining)
-    LOGGER.info('Performing AP Curve evaluation')
-    ap_curve = eval_object_ap_curve(
-        saliency, deepcopy(raw_image), preprocessor_fn, postprocessor_fn,
-        image_size, model_name, image_index, ap_curve_linspace,
-        explain_top5_backgrounds, save_modified_images)
-    df_ap_curve_entry = [str(image_index), object_arg,
-                         num_pixels_flipped,
-                         explaining, ]
-    df_ap_curve_entry = df_ap_curve_entry + ap_curve
-    df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
-    df_max_prob_entry = [str(image_index), object_arg,
-                         num_pixels_flipped, explaining, ]
-    df_max_prob_entry = df_max_prob_entry + max_prob_curve
-    df_max_prob.loc[len(df_max_prob)] = df_max_prob_entry
-    df_reg_error_entry = [str(image_index), object_arg,
-                          num_pixels_flipped, explaining, ]
-    df_reg_error_entry = df_reg_error_entry + reg_error_curve
-    df_reg_error.loc[len(df_reg_error)] = df_reg_error_entry
+                explain_top5_backgrounds, save_modified_images, eval_flip,
+                eval_ap_explain, df_class_flip, df_ap_curve, df_max_prob,
+                df_reg_error):
+
+    if eval_flip:
+        LOGGER.info('Extracting metrics for the explanation %s' % explaining)
+        LOGGER.info('Performing max probability and regression error')
+        (saliency_iou, saliency_centroid,
+         saliency_variance) = analyze_saliency_maps(detections, raw_image,
+                                                    saliency, object_arg)
+        eval_metrics = eval_numflip_maxprob_regerror(
+            saliency, deepcopy(raw_image), gt_boxes, detections,
+            preprocessor_fn, postprocessor_fn, image_size, model_name,
+            object_arg, ap_curve_linspace, explain_top5_backgrounds,
+            save_modified_images)
+        num_pixels_flipped, max_prob_curve, reg_error_curve = eval_metrics
+        df_class_flip_entry = [str(image_index), object_arg, explaining,
+                               detections[object_arg], saliency_iou,
+                               saliency_centroid, saliency_variance,
+                               num_pixels_flipped]
+        df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
+        df_max_prob_entry = [str(image_index), object_arg, num_pixels_flipped,
+                             explaining, ]
+        df_max_prob_entry = df_max_prob_entry + max_prob_curve
+        df_max_prob.loc[len(df_max_prob)] = df_max_prob_entry
+        df_reg_error_entry = [str(image_index), object_arg, num_pixels_flipped,
+                              explaining, ]
+        df_reg_error_entry = df_reg_error_entry + reg_error_curve
+        df_reg_error.loc[len(df_reg_error)] = df_reg_error_entry
+
+    if eval_ap_explain:
+        LOGGER.info('Extracting metrics for the explanation %s' % explaining)
+        LOGGER.info('Performing AP Curve evaluation')
+        ap_curve = eval_object_ap_curve(
+            saliency, deepcopy(raw_image), preprocessor_fn, postprocessor_fn,
+            image_size, model_name, image_index, ap_curve_linspace,
+            explain_top5_backgrounds, save_modified_images)
+        df_ap_curve_entry = [str(image_index), object_arg, explaining, ]
+        df_ap_curve_entry = df_ap_curve_entry + ap_curve
+        df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
     return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
 
 
@@ -88,16 +94,18 @@ def merge_all_maps(saliency_list, merge_method, analyze_each_maps,
                    detections, raw_image, gt_boxes, preprocessor_fn,
                    postprocessor_fn, image_size, title, model_name,
                    ap_curve_linspace, image_index, explain_top5_backgrounds,
-                   save_modified_images, object_arg, df_class_flip,
-                   df_ap_curve, df_max_prob, df_reg_error):
+                   save_modified_images, object_arg, eval_flip,
+                   eval_ap_explain, df_class_flip, df_ap_curve, df_max_prob,
+                   df_reg_error):
     combined_saliency = merge_saliency(saliency_list, merge_method)
     if analyze_each_maps:
         df_class_flip, df_ap_curve, df_max_prob, df_reg_error = get_metrics(
             detections, deepcopy(raw_image), gt_boxes, combined_saliency,
             object_arg, preprocessor_fn, postprocessor_fn, model_name,
             image_size, title, ap_curve_linspace, image_index,
-            explain_top5_backgrounds, save_modified_images, df_class_flip,
-            df_ap_curve, df_max_prob, df_reg_error)
+            explain_top5_backgrounds, save_modified_images, eval_flip,
+            eval_ap_explain, df_class_flip, df_ap_curve, df_max_prob,
+            df_reg_error)
     return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
 
 
@@ -106,9 +114,10 @@ def explain_single_object(
         detections, detection_image, interpretation_method, object_arg,
         box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, ap_curve_linspace, df_class_flip,
-        df_ap_curve, df_max_prob, df_reg_error, merge_saliency_maps,
-        explain_top5_backgrounds, save_modified_images, evaluate_random_map):
+        save_explanations, analyze_each_maps, ap_curve_linspace, eval_flip,
+        eval_ap_explain, df_class_flip, df_ap_curve, df_max_prob, df_reg_error,
+        merge_saliency_maps, explain_top5_backgrounds, save_modified_images,
+        evaluate_random_map):
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name)
@@ -154,7 +163,8 @@ def explain_single_object(
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset), ap_curve_linspace,
                 image_index, explain_top5_backgrounds, save_modified_images,
-                df_class_flip, df_ap_curve, df_max_prob, df_reg_error)
+                eval_flip, eval_ap_explain, df_class_flip, df_ap_curve,
+                df_max_prob, df_reg_error)
             df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
         if evaluate_random_map:
             random_map = np.random.random((image_size, image_size))
@@ -164,8 +174,8 @@ def explain_single_object(
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset) + '_random',
                 ap_curve_linspace, image_index, explain_top5_backgrounds,
-                save_modified_images, df_class_flip, df_ap_curve, df_max_prob,
-                df_reg_error)
+                save_modified_images, eval_flip, eval_ap_explain,
+                df_class_flip, df_ap_curve, df_max_prob, df_reg_error)
             df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
 
     if merge_saliency_maps:
@@ -174,8 +184,8 @@ def explain_single_object(
             deepcopy(raw_image), gt_boxes, preprocessor_fn, postprocessor_fn,
             image_size, 'combined', model_name, ap_curve_linspace, image_index,
             explain_top5_backgrounds, save_modified_images,
-            object_index_list[0], df_class_flip, df_ap_curve, df_max_prob,
-            df_reg_error)
+            object_index_list[0], eval_flip, eval_ap_explain, df_class_flip,
+            df_ap_curve, df_max_prob, df_reg_error)
         if evaluate_random_map:
             (df_class_flip, df_ap_curve,
              df_max_prob, reg_error) = merge_all_maps(
@@ -183,8 +193,9 @@ def explain_single_object(
                 deepcopy(raw_image), gt_boxes, preprocessor_fn,
                 postprocessor_fn, image_size, 'random', model_name,
                 ap_curve_linspace, image_index, explain_top5_backgrounds,
-                save_modified_images, object_index_list[0], df_class_flip,
-                df_ap_curve, df_max_prob, df_reg_error)
+                save_modified_images, object_index_list[0], eval_flip,
+                eval_ap_explain, df_class_flip, df_ap_curve, df_max_prob,
+                df_reg_error)
 
     if save_explanations:
         explanation_result_dir = os.path.join(result_dir, 'explanations')
@@ -207,9 +218,10 @@ def explain_all_objects(
         postprocessor_fn, detections, detection_image, interpretation_method,
         box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, ap_curve_linspace, df_class_flip,
-        df_ap_curve, df_max_prob, df_reg_error, merge_saliency_maps,
-        explain_top5_backgrounds, save_modified_images, evaluate_random_map):
+        save_explanations, analyze_each_maps, ap_curve_linspace, eval_flip,
+        eval_ap_explain, df_class_flip, df_ap_curve, df_max_prob, df_reg_error,
+        merge_saliency_maps, explain_top5_backgrounds, save_modified_images,
+        evaluate_random_map):
     for object_arg in objects_to_analyze:
         all_dfs = explain_single_object(
             raw_image, image_size, gt_boxes, preprocessor_fn, postprocessor_fn,
@@ -217,9 +229,10 @@ def explain_all_objects(
             object_arg, box_index, to_explain, result_dir, class_layer_name,
             reg_layer_name, visualize_box_offset, model_name, merge_method,
             image_index, save_explanations, analyze_each_maps,
-            ap_curve_linspace, df_class_flip, df_ap_curve, df_max_prob,
-            df_reg_error, merge_saliency_maps, explain_top5_backgrounds,
-            save_modified_images, evaluate_random_map)
+            ap_curve_linspace, eval_flip, eval_ap_explain, df_class_flip,
+            df_ap_curve, df_max_prob, df_reg_error, merge_saliency_maps,
+            explain_top5_backgrounds, save_modified_images,
+            evaluate_random_map)
         df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
     return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
 
@@ -231,9 +244,10 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   visualize_object_index=None, visualize_box_offset=None,
                   num_images=2, merge_method='add', save_detections=False,
                   save_explanations=False, analyze_each_maps=False,
-                  ap_curve_linspace=20, merge_saliency_maps=False,
-                  explain_top5_backgrounds=True, save_modified_images=True,
-                  evaluate_random_map=True):
+                  ap_curve_linspace=20, eval_flip=False, eval_ap_explain=False,
+                  merge_saliency_maps=False, explain_top5_backgrounds=True,
+                  save_modified_images=True, evaluate_random_map=True):
+    start_time = time.time()
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     if save_modified_images:
@@ -248,8 +262,7 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
     df_class_flip_columns = ["image_index", "object_index", "explaining",
                              "detection", "saliency_iou", "saliency_centroid",
                              "saliency_variance", "pixels_flipped"]
-    df_ap_curve_columns = ["image_index", "object_index", "pixels_flipped",
-                           "explaining"]
+    df_ap_curve_columns = ["image_index", "object_index", "explaining"]
     ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
                             for n in np.linspace(0, 1, ap_curve_linspace)]
     df_max_prob_columns = ["image_index", "object_index", "pixels_flipped",
@@ -307,10 +320,10 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
                 model_name, merge_method, image_index, save_explanations,
-                analyze_each_maps, ap_curve_linspace, df_class_flip,
-                df_ap_curve, df_max_prob, df_reg_error, merge_saliency_maps,
-                explain_top5_backgrounds, save_modified_images,
-                evaluate_random_map)
+                analyze_each_maps, ap_curve_linspace, eval_flip,
+                eval_ap_explain, df_class_flip, df_ap_curve, df_max_prob,
+                df_reg_error, merge_saliency_maps, explain_top5_backgrounds,
+                save_modified_images, evaluate_random_map)
             df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
         else:
             LOGGER.info("No detections to analyze.")
@@ -322,4 +335,6 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
     df_max_prob.to_excel(excel_writer, sheet_name="max_prob_curve")
     df_reg_error.to_excel(excel_writer, sheet_name="reg_error_curve")
     excel_writer.save()
+    end_time = time.time()
+    LOGGER.info('Time taken: %s' % (end_time - start_time))
     LOGGER.info('%%% INTERPRETATION DONE %%%')

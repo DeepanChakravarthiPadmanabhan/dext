@@ -7,7 +7,6 @@ import numpy as np
 from copy import deepcopy
 import gin
 
-from paz.backend.image.opencv_image import resize_image
 from dext.explainer.utils import resize_box
 from dext.explainer.utils import get_model
 from dext.explainer.utils import get_saliency_mask
@@ -80,16 +79,16 @@ def get_flipstatus_maxprob_regerror(all_det_boxes, interest_gt, percent):
     if class_match and iou[max_arg] > 0.4:
         max_prob = all_det_boxes[max_arg][-1]
         reg_error = get_regerror(interest_det, interest_gt)
-        LOGGER.info('No flip, IoU: %s, Maxprob: %s, Regerror: %s, '
-                    'GT: %s, DET: %s' % (iou, max_prob, reg_error,
-                                         interest_gt, interest_det))
+        LOGGER.debug('No flip, IoU: %s, Maxprob: %s, Regerror: %s, '
+                     'GT: %s, DET: %s' % (iou, max_prob, reg_error,
+                                          interest_gt, interest_det))
         return False, max_prob, reg_error
     else:
         max_prob = 0
         reg_error = np.inf
-        LOGGER.info('Flip, IoU: %s, Maxprob: %s, Regerror: %s, '
-                    'GT: %s, DET: %s' % (iou, max_prob, reg_error,
-                                         interest_gt, interest_det))
+        LOGGER.debug('Flip, IoU: %s, Maxprob: %s, Regerror: %s, '
+                     'GT: %s, DET: %s' % (iou, max_prob, reg_error,
+                                          interest_gt, interest_det))
         return True, max_prob, reg_error
 
 

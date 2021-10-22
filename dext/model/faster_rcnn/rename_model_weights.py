@@ -7,14 +7,16 @@ from tensorflow.keras.layers import UpSampling2D, MaxPooling2D
 
 from dext.model.faster_rcnn.utils import get_resnet_features, build_rpn_model
 from paz.processors.image import LoadImage
-from dext.model.faster_rcnn.faster_rcnn_preprocess import mask_rcnn_preprocess
+from dext.model.faster_rcnn.faster_rcnn_preprocess import (
+    faster_rcnn_preprocess)
 from dext.model.faster_rcnn.utils import generate_pyramid_anchors
 from dext.model.faster_rcnn.utils import norm_boxes_graph, norm_boxes
 from dext.model.faster_rcnn.utils import fpn_classifier_graph
 from dext.model.faster_rcnn.utils import compute_backbone_shapes
 from dext.model.faster_rcnn.layers import DetectionLayer, ProposalLayer
 from dext.model.faster_rcnn.config import Config
-from dext.model.faster_rcnn.faster_rcnn_postprocess import mask_rcnn_postprocess
+from dext.model.faster_rcnn.faster_rcnn_postprocess import (
+    faster_rcnn_postprocess)
 
 
 def read_hdf5(path):
@@ -121,7 +123,7 @@ class TestConfig(Config):
 
 def test(image, weights_path):
     config = TestConfig()
-    normalized_images, window = mask_rcnn_preprocess(config, image)
+    normalized_images, window = faster_rcnn_preprocess(config, image)
     image_size = normalized_images[0].shape
 
     config_window = norm_boxes_graph(window[0], image_size[:2])
@@ -165,20 +167,20 @@ def test(image, weights_path):
             raise ValueError("Weight with %s not found." % name)
 
     print('DONE COPYING WEIGHTS')
-    model.save_weights('new_weights_maskrcnn.h5')
+    model.save_weights('new_weights_faster_rcnn.h5')
 
     # model.load_weights('new_weights_maskrcnn.h5')
 
     input_image = tf.expand_dims(normalized_images[0], axis=0)
     detections = model(input_image)
     detections = detections.numpy()
-    detection, image = mask_rcnn_postprocess(image[0], normalized_images[0],
-                                             window[0], detections[0])
+    detection, image = faster_rcnn_postprocess(image[0], normalized_images[0],
+                                               window[0], detections[0])
     return detection, image
 
 
 raw_image = "images/000000128224.jpg"
-weights_path = 'new_weights_maskrcnn.h5'
+weights_path = 'new_weights_faster_rcnn.h5'
 loader = LoadImage()
 raw_image = loader(raw_image)
 image = raw_image.copy()
