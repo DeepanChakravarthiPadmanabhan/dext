@@ -189,8 +189,8 @@ def explain_single_object(
         if evaluate_random_map:
             (df_class_flip, df_ap_curve,
              df_max_prob, reg_error) = merge_all_maps(
-                saliency_list, merge_method, analyze_each_maps, detections,
-                deepcopy(raw_image), gt_boxes, preprocessor_fn,
+                random_saliency_list, merge_method, analyze_each_maps,
+                detections, deepcopy(raw_image), gt_boxes, preprocessor_fn,
                 postprocessor_fn, image_size, 'random', model_name,
                 ap_curve_linspace, image_index, explain_top5_backgrounds,
                 save_modified_images, object_index_list[0], eval_flip,

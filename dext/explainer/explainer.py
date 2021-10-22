@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Classification",
+@click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
 @click.option("--result_dir", default="images/results/")
@@ -34,7 +34,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--save_detections", default=True)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=True)
-@click.option("--ap_curve_linspace", default=100)
+@click.option("--ap_curve_linspace", default=200)
 @click.option("--eval_flip", default=True)
 @click.option("--eval_ap_explain", default=False)
 @click.option("--merge_saliency_maps", default=True)
