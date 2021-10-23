@@ -46,7 +46,7 @@ def calculate_centroid(mask_2d):
         cy = int(M["m01"] / M["m00"])
         return cx, cy
     except ZeroDivisionError:
-        return None, None
+        return 0, 0
 
 
 def calculate_variance(mask_2d):
