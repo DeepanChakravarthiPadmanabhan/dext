@@ -1,8 +1,12 @@
+import logging
 import os
 import numpy as np
 from dext.abstract.loader import Loader
 from paz.datasets.utils import get_class_names
 from pycocotools.coco import COCO
+from dext.utils.select_image_ids_coco import filter_image_ids
+
+LOGGER = logging.getLogger(__name__)
 
 
 class COCODataset(Loader):
@@ -81,7 +85,8 @@ class COCOParser(object):
                  split='train',
                  class_names='all',
                  dataset_name='train2017',
-                 evaluate=False):
+                 evaluate=False,
+                 continue_run=False):
 
         if dataset_name not in ['train2017', 'val2017', 'test2017']:
             raise Exception('Invalid dataset name.')
@@ -100,12 +105,18 @@ class COCOParser(object):
         #     self.image_ids = [114540, 117156, 128224, 130733,
         #                       253710, 438751, 487851, 581929]
         # elif "val" in self.dataset_name:
-        #     self.image_ids = [37777,
+        #     self.image_ids = [252219,
         #                       191672, 309391, 344611, 347456, 459954, 397133,
-        #                       252219,
+        #                       37777,
         #                       ]
         # else:
         #     self.image_ids = [347456, 459954]
+        if continue_run:
+            LOGGER.info('Loading already ran ids from all excel files.')
+            load_ran_ids = filter_image_ids()
+            LOGGER.info('Found previous run ids: %s ' % load_ran_ids)
+            image_ids = [i for i in self.image_ids if i not in load_ran_ids]
+            self.image_ids = image_ids
         self.evaluate = evaluate
         self.class_names = class_names
         if self.class_names == 'all':

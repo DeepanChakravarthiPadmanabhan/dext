@@ -39,5 +39,6 @@ dext.egg-info/
 __pycache__
 *.idea/
 *play.py
+*play.ipynb
 *weights/*
 *_local*

@@ -12,3 +12,5 @@ get_faster_rcnn_model.weight_path = %FASTER_RCNN_WEIGHT_PATH
 
 SHAP_DeepExplainer.dataset_path = %DATASET_PATH
 SHAP_GradientExplainer.dataset_path = %DATASET_PATH
+
+filter_image_ids.results_dir = 'images/results/'
