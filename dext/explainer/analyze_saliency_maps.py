@@ -36,10 +36,17 @@ def calculate_saliency_iou(mask_2d, box):
 
 
 def calculate_centroid(mask_2d):
-    M = cv2.moments(mask_2d)
-    cx = int(M["m10"] / M["m00"])
-    cy = int(M["m01"] / M["m00"])
-    return cx, cy
+    """
+    Returns centroid in mathematical coordinates
+    and not in computer coordinates.
+    """
+    try:
+        M = cv2.moments(mask_2d)
+        cx = int(M["m10"] / M["m00"])
+        cy = int(M["m01"] / M["m00"])
+        return cx, cy
+    except ZeroDivisionError:
+        return None, None
 
 
 def calculate_variance(mask_2d):

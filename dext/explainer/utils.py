@@ -180,8 +180,7 @@ def resize_boxes(boxes2D, old_size, new_size):
     return new_boxes
 
 
-def get_saliency_mask(saliency, threshold=0.7):
-    mask_2d = saliency.copy()
-    mask_2d[np.where(mask_2d > threshold)] = 1
-    mask_2d[np.where(mask_2d <= threshold)] = 0
+def get_saliency_mask(saliency, threshold=0.6):
+    mask_2d = np.zeros(saliency.shape).astype('uint8')
+    mask_2d[saliency > threshold] = 1
     return mask_2d

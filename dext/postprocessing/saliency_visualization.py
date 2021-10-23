@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 from paz.backend.image import resize_image
+from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.explainer.utils import get_box_index_to_arg
 
 
@@ -76,7 +77,6 @@ def check_overlay_image_shape(image, saliency, model_name):
     image_w = image.shape[1]
     if (image_w != saliency_w) or (image_h != saliency_h):
         if model_name == 'FasterRCNN':
-            from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
             resizer = ResizeImages(saliency_h, 0, saliency_w, "square")
             image = resizer(image)[0]
         else:
