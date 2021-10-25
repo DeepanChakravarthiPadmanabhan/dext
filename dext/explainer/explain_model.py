@@ -179,6 +179,7 @@ def explain_single_object(
             df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
 
     if merge_saliency_maps:
+        LOGGER.info('Merging saliency maps')
         df_class_flip, df_ap_curve, df_max_prob, reg_error = merge_all_maps(
             saliency_list, merge_method, analyze_each_maps, detections,
             deepcopy(raw_image), gt_boxes, preprocessor_fn, postprocessor_fn,
@@ -187,6 +188,7 @@ def explain_single_object(
             object_index_list[0], eval_flip, eval_ap_explain, df_class_flip,
             df_ap_curve, df_max_prob, df_reg_error)
         if evaluate_random_map:
+            LOGGER.info('Merging saliency maps - random baseline')
             (df_class_flip, df_ap_curve,
              df_max_prob, reg_error) = merge_all_maps(
                 random_saliency_list, merge_method, analyze_each_maps,
