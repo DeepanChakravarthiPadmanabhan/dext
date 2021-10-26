@@ -95,7 +95,7 @@ class GuidedBackpropagation(Explainer):
 def GuidedBackpropagationExplainer(model_name, image, interpretation_method,
                                    layer_name, visualize_index,
                                    preprocessor_fn, image_size):
-    model = get_model(model_name, image, image_size)
+    model = get_model(model_name)
     explainer = GuidedBackpropagation(model, model_name, image,
                                       interpretation_method, layer_name,
                                       visualize_index, preprocessor_fn,

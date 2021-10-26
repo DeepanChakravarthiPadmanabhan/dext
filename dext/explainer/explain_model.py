@@ -291,7 +291,7 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
         raw_image = loader(raw_image)
         raw_image = raw_image.astype('uint8')
         image = deepcopy(raw_image)
-        model = get_model(model_name, image, image_size)
+        model = get_model(model_name)
         LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
         LOGGER.info('Explaining image count: %s' % str(count + 1))
         LOGGER.info("Explanation input image ID: %s" % str(image_index))

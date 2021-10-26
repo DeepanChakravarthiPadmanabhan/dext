@@ -118,7 +118,7 @@ def SHAP_GradientExplainer(model_name, image, interpretation_method,
                            layer_name, visualize_index, preprocessor_fn,
                            image_size, num_background_images=5,
                            dataset_path=None):
-    model = get_model(model_name, image, image_size)
+    model = get_model(model_name)
     explainer = GradientSHAP(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
                              image_size, num_background_images, dataset_path)

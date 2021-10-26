@@ -7,14 +7,12 @@ from dext.model.ssd.ssd300_no_pool_model import SSD300NoPool
 from paz.models.detection.ssd512 import SSD512
 from paz.models.detection.ssd300 import SSD300
 from dext.model.faster_rcnn.faster_rcnn_detection_model import (
-    get_faster_rcnn_model)
+    faster_rcnn_detection)
 
 
 class ModelFactory:
-    def __init__(self, model_name, image, image_size):
+    def __init__(self, model_name):
         self.model_name = model_name
-        self.image = image
-        self.image_size = image_size
 
     def factory(self):
         if self.model_name == "EFFICIENTDETD0":
@@ -42,7 +40,7 @@ class ModelFactory:
         elif self.model_name == 'SSD300NoPool':
             return SSD300NoPool()
         elif self.model_name == 'FasterRCNN':
-            model = get_faster_rcnn_model(self.image, self.image_size)
+            model = faster_rcnn_detection()
             return model
         else:
             raise ValueError("Model not implemented %s" % self.model_name)

@@ -143,7 +143,7 @@ def eval_numflip_maxprob_regerror(
         mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
         modified_image = cv2.inpaint(resized_image, mask, 3, cv2.INPAINT_TELEA)
         input_image, _ = preprocessor_fn(modified_image, image_size)
-        model = get_model(model_name, deepcopy(raw_image), image_size)
+        model = get_model(model_name)
         outputs = model(input_image)
         detection_image, detections, _ = postprocessor_fn(
             model, outputs, image_scales, deepcopy(raw_image), image_size,
@@ -219,7 +219,7 @@ def eval_object_ap_curve(
         mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
         modified_image = cv2.inpaint(resized_image, mask, 3, cv2.INPAINT_TELEA)
         input_image, _ = preprocessor_fn(modified_image, image_size)
-        model = get_model(model_name, deepcopy(raw_image), image_size)
+        model = get_model(model_name)
         outputs = model(input_image)
         detection_image, detections, _ = postprocessor_fn(
             model, outputs, image_scales, deepcopy(raw_image), image_size,

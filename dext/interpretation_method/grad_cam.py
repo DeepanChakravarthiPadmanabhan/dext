@@ -108,7 +108,7 @@ class GradCAM(Explainer):
 def GradCAMExplainer(model_name, image, interpretation_method,
                      layer_name, visualize_index, preprocessor_fn,
                      image_size, grad_cam_layer=None, guided_grad_cam=False):
-    model = get_model(model_name, image, image_size)
+    model = get_model(model_name)
     model.summary()
     if 'SSD' in model_name:
         if visualize_index[-1] <= 3:

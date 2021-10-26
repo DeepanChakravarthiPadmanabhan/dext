@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+from copy import deepcopy
 from paz.processors.image import LoadImage
 from paz.processors.image import resize_image
 from dext.model.faster_rcnn.faster_rcnn_preprocess import (
@@ -11,7 +12,7 @@ from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
 from dext.model.faster_rcnn.faster_rcnn_detection_model import (
-    get_faster_rcnn_model)
+    faster_rcnn_detection)
 
 
 @tf.custom_gradient
@@ -86,14 +87,16 @@ class GuidedBackpropagation:
 
 
 def run_simple(image, weight_path, image_size):
-    model = get_faster_rcnn_model(image, image_size, weight_path)
-    input_image, image_scales = faster_rcnn_preprocess(image, image_size)
+    model = faster_rcnn_detection(weight_path=weight_path)
+    input_image, image_scales = faster_rcnn_preprocess(deepcopy(image),
+                                                       image_size)
     out = model(input_image)
     det_image, detections, class_map_idx = faster_rcnn_postprocess(
-        model, out, image_scales, image, image_size)
+        model, out, image_scales, deepcopy(image), image_size)
     print("Detections are here: ", detections)
-    gbp = GuidedBackpropagation(model, "Faster_RCNN", image,
-                                "GBP", "boxes", (0, 0, 0),
+    print(class_map_idx)
+    gbp = GuidedBackpropagation(model, "Faster_RCNN", image, "GBP",
+                                "boxes", (0, int(class_map_idx[3][0]), 3),
                                 faster_rcnn_preprocess)
     saliency = gbp.get_saliency_map()
     saliency = visualize_saliency_grayscale(saliency)
@@ -101,7 +104,7 @@ def run_simple(image, weight_path, image_size):
     return detections, det_image
 
 
-raw_image = "images/000000117156.jpg"
+raw_image = "images/000000252219.jpg"
 weight_path = "/media/deepan/externaldrive1/project_repos/"
 folder = "DEXT_versions/weights/paz_faster_rcnn_weights/"
 weight_path = weight_path + folder

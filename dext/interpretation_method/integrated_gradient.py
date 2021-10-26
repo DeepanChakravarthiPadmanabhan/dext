@@ -180,7 +180,7 @@ class IntegratedGradients(Explainer):
 def IntegratedGradientExplainer(model_name, image, interpretation_method,
                                 layer_name, visualize_index, preprocessor_fn,
                                 image_size, steps=2, batch_size=1):
-    model = get_model(model_name, image, image_size)
+    model = get_model(model_name)
     ig = IntegratedGradients(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
                              image_size, steps, batch_size)

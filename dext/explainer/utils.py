@@ -11,8 +11,8 @@ from paz.datasets.utils import get_class_names
 LOGGER = logging.getLogger(__name__)
 
 
-def get_model(model_name, image=None, image_size=512):
-    model = ModelFactory(model_name, image, image_size).factory()
+def get_model(model_name):
+    model = ModelFactory(model_name).factory()
     return model
 
 
