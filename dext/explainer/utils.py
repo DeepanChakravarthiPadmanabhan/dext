@@ -129,28 +129,14 @@ def get_explaining_info(visualize_object_index, box_index,
 
 def get_box_feature_index(box_index, explaining, visualize_object, model_name,
                           visualize_box_offset=1):
-    if ('SSD' in model_name) or ('EFFICIENTDET' in model_name):
-        models_with_all_box_outs = True
+    if explaining == 'Classification':
+        selection = (0,
+                     int(box_index[visualize_object][0]),
+                     int(box_index[visualize_object][1]) + 4)
     else:
-        models_with_all_box_outs = False  # For FasterRCNN
-    if models_with_all_box_outs:
-        if explaining == 'Classification':
-            selection = (0,
-                         int(box_index[visualize_object][0]),
-                         int(box_index[visualize_object][1]) + 4)
-        else:
-            selection = (0,
-                         int(box_index[visualize_object][0]),
-                         int(visualize_box_offset))
-    else:
-        if explaining == 'Classification':
-            selection = (0,
-                         int(visualize_object),
-                         5)
-        else:
-            selection = (0,
-                         int(visualize_object),
-                         int(visualize_box_offset))
+        selection = (0,
+                     int(box_index[visualize_object][0]),
+                     int(visualize_box_offset))
     LOGGER.info('Selected visualizing index: %s' % (selection,))
     return selection
 
