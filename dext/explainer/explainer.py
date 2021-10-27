@@ -17,14 +17,14 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Box offset",
+@click.option("--to_explain", default="Classification",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
 @click.option("--result_dir", default="images/results/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
-@click.option("--visualize_object_index", default=4)  # 1 <
+@click.option("--visualize_object_index", default=6)  # 1 <
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
 @click.option("--num_images", default=1)  # 1 <

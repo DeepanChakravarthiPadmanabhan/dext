@@ -29,6 +29,12 @@ def visualize_saliency_diverging(image_3d, percentile=99):
     return image_2d
 
 
+def get_positive_negative_saliency(saliency):
+    pos_saliency = np.maximum(0, saliency) / saliency.max()
+    neg_saliency = np.maximum(0, -saliency) / -saliency.min()
+    return pos_saliency, neg_saliency
+
+
 def plot_detection_image(detection_image, ax=None):
     ax.imshow(detection_image)
     ax.axis('on')
