@@ -17,30 +17,30 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Classification",
+@click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
 @click.option("--result_dir", default="images/results/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
-@click.option("--visualize_object_index", default=6)  # 1 <
+@click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
-@click.option("--num_images", default=1)  # 1 <
+@click.option("--num_images", default=5)  # 1 <
 @click.option("--merge_method", default='pca',
               type=click.Choice(["pca", "tsne", "and_add", "and_average",
                                  "or_add", "or_average"]))
 @click.option("--save_detections", default=True)
 @click.option("--save_explanations", default=True)
 @click.option("--analyze_each_maps", default=True)
-@click.option("--ap_curve_linspace", default=3)
-@click.option("--eval_flip", default=False)
+@click.option("--ap_curve_linspace", default=100)
+@click.option("--eval_flip", default=True)
 @click.option("--eval_ap_explain", default=False)
-@click.option("--merge_saliency_maps", default=True)
+@click.option("--merge_saliency_maps", default=False)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--save_modified_images", default=False)
-@click.option("--evaluate_random_map", default=False)
+@click.option("--evaluate_random_map", default=True)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
                                  "DEBUG"]))

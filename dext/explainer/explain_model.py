@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 import time
 from copy import deepcopy
 import pandas as pd
@@ -44,6 +45,40 @@ def get_single_saliency(
     return saliency
 
 
+def create_all_dfs(ap_curve_linspace, df_class_flip, df_ap_curve, df_max_prob,
+                   df_reg_error, result_dir):
+    df_class_flip_columns = ["image_index", "object_index", "explaining",
+                             "detection", "saliency_iou", "saliency_centroid",
+                             "saliency_variance", "pixels_flipped"]
+    df_ap_curve_columns = ["image_index", "object_index", "explaining"]
+    ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
+                            for n in np.linspace(0, 1, ap_curve_linspace)]
+    df_max_prob_columns = ["image_index", "object_index", "pixels_flipped",
+                           "explaining"]
+    max_prob_percent = ["max_prob_" + str(round(n, 2))
+                        for n in np.linspace(0, 1, ap_curve_linspace)]
+    df_reg_error_columns = ["image_index", "object_index", "pixels_flipped",
+                            "explaining"]
+    reg_error_percent = ["reg_error_" + str(round(n, 2))
+                         for n in np.linspace(0, 1, ap_curve_linspace)]
+    df_ap_curve_columns = df_ap_curve_columns + ap_50percent_columns
+    df_max_prob_columns = df_max_prob_columns + max_prob_percent
+    df_reg_error_columns = df_reg_error_columns + reg_error_percent
+    class_flip = pd.DataFrame(df_class_flip, columns=df_class_flip_columns)
+    ap_curve = pd.DataFrame(df_ap_curve, columns=df_ap_curve_columns)
+    max_prob = pd.DataFrame(df_max_prob, columns=df_max_prob_columns)
+    reg_error = pd.DataFrame(df_reg_error, columns=df_reg_error_columns)
+    if os.path.exists(os.path.join(result_dir, 'report.xlsx')):
+        os.remove(os.path.join(result_dir, 'report.xlsx'))
+    excel_writer = pd.ExcelWriter(os.path.join(result_dir, "report.xlsx"),
+                                  engine="xlsxwriter")
+    class_flip.to_excel(excel_writer, sheet_name="class_flip")
+    ap_curve.to_excel(excel_writer, sheet_name="ap_curve")
+    max_prob.to_excel(excel_writer, sheet_name="max_prob_curve")
+    reg_error.to_excel(excel_writer, sheet_name="reg_error_curve")
+    excel_writer.save()
+
+
 def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
                 preprocessor_fn, postprocessor_fn, model_name, image_size,
                 explaining, ap_curve_linspace, image_index,
@@ -67,15 +102,15 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
                                detections[object_arg], saliency_iou,
                                saliency_centroid, saliency_variance,
                                num_pixels_flipped]
-        df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
+        df_class_flip.append(df_class_flip_entry)
         df_max_prob_entry = [str(image_index), object_arg, num_pixels_flipped,
                              explaining, ]
         df_max_prob_entry = df_max_prob_entry + max_prob_curve
-        df_max_prob.loc[len(df_max_prob)] = df_max_prob_entry
+        df_max_prob.append(df_max_prob_entry)
         df_reg_error_entry = [str(image_index), object_arg, num_pixels_flipped,
                               explaining, ]
         df_reg_error_entry = df_reg_error_entry + reg_error_curve
-        df_reg_error.loc[len(df_reg_error)] = df_reg_error_entry
+        df_reg_error.append(df_reg_error_entry)
 
     if eval_ap_explain:
         LOGGER.info('Extracting metrics for the explanation %s' % explaining)
@@ -86,7 +121,7 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
             explain_top5_backgrounds, save_modified_images)
         df_ap_curve_entry = [str(image_index), object_arg, explaining, ]
         df_ap_curve_entry = df_ap_curve_entry + ap_curve
-        df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
+        df_ap_curve.append(df_ap_curve_entry)
     return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
 
 
@@ -261,27 +296,10 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
 
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
                                             num_images)
-    df_class_flip_columns = ["image_index", "object_index", "explaining",
-                             "detection", "saliency_iou", "saliency_centroid",
-                             "saliency_variance", "pixels_flipped"]
-    df_ap_curve_columns = ["image_index", "object_index", "explaining"]
-    ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
-                            for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_max_prob_columns = ["image_index", "object_index", "pixels_flipped",
-                           "explaining"]
-    max_prob_percent = ["max_prob_" + str(round(n, 2))
-                        for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_reg_error_columns = ["image_index", "object_index", "pixels_flipped",
-                            "explaining"]
-    reg_error_percent = ["reg_error_" + str(round(n, 2))
-                         for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_ap_curve_columns = df_ap_curve_columns + ap_50percent_columns
-    df_max_prob_columns = df_max_prob_columns + max_prob_percent
-    df_reg_error_columns = df_reg_error_columns + reg_error_percent
-    df_class_flip = pd.DataFrame(columns=df_class_flip_columns)
-    df_ap_curve = pd.DataFrame(columns=df_ap_curve_columns)
-    df_max_prob = pd.DataFrame(columns=df_max_prob_columns)
-    df_reg_error = pd.DataFrame(columns=df_reg_error_columns)
+    df_class_flip = []
+    df_ap_curve = []
+    df_max_prob = []
+    df_reg_error = []
 
     for count, data in enumerate(to_be_explained):
         raw_image = data["image"]
@@ -329,14 +347,9 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
             df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
         else:
             LOGGER.info("No detections to analyze.")
-    excel_writer = pd.ExcelWriter(
-        os.path.join(result_dir, "report.xlsx"),
-        engine="xlsxwriter")
-    df_class_flip.to_excel(excel_writer, sheet_name="class_flip")
-    df_ap_curve.to_excel(excel_writer, sheet_name="ap_curve")
-    df_max_prob.to_excel(excel_writer, sheet_name="max_prob_curve")
-    df_reg_error.to_excel(excel_writer, sheet_name="reg_error_curve")
-    excel_writer.save()
+
+    create_all_dfs(ap_curve_linspace, df_class_flip, df_ap_curve,
+                   df_max_prob, df_reg_error, result_dir)
     end_time = time.time()
     LOGGER.info('Time taken: %s' % (end_time - start_time))
     LOGGER.info('%%% INTERPRETATION DONE %%%')
