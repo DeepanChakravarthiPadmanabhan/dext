@@ -1,10 +1,10 @@
 import logging
 import os
-import pickle
 import time
 from copy import deepcopy
 import pandas as pd
 import numpy as np
+import psutil
 
 from paz.backend.image.opencv_image import write_image
 from paz.processors.image import LoadImage
@@ -285,6 +285,7 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   merge_saliency_maps=False, explain_top5_backgrounds=True,
                   save_modified_images=True, evaluate_random_map=True):
     start_time = time.time()
+    process = psutil.Process(os.getpid())
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     if save_modified_images:
@@ -351,5 +352,7 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
     create_all_dfs(ap_curve_linspace, df_class_flip, df_ap_curve,
                    df_max_prob, df_reg_error, result_dir)
     end_time = time.time()
+    memory_profile_in_mb = process.memory_info().rss / 1024 ** 2
+    LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)
     LOGGER.info('Time taken: %s' % (end_time - start_time))
     LOGGER.info('%%% INTERPRETATION DONE %%%')
