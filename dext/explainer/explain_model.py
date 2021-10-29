@@ -3,7 +3,6 @@ import os
 import time
 import json
 from copy import deepcopy
-import pandas as pd
 import numpy as np
 import psutil
 
@@ -44,40 +43,6 @@ def get_single_saliency(
         model_name, deepcopy(raw_image), interpretation_method,
         layer_name, box_features, preprocessor_fn, image_size)
     return saliency
-
-
-def create_all_dfs(ap_curve_linspace, df_class_flip, df_ap_curve, df_max_prob,
-                   df_reg_error, result_dir):
-    df_class_flip_columns = ["image_index", "object_index", "explaining",
-                             "detection", "saliency_iou", "saliency_centroid",
-                             "saliency_variance", "pixels_flipped"]
-    df_ap_curve_columns = ["image_index", "object_index", "explaining"]
-    ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
-                            for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_max_prob_columns = ["image_index", "object_index", "pixels_flipped",
-                           "explaining"]
-    max_prob_percent = ["max_prob_" + str(round(n, 2))
-                        for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_reg_error_columns = ["image_index", "object_index", "pixels_flipped",
-                            "explaining"]
-    reg_error_percent = ["reg_error_" + str(round(n, 2))
-                         for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_ap_curve_columns = df_ap_curve_columns + ap_50percent_columns
-    df_max_prob_columns = df_max_prob_columns + max_prob_percent
-    df_reg_error_columns = df_reg_error_columns + reg_error_percent
-    class_flip = pd.DataFrame(df_class_flip, columns=df_class_flip_columns)
-    ap_curve = pd.DataFrame(df_ap_curve, columns=df_ap_curve_columns)
-    max_prob = pd.DataFrame(df_max_prob, columns=df_max_prob_columns)
-    reg_error = pd.DataFrame(df_reg_error, columns=df_reg_error_columns)
-    if os.path.exists(os.path.join(result_dir, 'report.xlsx')):
-        os.remove(os.path.join(result_dir, 'report.xlsx'))
-    excel_writer = pd.ExcelWriter(os.path.join(result_dir, "report.xlsx"),
-                                  engine="xlsxwriter")
-    class_flip.to_excel(excel_writer, sheet_name="class_flip")
-    ap_curve.to_excel(excel_writer, sheet_name="ap_curve")
-    max_prob.to_excel(excel_writer, sheet_name="max_prob_curve")
-    reg_error.to_excel(excel_writer, sheet_name="reg_error_curve")
-    excel_writer.save()
 
 
 def write_record(record, file_name):
