@@ -101,16 +101,16 @@ class COCOParser(object):
         self.images_path = os.path.join(self.dataset_path, self.dataset_name)
         self.coco = COCO(self.annotations_path)
         self.image_ids = self.coco.getImgIds()
-        if "train" in self.dataset_name:
-            self.image_ids = [114540, 117156, 128224, 130733,
-                              253710, 438751, 487851, 581929]
-        elif "val" in self.dataset_name:
-            self.image_ids = [252219,
-                              # 191672, 309391, 344611, 347456, 459954, 397133,
-                              # 37777,
-                              ]
-        else:
-            self.image_ids = [347456, 459954]
+        # if "train" in self.dataset_name:
+        #     self.image_ids = [114540, 117156, 128224, 130733,
+        #                       253710, 438751, 487851, 581929]
+        # elif "val" in self.dataset_name:
+        #     self.image_ids = [252219,
+        #                       191672, 309391, 344611, 347456, 459954, 397133,
+        #                       37777,
+        #                       ]
+        # else:
+        #     self.image_ids = [347456, 459954]
         if continue_run:
             LOGGER.info('Loading already ran ids from all excel files.')
             load_ran_ids = filter_image_ids()

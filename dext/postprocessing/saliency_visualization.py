@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
@@ -112,22 +113,22 @@ def plot_single_saliency(detection_image, image, saliency,
     return fig
 
 
-def plot_all(detection_image, image, saliency_list,
-             confidence, class_name,
+def plot_all(detection_image, image, saliency_list, confidence, class_name,
              explaining_list, box_offset_list, to_explain,
              interpretation_method="Integrated Gradients",
-             model_name="EfficientDet", mode="subplot"):
+             model_name="EfficientDet", mode="subplot",
+             explanation_result_dir=None, image_index=None, object_arg=None):
     image = check_overlay_image_shape(image, saliency_list[0], model_name)
     if mode == "subplot":
-        return plot_all_subplot(detection_image, image, saliency_list,
-                                confidence, class_name, explaining_list,
-                                box_offset_list, to_explain,
-                                interpretation_method, model_name)
-    else:
-        return plot_all_gridspec(detection_image, image, saliency_list,
-                                 confidence, class_name, explaining_list,
-                                 box_offset_list, to_explain,
-                                 interpretation_method, model_name)
+        f = plot_all_subplot(detection_image, image, saliency_list,
+                             confidence, class_name, explaining_list,
+                             box_offset_list, to_explain,
+                             interpretation_method, model_name)
+        f.savefig(os.path.join(
+            explanation_result_dir, 'explanation_' + str(image_index) + "_" +
+                                    "obj" + str(object_arg) + '.jpg'))
+        f.clear()
+        plt.close(f)
 
 
 def get_plot_params(num_axes):
