@@ -132,6 +132,7 @@ def explain_single_object(
     layer_name_list = explaining_info[2]
     box_offset_list = explaining_info[3]
     saliency_list = []
+    saliency_stat_list = []
     random_saliency_list = []
     confidence_list = []
     class_name_list = []
@@ -151,12 +152,12 @@ def explain_single_object(
                     "Confidence - %s, Explaining - %s, Box offset - %s"
                     % (str(image_index), class_name, class_confidence,
                        explaining, box_offset))
-        saliency = get_single_saliency(
+        saliency, saliency_stat = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
             box_offset, model_name, raw_image,
             layer_name, preprocessor_fn, image_size)
-
         saliency_list.append(saliency)
+        saliency_stat_list.append(saliency_stat)
         confidence_list.append(class_confidence)
         class_name_list.append(class_name)
         # analyze saliency maps
@@ -199,7 +200,7 @@ def explain_single_object(
         explanation_result_dir = os.path.join(result_dir, 'explanations')
         if not os.path.exists(explanation_result_dir):
             os.makedirs(explanation_result_dir)
-        plot_all(detection_image, raw_image, saliency_list,
+        plot_all(detection_image, raw_image, saliency_list, saliency_stat_list,
                  confidence_list, class_name_list, explaining_list,
                  box_offset_list, to_explain, interpretation_method,
                  model_name, "subplot", explanation_result_dir,

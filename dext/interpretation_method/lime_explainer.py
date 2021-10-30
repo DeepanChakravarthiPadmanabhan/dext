@@ -108,4 +108,5 @@ def LimeExplainer(model, model_name, image,
                      preprocessor_fn, image_size,
                      num_samples, min_weight, num_features)
     saliency = explainer.get_saliency_map()
-    return saliency
+    saliency_stat = (np.min(saliency), np.max(saliency))
+    return saliency, saliency_stat

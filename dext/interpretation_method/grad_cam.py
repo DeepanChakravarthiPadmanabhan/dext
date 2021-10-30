@@ -121,5 +121,6 @@ def GradCAMExplainer(model_name, image, interpretation_method,
                         layer_name, visualize_index, preprocessor_fn,
                         image_size, grad_cam_layer, guided_grad_cam)
     saliency = explainer.get_saliency_map()
+    saliency_stat = (np.min(saliency), np.max(saliency))
     saliency = visualize_saliency_grayscale(saliency, 100)
-    return saliency
+    return saliency, saliency_stat

@@ -101,5 +101,6 @@ def GuidedBackpropagationExplainer(model_name, image, interpretation_method,
                                       visualize_index, preprocessor_fn,
                                       image_size)
     saliency = explainer.get_saliency_map()
+    saliency_stat = (np.min(saliency), np.max(saliency))
     saliency = visualize_saliency_grayscale(saliency)
-    return saliency
+    return saliency, saliency_stat

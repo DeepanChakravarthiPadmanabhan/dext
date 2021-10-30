@@ -89,5 +89,6 @@ def SmoothGradExplainer(model_name, image, interpretation_method,
                     image_size, standard_deviation, nsamples,
                     magnitude, steps, batch_size)
     saliency = sg.get_saliency_map()
+    saliency_stat = (np.min(saliency), np.max(saliency))
     saliency = visualize_saliency_grayscale(saliency)
-    return saliency
+    return saliency, saliency_stat

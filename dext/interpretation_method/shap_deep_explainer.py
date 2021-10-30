@@ -109,4 +109,5 @@ def SHAP_DeepExplainer(model_name, image, interpretation_method,
                          layer_name, visualize_index, preprocessor_fn,
                          image_size, num_background_images, dataset_path)
     saliency = explainer.get_saliency_map()
-    return saliency
+    saliency_stat = (np.min(saliency), np.max(saliency))
+    return saliency, saliency_stat
