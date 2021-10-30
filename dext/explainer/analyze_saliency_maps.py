@@ -122,7 +122,8 @@ def eval_numflip_maxprob_regerror(
         saliency, raw_image, gt_boxes, detections, preprocessor_fn,
         postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
         object_index=None, ap_curve_linspace=10,
-        explain_top5_backgrounds=False, save_modified_images=True):
+        explain_top5_backgrounds=False, save_modified_images=True,
+        image_adulteration_method='subzero'):
     det_matching_interest_det = get_interest_det(detections[object_index])
     LOGGER.info('Evaluating numflip, maxprob, regerror on detection: %s'
                 % det_matching_interest_det)
@@ -139,9 +140,14 @@ def eval_numflip_maxprob_regerror(
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
         resized_image = resized_image[0].astype('uint8')
-        mask = np.zeros(saliency.shape).astype('uint8')
-        mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
-        modified_image = cv2.inpaint(resized_image, mask, 3, cv2.INPAINT_TELEA)
+        if image_adulteration_method == 'inpaint':
+            mask = np.zeros(saliency.shape).astype('uint8')
+            mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
+            modified_image = cv2.inpaint(resized_image, mask, 3,
+                                         cv2.INPAINT_TELEA)
+        else:
+            resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
+            modified_image = resized_image
         input_image, _ = preprocessor_fn(modified_image, image_size)
         model = get_model(model_name)
         outputs = model(input_image)
@@ -202,7 +208,7 @@ def eval_object_ap_curve(
         saliency, raw_image, preprocessor_fn, postprocessor_fn, image_size=512,
         model_name='SSD512', image_index=None, ap_curve_linspace=10,
         explain_top5_backgrounds=False, save_modified_images=False,
-        result_file='ap_curve.json',):
+        image_adulteration_method='inpaint', result_file='ap_curve.json',):
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
@@ -215,9 +221,14 @@ def eval_object_ap_curve(
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
         resized_image = resized_image[0].astype('uint8')
-        mask = np.zeros(saliency.shape).astype('uint8')
-        mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
-        modified_image = cv2.inpaint(resized_image, mask, 3, cv2.INPAINT_TELEA)
+        if image_adulteration_method == 'inpaint':
+            mask = np.zeros(saliency.shape).astype('uint8')
+            mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
+            modified_image = cv2.inpaint(resized_image, mask, 3,
+                                         cv2.INPAINT_TELEA)
+        else:
+            resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
+            modified_image = resized_image
         input_image, _ = preprocessor_fn(modified_image, image_size)
         model = get_model(model_name)
         outputs = model(input_image)

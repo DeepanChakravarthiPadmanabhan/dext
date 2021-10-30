@@ -54,8 +54,8 @@ def write_record(record, file_name):
 def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
                 preprocessor_fn, postprocessor_fn, model_name, image_size,
                 explaining, ap_curve_linspace, image_index,
-                explain_top5_backgrounds, save_modified_images, eval_flip,
-                eval_ap_explain):
+                explain_top5_backgrounds, save_modified_images,
+                image_adulteration_method, eval_flip, eval_ap_explain):
     if eval_flip:
         LOGGER.info('Extracting metrics for the explanation %s' % explaining)
         LOGGER.info('Performing max probability and regression error')
@@ -66,7 +66,7 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
             saliency, deepcopy(raw_image), gt_boxes, detections,
             preprocessor_fn, postprocessor_fn, image_size, model_name,
             object_arg, ap_curve_linspace, explain_top5_backgrounds,
-            save_modified_images)
+            save_modified_images, image_adulteration_method)
         num_pixels_flipped, max_prob_curve, reg_error_curve = eval_metrics
         df_class_flip_entry = [str(image_index), object_arg, explaining,
                                detections[object_arg].coordinates,
@@ -91,7 +91,8 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
         ap_curve = eval_object_ap_curve(
             saliency, deepcopy(raw_image), preprocessor_fn, postprocessor_fn,
             image_size, model_name, image_index, ap_curve_linspace,
-            explain_top5_backgrounds, save_modified_images)
+            explain_top5_backgrounds, save_modified_images,
+            image_adulteration_method)
         df_ap_curve_entry = [str(image_index), object_arg, explaining, ]
         df_ap_curve_entry = df_ap_curve_entry + ap_curve
         write_record(df_ap_curve_entry, 'ap_curve')
@@ -101,16 +102,16 @@ def merge_all_maps(saliency_list, merge_method, analyze_each_maps,
                    detections, raw_image, gt_boxes, preprocessor_fn,
                    postprocessor_fn, image_size, title, model_name,
                    ap_curve_linspace, image_index, explain_top5_backgrounds,
-                   save_modified_images, object_arg, eval_flip,
-                   eval_ap_explain):
+                   save_modified_images, image_adulteration_method, object_arg,
+                   eval_flip, eval_ap_explain):
     combined_saliency = merge_saliency(saliency_list, merge_method)
     if analyze_each_maps:
         get_metrics(
             detections, deepcopy(raw_image), gt_boxes, combined_saliency,
             object_arg, preprocessor_fn, postprocessor_fn, model_name,
             image_size, title, ap_curve_linspace, image_index,
-            explain_top5_backgrounds, save_modified_images, eval_flip,
-            eval_ap_explain)
+            explain_top5_backgrounds, save_modified_images,
+            image_adulteration_method, eval_flip, eval_ap_explain)
 
 
 def explain_single_object(
@@ -120,7 +121,7 @@ def explain_single_object(
         visualize_box_offset, model_name, merge_method, image_index,
         save_explanations, analyze_each_maps, ap_curve_linspace, eval_flip,
         eval_ap_explain, merge_saliency_maps, explain_top5_backgrounds,
-        save_modified_images, evaluate_random_map):
+        save_modified_images, image_adulteration_method, evaluate_random_map):
     explaining_info = get_explaining_info(
         object_arg, box_index, to_explain, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name)
@@ -167,7 +168,7 @@ def explain_single_object(
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset), ap_curve_linspace,
                 image_index, explain_top5_backgrounds, save_modified_images,
-                eval_flip, eval_ap_explain)
+                image_adulteration_method, eval_flip, eval_ap_explain)
         if evaluate_random_map:
             random_map = np.random.random((image_size, image_size))
             random_saliency_list.append(random_map)
@@ -176,7 +177,8 @@ def explain_single_object(
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset) + '_random',
                 ap_curve_linspace, image_index, explain_top5_backgrounds,
-                save_modified_images, eval_flip, eval_ap_explain)
+                save_modified_images, image_adulteration_method, eval_flip,
+                eval_ap_explain)
 
     if merge_saliency_maps:
         LOGGER.info('Merging saliency maps')
@@ -185,7 +187,8 @@ def explain_single_object(
             deepcopy(raw_image), gt_boxes, preprocessor_fn, postprocessor_fn,
             image_size, 'combined', model_name, ap_curve_linspace, image_index,
             explain_top5_backgrounds, save_modified_images,
-            object_index_list[0], eval_flip, eval_ap_explain)
+            image_adulteration_method, object_index_list[0], eval_flip,
+            eval_ap_explain)
         if evaluate_random_map:
             LOGGER.info('Merging saliency maps - random baseline')
             merge_all_maps(
@@ -193,8 +196,8 @@ def explain_single_object(
                 detections, deepcopy(raw_image), gt_boxes, preprocessor_fn,
                 postprocessor_fn, image_size, 'random', model_name,
                 ap_curve_linspace, image_index, explain_top5_backgrounds,
-                save_modified_images, object_index_list[0], eval_flip,
-                eval_ap_explain)
+                save_modified_images, image_adulteration_method,
+                object_index_list[0], eval_flip, eval_ap_explain)
 
     if save_explanations:
         explanation_result_dir = os.path.join(result_dir, 'explanations')
@@ -217,7 +220,7 @@ def explain_all_objects(
         visualize_box_offset, model_name, merge_method, image_index,
         save_explanations, analyze_each_maps, ap_curve_linspace, eval_flip,
         eval_ap_explain, merge_saliency_maps, explain_top5_backgrounds,
-        save_modified_images, evaluate_random_map):
+        save_modified_images, image_adulteration_method, evaluate_random_map):
     for object_arg in objects_to_analyze:
         explain_single_object(
             raw_image, image_size, gt_boxes, preprocessor_fn, postprocessor_fn,
@@ -227,8 +230,7 @@ def explain_all_objects(
             image_index, save_explanations, analyze_each_maps,
             ap_curve_linspace, eval_flip, eval_ap_explain, merge_saliency_maps,
             explain_top5_backgrounds, save_modified_images,
-            evaluate_random_map)
-
+            image_adulteration_method, evaluate_random_map)
 
 
 def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
@@ -240,7 +242,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   save_explanations=False, analyze_each_maps=False,
                   ap_curve_linspace=20, eval_flip=False, eval_ap_explain=False,
                   merge_saliency_maps=False, explain_top5_backgrounds=True,
-                  save_modified_images=True, evaluate_random_map=True):
+                  save_modified_images=True, image_adulteration_method=None,
+                  evaluate_random_map=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     if not os.path.exists(result_dir):
@@ -296,7 +299,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                 model_name, merge_method, image_index, save_explanations,
                 analyze_each_maps, ap_curve_linspace, eval_flip,
                 eval_ap_explain, merge_saliency_maps, explain_top5_backgrounds,
-                save_modified_images, evaluate_random_map)
+                save_modified_images, image_adulteration_method,
+                evaluate_random_map)
         else:
             LOGGER.info("No detections to analyze.")
 
