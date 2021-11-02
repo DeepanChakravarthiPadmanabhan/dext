@@ -124,7 +124,7 @@ def eval_numflip_maxprob_regerror(
         postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
         object_index=None, ap_curve_linspace=10,
         explain_top5_backgrounds=False, save_modified_images=True,
-        image_adulteration_method='subzero'):
+        image_adulteration_method='subzero', result_dir=None):
     det_matching_interest_det = get_interest_det(detections[object_index])
     LOGGER.info('Evaluating numflip, maxprob, regerror on detection: %s'
                 % det_matching_interest_det)
@@ -138,6 +138,7 @@ def eval_numflip_maxprob_regerror(
     model = get_model(model_name)
     raw_image_modifier = get_image(raw_image_path)
     for n, percent in enumerate(percentage_space[:-1]):
+        print('Percent: ', n)
         resized_image, image_scales = preprocessor_fn(
             raw_image_modifier, image_size, True)
         num_pixels_selected = int(num_pixels * percent)
@@ -157,10 +158,10 @@ def eval_numflip_maxprob_regerror(
             model, outputs, image_scales, get_image(raw_image_path),
             image_size, explain_top5_backgrounds)
         if save_modified_images:
-            plt.imsave("images/results/modified_images/modified_flip" +
-                       str(n) + ".jpg", modified_image)
-            plt.imsave("images/results/modified_images/detection_flip" +
-                       str(n) + '.jpg', detection_image)
+            plt.imsave(os.path.join(result_dir, "modified_images") +
+                       "/modified_image" + str(n) + ".jpg", modified_image)
+            plt.imsave(os.path.join(result_dir, "modified_images") +
+                       "/detection_flip" + str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections) and len(det_matching_interest_det):
@@ -209,7 +210,7 @@ def eval_object_ap_curve(
         image_size=512, model_name='SSD512', image_index=None,
         ap_curve_linspace=10, explain_top5_backgrounds=False,
         save_modified_images=False, image_adulteration_method='inpaint',
-        result_file='ap_curve.json',):
+        result_dir=None, result_file='ap_curve.json',):
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
@@ -238,10 +239,10 @@ def eval_object_ap_curve(
             model, outputs, image_scales, get_image(raw_image_path),
             image_size, explain_top5_backgrounds)
         if save_modified_images:
-            plt.imsave("images/results/modified_images/modified_ap" +
-                       str(n) + ".jpg", modified_image)
-            plt.imsave("images/results/modified_images/detection_ap" +
-                       str(n) + '.jpg', detection_image)
+            plt.imsave(os.path.join(result_dir, "modified_images") +
+                       "/modified_image" + str(n) + ".jpg", modified_image)
+            plt.imsave(os.path.join(result_dir, "modified_images") +
+                       "/detection_flip" + str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections):

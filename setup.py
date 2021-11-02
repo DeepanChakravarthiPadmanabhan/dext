@@ -12,8 +12,8 @@ else:
 dependencies = [
     "numpy",
     "opencv-python",
-    "tensorflow",
-    "pypaz",
+    #"tensorflow_gpu==2.3.0",
+    #"pypaz",
     "click",
     "pandas",
     "pycocotools",
@@ -24,6 +24,7 @@ dependencies = [
     "shap",
     "gin-config==0.3.0",
     "jupyter",
+    "psutil",
 ]
 
 setup(

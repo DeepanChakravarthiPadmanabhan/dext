@@ -4,6 +4,7 @@ import time
 import json
 import numpy as np
 import psutil
+import tensorflow as tf
 
 from paz.backend.image.opencv_image import write_image
 
@@ -65,7 +66,7 @@ def get_metrics(detections, raw_image_path, saliency, object_arg,
             saliency, raw_image_path, detections,
             preprocessor_fn, postprocessor_fn, image_size, model_name,
             object_arg, ap_curve_linspace, explain_top5_backgrounds,
-            save_modified_images, image_adulteration_method)
+            save_modified_images, image_adulteration_method, result_dir)
         num_pixels_flipped, max_prob_curve, reg_error_curve = eval_metrics
         df_class_flip_entry = [str(image_index), object_arg, explaining,
                                detections[object_arg].coordinates,
@@ -91,7 +92,7 @@ def get_metrics(detections, raw_image_path, saliency, object_arg,
             saliency, raw_image_path, preprocessor_fn, postprocessor_fn,
             image_size, model_name, image_index, ap_curve_linspace,
             explain_top5_backgrounds, save_modified_images,
-            image_adulteration_method)
+            image_adulteration_method, result_dir)
         df_ap_curve_entry = [str(image_index), object_arg, explaining, ]
         df_ap_curve_entry = df_ap_curve_entry + ap_curve
         write_record(df_ap_curve_entry, 'ap_curve', result_dir)
@@ -248,6 +249,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   evaluate_random_map=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())
+    LOGGER.info("TF device check: %s" % tf.test.is_gpu_available())
+    LOGGER.info("TF device name: %s" % tf.config.list_physical_devices('GPU'))
     result_dir = os.path.join(result_dir,
                               model_name + '_' + interpretation_method)
     if not os.path.exists(result_dir):
