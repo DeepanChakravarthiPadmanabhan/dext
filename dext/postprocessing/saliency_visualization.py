@@ -8,6 +8,7 @@ import cv2
 from paz.backend.image import resize_image
 from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.explainer.utils import get_box_index_to_arg
+from dext.utils.get_image import get_image
 
 
 def visualize_saliency_grayscale(image_3d, percentile=99):
@@ -121,6 +122,7 @@ def plot_all(detection_image, image, saliency_list, saliency_stat_list,
              to_explain, interpretation_method="Integrated Gradients",
              model_name="EfficientDet", mode="subplot",
              explanation_result_dir=None, image_index=None, object_arg=None):
+    image = get_image(image)
     image = check_overlay_image_shape(image, saliency_list[0], model_name)
     if mode == "subplot":
         f = plot_all_subplot(detection_image, image, saliency_list,

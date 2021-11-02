@@ -2,12 +2,10 @@ import logging
 import os
 import time
 import json
-from copy import deepcopy
 import numpy as np
 import psutil
 
 from paz.backend.image.opencv_image import write_image
-from paz.processors.image import LoadImage
 
 from dext.explainer.utils import get_model
 from dext.factory.preprocess_factory import PreprocessorFactory
@@ -30,7 +28,7 @@ LOGGER = logging.getLogger(__name__)
 
 def get_single_saliency(
         interpretation_method, box_index, explaining, visualize_object_index,
-        visualize_box_offset, model_name, raw_image, layer_name,
+        visualize_box_offset, model_name, raw_image_path, layer_name,
         preprocessor_fn, image_size):
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
@@ -40,7 +38,7 @@ def get_single_saliency(
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
     saliency = interpretation_method_fn(
-        model_name, deepcopy(raw_image), interpretation_method,
+        model_name, raw_image_path, interpretation_method,
         layer_name, box_features, preprocessor_fn, image_size)
     return saliency
 
@@ -51,7 +49,7 @@ def write_record(record, file_name):
         f.write(os.linesep)
 
 
-def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
+def get_metrics(detections, raw_image_path, saliency, object_arg,
                 preprocessor_fn, postprocessor_fn, model_name, image_size,
                 explaining, ap_curve_linspace, image_index,
                 explain_top5_backgrounds, save_modified_images,
@@ -60,10 +58,10 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
         LOGGER.info('Extracting metrics for the explanation %s' % explaining)
         LOGGER.info('Performing max probability and regression error')
         (saliency_iou, saliency_centroid,
-         saliency_variance) = analyze_saliency_maps(detections, raw_image,
+         saliency_variance) = analyze_saliency_maps(detections, raw_image_path,
                                                     saliency, object_arg)
         eval_metrics = eval_numflip_maxprob_regerror(
-            saliency, deepcopy(raw_image), gt_boxes, detections,
+            saliency, raw_image_path, detections,
             preprocessor_fn, postprocessor_fn, image_size, model_name,
             object_arg, ap_curve_linspace, explain_top5_backgrounds,
             save_modified_images, image_adulteration_method)
@@ -89,7 +87,7 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
         LOGGER.info('Extracting metrics for the explanation %s' % explaining)
         LOGGER.info('Performing AP Curve evaluation')
         ap_curve = eval_object_ap_curve(
-            saliency, deepcopy(raw_image), preprocessor_fn, postprocessor_fn,
+            saliency, raw_image_path, preprocessor_fn, postprocessor_fn,
             image_size, model_name, image_index, ap_curve_linspace,
             explain_top5_backgrounds, save_modified_images,
             image_adulteration_method)
@@ -99,7 +97,7 @@ def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
 
 
 def merge_all_maps(saliency_list, merge_method, analyze_each_maps,
-                   detections, raw_image, gt_boxes, preprocessor_fn,
+                   detections, raw_image_path, preprocessor_fn,
                    postprocessor_fn, image_size, title, model_name,
                    ap_curve_linspace, image_index, explain_top5_backgrounds,
                    save_modified_images, image_adulteration_method, object_arg,
@@ -107,7 +105,7 @@ def merge_all_maps(saliency_list, merge_method, analyze_each_maps,
     combined_saliency = merge_saliency(saliency_list, merge_method)
     if analyze_each_maps:
         get_metrics(
-            detections, deepcopy(raw_image), gt_boxes, combined_saliency,
+            detections, raw_image_path, combined_saliency,
             object_arg, preprocessor_fn, postprocessor_fn, model_name,
             image_size, title, ap_curve_linspace, image_index,
             explain_top5_backgrounds, save_modified_images,
@@ -115,7 +113,7 @@ def merge_all_maps(saliency_list, merge_method, analyze_each_maps,
 
 
 def explain_single_object(
-        raw_image, image_size, gt_boxes, preprocessor_fn, postprocessor_fn,
+        raw_image_path, image_size, preprocessor_fn, postprocessor_fn,
         detections, detection_image, interpretation_method, object_arg,
         box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name, merge_method, image_index,
@@ -155,7 +153,7 @@ def explain_single_object(
                        explaining, box_offset))
         saliency, saliency_stat = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
-            box_offset, model_name, raw_image,
+            box_offset, model_name, raw_image_path,
             layer_name, preprocessor_fn, image_size)
         saliency_list.append(saliency)
         saliency_stat_list.append(saliency_stat)
@@ -164,7 +162,7 @@ def explain_single_object(
         # analyze saliency maps
         if analyze_each_maps:
             get_metrics(
-                detections, deepcopy(raw_image), gt_boxes, saliency,
+                detections, raw_image_path, saliency,
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset), ap_curve_linspace,
                 image_index, explain_top5_backgrounds, save_modified_images,
@@ -173,7 +171,7 @@ def explain_single_object(
             random_map = np.random.random((image_size, image_size))
             random_saliency_list.append(random_map)
             get_metrics(
-                detections, deepcopy(raw_image), gt_boxes, random_map,
+                detections, raw_image_path, random_map,
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset) + '_random',
                 ap_curve_linspace, image_index, explain_top5_backgrounds,
@@ -184,7 +182,7 @@ def explain_single_object(
         LOGGER.info('Merging saliency maps')
         merge_all_maps(
             saliency_list, merge_method, analyze_each_maps, detections,
-            deepcopy(raw_image), gt_boxes, preprocessor_fn, postprocessor_fn,
+            raw_image_path, preprocessor_fn, postprocessor_fn,
             image_size, 'combined', model_name, ap_curve_linspace, image_index,
             explain_top5_backgrounds, save_modified_images,
             image_adulteration_method, object_index_list[0], eval_flip,
@@ -193,7 +191,7 @@ def explain_single_object(
             LOGGER.info('Merging saliency maps - random baseline')
             merge_all_maps(
                 random_saliency_list, merge_method, analyze_each_maps,
-                detections, deepcopy(raw_image), gt_boxes, preprocessor_fn,
+                detections, raw_image_path, preprocessor_fn,
                 postprocessor_fn, image_size, 'random', model_name,
                 ap_curve_linspace, image_index, explain_top5_backgrounds,
                 save_modified_images, image_adulteration_method,
@@ -203,18 +201,18 @@ def explain_single_object(
         explanation_result_dir = os.path.join(result_dir, 'explanations')
         if not os.path.exists(explanation_result_dir):
             os.makedirs(explanation_result_dir)
-        plot_all(detection_image, raw_image, saliency_list, saliency_stat_list,
-                 confidence_list, class_name_list, explaining_list,
-                 box_offset_list, to_explain, interpretation_method,
-                 model_name, "subplot", explanation_result_dir,
-                 image_index, object_arg)
+        plot_all(detection_image, raw_image_path, saliency_list,
+                 saliency_stat_list, confidence_list, class_name_list,
+                 explaining_list, box_offset_list, to_explain,
+                 interpretation_method, model_name, "subplot",
+                 explanation_result_dir, image_index, object_arg)
     LOGGER.info("Box and class labels, after post-processing: %s"
                 % box_index)
     LOGGER.info("Completed explaining image index: %s" % str(image_index))
 
 
 def explain_all_objects(
-        objects_to_analyze, raw_image, image_size, gt_boxes, preprocessor_fn,
+        objects_to_analyze, raw_image_path, image_size, preprocessor_fn,
         postprocessor_fn, detections, detection_image, interpretation_method,
         box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
         visualize_box_offset, model_name, merge_method, image_index,
@@ -223,7 +221,7 @@ def explain_all_objects(
         save_modified_images, image_adulteration_method, evaluate_random_map):
     for object_arg in objects_to_analyze:
         explain_single_object(
-            raw_image, image_size, gt_boxes, preprocessor_fn, postprocessor_fn,
+            raw_image_path, image_size, preprocessor_fn, postprocessor_fn,
             detections, detection_image, interpretation_method,
             object_arg, box_index, to_explain, result_dir, class_layer_name,
             reg_layer_name, visualize_box_offset, model_name, merge_method,
@@ -259,13 +257,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                                             num_images)
 
     for count, data in enumerate(to_be_explained):
-        raw_image = data["image"]
+        raw_image_path = data["image"]
         image_index = data["image_index"]
-        gt_boxes = data["boxes"]
-        loader = LoadImage()
-        raw_image = loader(raw_image)
-        raw_image = raw_image.astype('uint8')
-        image = deepcopy(raw_image)
         model = get_model(model_name)
         LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
         LOGGER.info('Explaining image count: %s' % str(count + 1))
@@ -273,7 +266,7 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
 
         # forward pass - get model outputs for input image
         forward_pass_outs = inference_fn(
-            model, deepcopy(image), preprocessor_fn, postprocessor_fn,
+            model, raw_image_path, preprocessor_fn, postprocessor_fn,
             image_size, explain_top5_backgrounds)
         detection_image = forward_pass_outs[0]
         detections = forward_pass_outs[1]
@@ -285,14 +278,13 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                 os.makedirs(detections_result_dir)
             write_image(os.path.join(
                 detections_result_dir, "paz_postprocess.jpg"), detection_image)
-
         if len(detections):
             if visualize_object_index == 'all':
                 objects_to_analyze = list(range(1, len(detections) + 1))
             else:
                 objects_to_analyze = [int(visualize_object_index)]
             explain_all_objects(
-                objects_to_analyze, deepcopy(raw_image), image_size, gt_boxes,
+                objects_to_analyze, raw_image_path, image_size,
                 preprocessor_fn, postprocessor_fn, detections, detection_image,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,

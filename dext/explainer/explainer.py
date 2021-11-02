@@ -40,6 +40,8 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--merge_saliency_maps", default=True)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--save_modified_images", default=False)
+@click.option("--image_adulteration_method", default='inpaint',
+              type=click.Choice(["inpaint", "subzero"]))
 @click.option("--evaluate_random_map", default=True)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
@@ -52,7 +54,8 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
               save_explanations, analyze_each_maps, ap_curve_linspace,
               eval_flip, eval_ap_explain, merge_saliency_maps,
               explain_top5_backgrounds, save_modified_images,
-              evaluate_random_map, log_level, log_dir):
+              image_adulteration_method, evaluate_random_map, log_level,
+              log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -63,7 +66,8 @@ def explainer(config, model_name, explain_mode, input_image_path, image_size,
                   save_detections, save_explanations, analyze_each_maps,
                   ap_curve_linspace, eval_flip, eval_ap_explain,
                   merge_saliency_maps, explain_top5_backgrounds,
-                  save_modified_images, evaluate_random_map)
+                  save_modified_images, image_adulteration_method,
+                  evaluate_random_map)
 
 
 if __name__ == "__main__":

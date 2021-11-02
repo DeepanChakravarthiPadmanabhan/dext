@@ -1,9 +1,11 @@
 from dext.model.faster_rcnn.utils import norm_boxes_graph
+from dext.utils.get_image import get_image
 
 
-def inference_image_efficientdet(model, raw_image, preprocessor_fn,
+def inference_image_efficientdet(model, raw_image_path, preprocessor_fn,
                                  postprocessor_fn, image_size,
                                  explain_top5_backgrounds=False):
+    raw_image = get_image(raw_image_path)
     input_image, image_scales = preprocessor_fn(raw_image, image_size)
     outputs = model(input_image)
     detection_image, detections, box_index = postprocessor_fn(
@@ -13,8 +15,10 @@ def inference_image_efficientdet(model, raw_image, preprocessor_fn,
     return forward_pass_outs
 
 
-def inference_image_ssd(model, raw_image, preprocessor_fn, postprocessor_fn,
-                        image_size, explain_top5_backgrounds=False):
+def inference_image_ssd(model, raw_image_path, preprocessor_fn,
+                        postprocessor_fn, image_size,
+                        explain_top5_backgrounds=False):
+    raw_image = get_image(raw_image_path)
     input_image, image_scales = preprocessor_fn(raw_image, image_size)
     outputs = model(input_image)
     detection_image, detections, box_index = postprocessor_fn(
@@ -24,9 +28,10 @@ def inference_image_ssd(model, raw_image, preprocessor_fn, postprocessor_fn,
     return forward_pass_outs
 
 
-def inference_image_faster_rcnn(model, raw_image, preprocessor_fn,
+def inference_image_faster_rcnn(model, raw_image_path, preprocessor_fn,
                                 postprocessor_fn, image_size,
                                 explain_top5_backgrounds=False):
+    raw_image = get_image(raw_image_path)
     input_image, image_scales = preprocessor_fn(raw_image, image_size)
     config_window = norm_boxes_graph(image_scales, (image_size, image_size))
     outputs = model(input_image, config_window)

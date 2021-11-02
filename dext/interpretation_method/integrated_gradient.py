@@ -8,6 +8,7 @@ from dext.abstract.explanation import Explainer
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
 from dext.explainer.utils import get_model
+from dext.utils.get_image import get_image
 
 LOGGER = logging.getLogger(__name__)
 
@@ -177,9 +178,10 @@ class IntegratedGradients(Explainer):
         plt.savefig(save_path)
 
 
-def IntegratedGradientExplainer(model_name, image, interpretation_method,
+def IntegratedGradientExplainer(model_name, image_path, interpretation_method,
                                 layer_name, visualize_index, preprocessor_fn,
                                 image_size, steps=2, batch_size=1):
+    image = get_image(image_path)
     model = get_model(model_name)
     ig = IntegratedGradients(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,

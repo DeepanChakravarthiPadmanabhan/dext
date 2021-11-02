@@ -8,6 +8,7 @@ from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
 from dext.explainer.utils import get_model
+from dext.utils.get_image import get_image
 
 LOGGER = logging.getLogger(__name__)
 
@@ -92,9 +93,11 @@ class GuidedBackpropagation(Explainer):
         return saliency
 
 
-def GuidedBackpropagationExplainer(model_name, image, interpretation_method,
-                                   layer_name, visualize_index,
-                                   preprocessor_fn, image_size):
+def GuidedBackpropagationExplainer(model_name, image_path,
+                                   interpretation_method, layer_name,
+                                   visualize_index, preprocessor_fn,
+                                   image_size):
+    image = get_image(image_path)
     model = get_model(model_name)
     explainer = GuidedBackpropagation(model, model_name, image,
                                       interpretation_method, layer_name,

@@ -4,7 +4,6 @@ import json
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from copy import deepcopy
 import gin
 
 from dext.explainer.utils import resize_box
@@ -14,6 +13,7 @@ from dext.evaluate.utils import get_evaluation_details
 from dext.evaluate.coco_evaluation import get_coco_metrics
 from paz.backend.boxes import compute_iou
 from dext.evaluate.utils import get_category_id
+from dext.utils.get_image import get_image
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,8 +53,9 @@ def calculate_variance(mask_2d):
     return np.var(mask_2d)
 
 
-def analyze_saliency_maps(detections, image, saliency_map,
+def analyze_saliency_maps(detections, raw_image_path, saliency_map,
                           visualize_object_index):
+    image = get_image(raw_image_path)
     box = detections[visualize_object_index]
     box = resize_box(box, image.shape, saliency_map.shape)
     mask_2d = get_saliency_mask(saliency_map)
@@ -119,7 +120,7 @@ def get_interest_det(detection):
 
 
 def eval_numflip_maxprob_regerror(
-        saliency, raw_image, gt_boxes, detections, preprocessor_fn,
+        saliency, raw_image_path, detections, preprocessor_fn,
         postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
         object_index=None, ap_curve_linspace=10,
         explain_top5_backgrounds=False, save_modified_images=True,
@@ -134,9 +135,11 @@ def eval_numflip_maxprob_regerror(
     sorted_indices = np.vstack(sorted_flat_indices).T
     max_prob_list = [0, ] * len(percentage_space)
     reg_error_list = [np.inf, ] * len(percentage_space)
+    model = get_model(model_name)
+    raw_image_modifier = get_image(raw_image_path)
     for n, percent in enumerate(percentage_space[:-1]):
         resized_image, image_scales = preprocessor_fn(
-            deepcopy(raw_image), image_size, True)
+            raw_image_modifier, image_size, True)
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
         resized_image = resized_image[0].astype('uint8')
@@ -149,11 +152,10 @@ def eval_numflip_maxprob_regerror(
             resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
             modified_image = resized_image
         input_image, _ = preprocessor_fn(modified_image, image_size)
-        model = get_model(model_name)
         outputs = model(input_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, deepcopy(raw_image), image_size,
-            explain_top5_backgrounds)
+            model, outputs, image_scales, get_image(raw_image_path),
+            image_size, explain_top5_backgrounds)
         if save_modified_images:
             plt.imsave("images/results/modified_images/modified_flip" +
                        str(n) + ".jpg", modified_image)
@@ -163,7 +165,6 @@ def eval_numflip_maxprob_regerror(
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections) and len(det_matching_interest_det):
             all_boxes = get_evaluation_details(detections, 'corners')
-
             metrics = get_flipstatus_maxprob_regerror(
                 all_boxes, det_matching_interest_det, percent)
             flag_label_flip, max_prob, reg_error = metrics
@@ -175,7 +176,6 @@ def eval_numflip_maxprob_regerror(
                 max_prob_list[n] = max_prob
                 reg_error_list[n] = reg_error
                 continue
-
         else:
             max_prob_list[n] = 0
             reg_error_list[n] = np.inf
@@ -205,19 +205,22 @@ def coco_eval_ap50(image_index, all_boxes, result_file, percent,
 
 
 def eval_object_ap_curve(
-        saliency, raw_image, preprocessor_fn, postprocessor_fn, image_size=512,
-        model_name='SSD512', image_index=None, ap_curve_linspace=10,
-        explain_top5_backgrounds=False, save_modified_images=False,
-        image_adulteration_method='inpaint', result_file='ap_curve.json',):
+        saliency, raw_image_path, preprocessor_fn, postprocessor_fn,
+        image_size=512, model_name='SSD512', image_index=None,
+        ap_curve_linspace=10, explain_top5_backgrounds=False,
+        save_modified_images=False, image_adulteration_method='inpaint',
+        result_file='ap_curve.json',):
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
     sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
     sorted_indices = np.vstack(sorted_flat_indices).T
     ap_curve = [0, ] * len(percentage_space)
+    model = get_model(model_name)
+    raw_image_modifier = get_image(raw_image_path)
     for n, percent in enumerate(percentage_space[:-1]):
         resized_image, image_scales = preprocessor_fn(
-            deepcopy(raw_image), image_size, True)
+            raw_image_modifier, image_size, True)
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
         resized_image = resized_image[0].astype('uint8')
@@ -230,11 +233,10 @@ def eval_object_ap_curve(
             resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
             modified_image = resized_image
         input_image, _ = preprocessor_fn(modified_image, image_size)
-        model = get_model(model_name)
         outputs = model(input_image)
         detection_image, detections, _ = postprocessor_fn(
-            model, outputs, image_scales, deepcopy(raw_image), image_size,
-            explain_top5_backgrounds)
+            model, outputs, image_scales, get_image(raw_image_path),
+            image_size, explain_top5_backgrounds)
         if save_modified_images:
             plt.imsave("images/results/modified_images/modified_ap" +
                        str(n) + ".jpg", modified_image)
