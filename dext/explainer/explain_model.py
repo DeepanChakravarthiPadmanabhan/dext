@@ -43,7 +43,8 @@ def get_single_saliency(
     return saliency
 
 
-def write_record(record, file_name):
+def write_record(record, file_name, result_dir):
+    file_name = os.path.join(result_dir, file_name)
     with open(file_name, 'a', encoding='utf-8') as f:
         json.dump(record, f, ensure_ascii=False)
         f.write(os.linesep)
@@ -51,7 +52,7 @@ def write_record(record, file_name):
 
 def get_metrics(detections, raw_image_path, saliency, object_arg,
                 preprocessor_fn, postprocessor_fn, model_name, image_size,
-                explaining, ap_curve_linspace, image_index,
+                explaining, ap_curve_linspace, image_index, result_dir,
                 explain_top5_backgrounds, save_modified_images,
                 image_adulteration_method, eval_flip, eval_ap_explain):
     if eval_flip:
@@ -73,15 +74,15 @@ def get_metrics(detections, raw_image_path, saliency, object_arg,
                                saliency_iou,
                                saliency_centroid, saliency_variance,
                                num_pixels_flipped]
-        write_record(df_class_flip_entry, 'class_flip')
+        write_record(df_class_flip_entry, 'class_flip', result_dir)
         df_max_prob_entry = [str(image_index), object_arg, num_pixels_flipped,
                              explaining, ]
         df_max_prob_entry = df_max_prob_entry + max_prob_curve
-        write_record(df_max_prob_entry, 'max_prob')
+        write_record(df_max_prob_entry, 'max_prob', result_dir)
         df_reg_error_entry = [str(image_index), object_arg, num_pixels_flipped,
                               explaining, ]
         df_reg_error_entry = df_reg_error_entry + reg_error_curve
-        write_record(df_reg_error_entry, 'reg_error')
+        write_record(df_reg_error_entry, 'reg_error', result_dir)
 
     if eval_ap_explain:
         LOGGER.info('Extracting metrics for the explanation %s' % explaining)
@@ -93,21 +94,22 @@ def get_metrics(detections, raw_image_path, saliency, object_arg,
             image_adulteration_method)
         df_ap_curve_entry = [str(image_index), object_arg, explaining, ]
         df_ap_curve_entry = df_ap_curve_entry + ap_curve
-        write_record(df_ap_curve_entry, 'ap_curve')
+        write_record(df_ap_curve_entry, 'ap_curve', result_dir)
 
 
 def merge_all_maps(saliency_list, merge_method, analyze_each_maps,
                    detections, raw_image_path, preprocessor_fn,
                    postprocessor_fn, image_size, title, model_name,
-                   ap_curve_linspace, image_index, explain_top5_backgrounds,
-                   save_modified_images, image_adulteration_method, object_arg,
+                   ap_curve_linspace, image_index, result_dir,
+                   explain_top5_backgrounds, save_modified_images,
+                   image_adulteration_method, object_arg,
                    eval_flip, eval_ap_explain):
     combined_saliency = merge_saliency(saliency_list, merge_method)
     if analyze_each_maps:
         get_metrics(
             detections, raw_image_path, combined_saliency,
             object_arg, preprocessor_fn, postprocessor_fn, model_name,
-            image_size, title, ap_curve_linspace, image_index,
+            image_size, title, ap_curve_linspace, image_index, result_dir,
             explain_top5_backgrounds, save_modified_images,
             image_adulteration_method, eval_flip, eval_ap_explain)
 
@@ -165,8 +167,9 @@ def explain_single_object(
                 detections, raw_image_path, saliency,
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset), ap_curve_linspace,
-                image_index, explain_top5_backgrounds, save_modified_images,
-                image_adulteration_method, eval_flip, eval_ap_explain)
+                image_index, result_dir, explain_top5_backgrounds,
+                save_modified_images, image_adulteration_method, eval_flip,
+                eval_ap_explain)
         if evaluate_random_map:
             random_map = np.random.random((image_size, image_size))
             random_saliency_list.append(random_map)
@@ -174,9 +177,9 @@ def explain_single_object(
                 detections, raw_image_path, random_map,
                 object_index, preprocessor_fn, postprocessor_fn, model_name,
                 image_size, explaining + str(box_offset) + '_random',
-                ap_curve_linspace, image_index, explain_top5_backgrounds,
-                save_modified_images, image_adulteration_method, eval_flip,
-                eval_ap_explain)
+                ap_curve_linspace, image_index, result_dir,
+                explain_top5_backgrounds, save_modified_images,
+                image_adulteration_method, eval_flip, eval_ap_explain)
 
     if merge_saliency_maps:
         LOGGER.info('Merging saliency maps')
@@ -184,7 +187,7 @@ def explain_single_object(
             saliency_list, merge_method, analyze_each_maps, detections,
             raw_image_path, preprocessor_fn, postprocessor_fn,
             image_size, 'combined', model_name, ap_curve_linspace, image_index,
-            explain_top5_backgrounds, save_modified_images,
+            result_dir, explain_top5_backgrounds, save_modified_images,
             image_adulteration_method, object_index_list[0], eval_flip,
             eval_ap_explain)
         if evaluate_random_map:
@@ -193,9 +196,10 @@ def explain_single_object(
                 random_saliency_list, merge_method, analyze_each_maps,
                 detections, raw_image_path, preprocessor_fn,
                 postprocessor_fn, image_size, 'random', model_name,
-                ap_curve_linspace, image_index, explain_top5_backgrounds,
-                save_modified_images, image_adulteration_method,
-                object_index_list[0], eval_flip, eval_ap_explain)
+                ap_curve_linspace, image_index, result_dir,
+                explain_top5_backgrounds, save_modified_images,
+                image_adulteration_method, object_index_list[0], eval_flip,
+                eval_ap_explain)
 
     if save_explanations:
         explanation_result_dir = os.path.join(result_dir, 'explanations')
@@ -244,6 +248,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   evaluate_random_map=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())
+    result_dir = os.path.join(result_dir,
+                              model_name + '_' + interpretation_method)
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     if save_modified_images:
