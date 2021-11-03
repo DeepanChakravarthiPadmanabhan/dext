@@ -5,7 +5,6 @@ import json
 import numpy as np
 import psutil
 import tensorflow as tf
-import gc
 from paz.backend.image.opencv_image import write_image
 
 from dext.explainer.utils import get_model
@@ -158,10 +157,10 @@ def explain_single_object(
             interpretation_method, box_index, explaining, object_index,
             box_offset, model_name, raw_image_path,
             layer_name, preprocessor_fn, image_size)
-        # saliency_list.append(saliency)
-        # saliency_stat_list.append(saliency_stat)
-        # confidence_list.append(class_confidence)
-        # class_name_list.append(class_name)
+        saliency_list.append(saliency)
+        saliency_stat_list.append(saliency_stat)
+        confidence_list.append(class_confidence)
+        class_name_list.append(class_name)
         # analyze saliency maps
         if analyze_each_maps:
             get_metrics(
