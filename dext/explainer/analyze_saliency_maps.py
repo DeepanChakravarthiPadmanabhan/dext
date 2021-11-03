@@ -157,9 +157,10 @@ def eval_numflip_maxprob_regerror(
             model, outputs, image_scales, get_image(raw_image_path),
             image_size, explain_top5_backgrounds)
         if save_modified_images:
-            plt.imsave(os.path.join(result_dir, "modified_images") +
+            modified_images_dir = os.path.join(result_dir, "modified_images")
+            plt.imsave(modified_images_dir +
                        "/modified_image" + str(n) + ".jpg", modified_image)
-            plt.imsave(os.path.join(result_dir, "modified_images") +
+            plt.imsave(modified_images_dir +
                        "/detection_flip" + str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
@@ -238,9 +239,10 @@ def eval_object_ap_curve(
             model, outputs, image_scales, get_image(raw_image_path),
             image_size, explain_top5_backgrounds)
         if save_modified_images:
-            plt.imsave(os.path.join(result_dir, "modified_images") +
+            modified_images_dir = os.path.join(result_dir, "modified_images")
+            plt.imsave(modified_images_dir +
                        "/modified_image" + str(n) + ".jpg", modified_image)
-            plt.imsave(os.path.join(result_dir, "modified_images") +
+            plt.imsave(modified_images_dir +
                        "/detection_flip" + str(n) + '.jpg', detection_image)
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')

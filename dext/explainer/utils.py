@@ -2,6 +2,8 @@ import logging
 import os
 import numpy as np
 import gin
+import json
+import tensorflow as tf
 from tensorflow.keras import Model
 
 from dext.dataset.coco import COCODataset
@@ -10,6 +12,37 @@ from dext.utils.class_names import get_class_name_efficientdet
 from paz.datasets.utils import get_class_names
 
 LOGGER = logging.getLogger(__name__)
+
+
+def write_record(record, file_name, result_dir):
+    file_name = os.path.join(result_dir, file_name)
+    with open(file_name, 'a', encoding='utf-8') as f:
+        json.dump(record, f, ensure_ascii=False)
+        f.write(os.linesep)
+
+
+def test_gpus():
+    LOGGER.info("TF device check: %s" % tf.test.is_gpu_available())
+    LOGGER.info("TF device name: %s" % tf.config.list_physical_devices('GPU'))
+
+
+def create_directory(directory_path):
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+
+
+def create_directories(result_dir, save_modified_images, save_saliency_images,
+                       save_explanation_images):
+    create_directory(result_dir)
+    if save_modified_images:
+        modified_images_dir = os.path.join(result_dir, 'modified_images')
+        create_directory(modified_images_dir)
+    if save_saliency_images:
+        saliency_images_dir = os.path.join(result_dir, 'saliency_images')
+        create_directory(saliency_images_dir)
+    if save_explanation_images:
+        explanation_images_dir = os.path.join(result_dir, 'explanation_images')
+        create_directory(explanation_images_dir)
 
 
 def get_model(model_name):

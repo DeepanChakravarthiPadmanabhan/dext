@@ -174,7 +174,7 @@ def plot_all_subplot(detection_image, image, saliency_list, saliency_stat_list,
         plot_saliency(saliency_list[obj], ax, saliency_title,
                       saliency_stat_list[obj])
         ax.imshow(image, alpha=0.4)
-        text = 'Object: {:0.2f}, {}'.format(confidence[obj], class_name[obj])
+        text = 'Object: {:0.2f}, {}'.format(confidence, class_name)
         ax.text(0.5, -0.1, text, size=12, ha="center", transform=ax.transAxes)
     fig.suptitle('%s explanation using %s on %s' % (
         to_explain, interpretation_method, model_name))
