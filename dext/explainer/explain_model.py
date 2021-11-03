@@ -5,7 +5,7 @@ import json
 import numpy as np
 import psutil
 import tensorflow as tf
-
+import gc
 from paz.backend.image.opencv_image import write_image
 
 from dext.explainer.utils import get_model
@@ -158,10 +158,10 @@ def explain_single_object(
             interpretation_method, box_index, explaining, object_index,
             box_offset, model_name, raw_image_path,
             layer_name, preprocessor_fn, image_size)
-        saliency_list.append(saliency)
-        saliency_stat_list.append(saliency_stat)
-        confidence_list.append(class_confidence)
-        class_name_list.append(class_name)
+        # saliency_list.append(saliency)
+        # saliency_stat_list.append(saliency_stat)
+        # confidence_list.append(class_confidence)
+        # class_name_list.append(class_name)
         # analyze saliency maps
         if analyze_each_maps:
             get_metrics(
@@ -235,7 +235,8 @@ def explain_all_objects(
             explain_top5_backgrounds, save_modified_images,
             image_adulteration_method, evaluate_random_map)
 
-
+from memory_profiler import profile
+@profile
 def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   class_layer_name=None, reg_layer_name=None,
                   to_explain="Classification", result_dir='images/results/',
@@ -264,11 +265,10 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
 
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
                                             num_images)
-
+    model = get_model(model_name)
     for count, data in enumerate(to_be_explained):
         raw_image_path = data["image"]
         image_index = data["image_index"]
-        model = get_model(model_name)
         LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
         LOGGER.info('Explaining image count: %s' % str(count + 1))
         LOGGER.info("Explanation input image ID: %s" % str(image_index))
@@ -304,7 +304,6 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                 evaluate_random_map)
         else:
             LOGGER.info("No detections to analyze.")
-
     end_time = time.time()
     memory_profile_in_mb = process.memory_info().rss / 1024 ** 2
     LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)

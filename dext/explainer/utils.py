@@ -2,6 +2,7 @@ import logging
 import os
 import numpy as np
 import gin
+from tensorflow.keras import Model
 
 from dext.dataset.coco import COCODataset
 from dext.factory.model_factory import ModelFactory
@@ -14,6 +15,21 @@ LOGGER = logging.getLogger(__name__)
 def get_model(model_name):
     model = ModelFactory(model_name).factory()
     return model
+
+
+def get_custom_model(model_name, visualize_index, layer_name):
+    model = get_model(model_name)
+    if visualize_index:
+        custom_model = Model(
+            inputs=[model.inputs],
+            outputs=[model.output[visualize_index[0],
+                                  visualize_index[1],
+                                  visualize_index[2]]])
+    else:
+        custom_model = Model(
+            inputs=[model.inputs],
+            outputs=[model.get_layer(layer_name).output])
+    return custom_model
 
 
 def get_model_class_name(model_name, dataset_name):

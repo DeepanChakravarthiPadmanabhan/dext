@@ -1,13 +1,12 @@
 import logging
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Model
 
+from dext.explainer.utils import get_custom_model
 from dext.abstract.explanation import Explainer
 from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
-from dext.explainer.utils import get_model
 from dext.utils.get_image import get_image
 
 LOGGER = logging.getLogger(__name__)
@@ -21,23 +20,21 @@ def guided_relu(x):
 
 
 class GuidedBackpropagation(Explainer):
-    def __init__(self, model, model_name, image, explainer,
-                 layer_name=None, visualize_idx=None,
+    def __init__(self, model_name, image, explainer,
+                 layer_name=None, visualize_index=None,
                  preprocessor_fn=None, image_size=512):
-        super().__init__(model, model_name, image, explainer)
+        super().__init__(model_name, image, explainer)
         LOGGER.info('STARTING GUIDED BACKPROPAGATION')
-        self.model = model
         self.model_name = model_name
         self.image = image
         self.explainer = explainer
         self.layer_name = layer_name
-        self.visualize_idx = visualize_idx
+        self.visualize_index = visualize_index
         self.preprocessor_fn = preprocessor_fn
         self.image_size = image_size
         self.image = self.check_image_size(self.image, self.image_size)
         self.image = self.preprocess_image(self.image, self.image_size)
-        if self.layer_name is None:
-            self.layer_name = self.find_target_layer()
+        self.layer_name = layer_name
         self.custom_model = self.build_custom_model()
 
     def check_image_size(self, image, image_size):
@@ -47,29 +44,13 @@ class GuidedBackpropagation(Explainer):
                 image = image[0]
         return image
 
-    def find_target_layer(self):
-        for layer in reversed(self.model.layers):
-            if len(layer.output_shape) == 4:
-                return layer.name
-        raise ValueError(
-            "Could not find 4D layer. Cannot apply guided backpropagation.")
-
     def preprocess_image(self, image, image_size):
         input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
     def build_custom_model(self):
-        if self.visualize_idx:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.output[self.visualize_idx[0],
-                                           self.visualize_idx[1],
-                                           self.visualize_idx[2]]])
-        else:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output])
-
+        custom_model = get_custom_model(
+            self.model_name, self.visualize_index, self.layer_name)
         all_layers = get_all_layers(custom_model)
         all_layers = [act_layer for act_layer in all_layers
                       if hasattr(act_layer, 'activation')]
@@ -98,8 +79,7 @@ def GuidedBackpropagationExplainer(model_name, image_path,
                                    visualize_index, preprocessor_fn,
                                    image_size):
     image = get_image(image_path)
-    model = get_model(model_name)
-    explainer = GuidedBackpropagation(model, model_name, image,
+    explainer = GuidedBackpropagation(model_name, image,
                                       interpretation_method, layer_name,
                                       visualize_index, preprocessor_fn,
                                       image_size)

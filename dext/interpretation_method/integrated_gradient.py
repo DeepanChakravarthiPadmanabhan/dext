@@ -2,26 +2,24 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Model
 
 from dext.abstract.explanation import Explainer
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
-from dext.explainer.utils import get_model
+from dext.explainer.utils import get_custom_model
 from dext.utils.get_image import get_image
 
 LOGGER = logging.getLogger(__name__)
 
 
 class IntegratedGradients(Explainer):
-    def __init__(self, model, model_name, image,
+    def __init__(self, model_name, image,
                  explainer="IntegratedGradients",
                  layer_name=None, visualize_index=None,
                  preprocessor_fn=None, image_size=512,
                  steps=5, batch_size=1):
-        super().__init__(model, model_name, image, explainer)
+        super().__init__(model_name, image, explainer)
         LOGGER.info('STARTING INTEGRATED GRADIENTS')
-        self.model = model
         self.model_name = model_name
         self.image = image
         self.image_size = image_size
@@ -32,9 +30,8 @@ class IntegratedGradients(Explainer):
         self.visualize_index = visualize_index
         self.preprocessor_fn = preprocessor_fn
         self.image = self.check_image_size(self.image, self.image_size)
-        self.generate_baseline()
-        if self.layer_name is None:
-            self.layer_name = self.find_target_layer()
+        self.baseline = self.generate_baseline()
+        self.layer_name = layer_name
         self.custom_model = self.build_custom_model()
 
     def check_image_size(self, image, image_size):
@@ -45,32 +42,17 @@ class IntegratedGradients(Explainer):
         return image
 
     def generate_baseline(self):
-        self.baseline = np.zeros(shape=(1, self.image_size,
-                                        self.image_size, 3))
-
-    def find_target_layer(self):
-        for layer in reversed(self.model.layers):
-            if len(layer.output_shape) == 4:
-                return layer.name
-        raise ValueError(
-            "Could not find 4D layer. Cannot apply Integrated Gradients.")
+        baseline = np.zeros(shape=(1, self.image_size,
+                            self.image_size, 3))
+        return baseline
 
     def preprocess_image(self, image, image_size):
         input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
     def build_custom_model(self):
-        if self.visualize_index:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.output[self.visualize_index[0],
-                                           self.visualize_index[1],
-                                           self.visualize_index[2]]])
-        else:
-            custom_model = Model(
-                inputs=[self.model.inputs],
-                outputs=[self.model.get_layer(self.layer_name).output])
-
+        custom_model = get_custom_model(
+            self.model_name, self.visualize_index, self.layer_name)
         # To get logits without softmax
         if 'class' in self.layer_name:
             custom_model.get_layer(self.layer_name).activation = None
@@ -182,8 +164,7 @@ def IntegratedGradientExplainer(model_name, image_path, interpretation_method,
                                 layer_name, visualize_index, preprocessor_fn,
                                 image_size, steps=2, batch_size=1):
     image = get_image(image_path)
-    model = get_model(model_name)
-    ig = IntegratedGradients(model, model_name, image, interpretation_method,
+    ig = IntegratedGradients(model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
                              image_size, steps, batch_size)
     saliency = ig.get_saliency_map()

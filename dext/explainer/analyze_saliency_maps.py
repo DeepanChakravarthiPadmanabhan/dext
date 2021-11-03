@@ -138,7 +138,6 @@ def eval_numflip_maxprob_regerror(
     model = get_model(model_name)
     raw_image_modifier = get_image(raw_image_path)
     for n, percent in enumerate(percentage_space[:-1]):
-        print('Percent: ', n)
         resized_image, image_scales = preprocessor_fn(
             raw_image_modifier, image_size, True)
         num_pixels_selected = int(num_pixels * percent)
