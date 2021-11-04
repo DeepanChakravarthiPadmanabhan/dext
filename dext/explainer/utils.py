@@ -130,8 +130,8 @@ def get_explaining_info_lists(
         index = object_index_list[-1]
         index_list = [index, ] * 4
         object_index_list += index_list
-        explaining_list = ['Classification', 'Box offset',
-                           'Box offset', 'Box offset', 'Box offset']
+        explaining_list = ['Classification', 'Boxoffset',
+                           'Boxoffset', 'Boxoffset', 'Boxoffset']
         layer_name_list = [class_layer_name, reg_layer_name,
                            reg_layer_name, reg_layer_name,
                            reg_layer_name]
@@ -144,7 +144,7 @@ def get_explaining_info_lists(
         box_offset_list = [None, ] * len(object_index_list)
     else:
         object_index_list.append(visualize_object_index)
-        explaining_list = ['Box offset', ] * len(object_index_list)
+        explaining_list = ['Boxoffset', ] * len(object_index_list)
         layer_name_list = [reg_layer_name, ] * len(object_index_list)
         box_offset_list = [box_arg_to_index[box_offset],
                            ] * len(object_index_list)

@@ -76,8 +76,8 @@ class IntegratedGradients(Explainer):
         return grads
 
     def integral_approximation(self, gradients):
-        grads = (gradients[:-1] + gradients[1:]) / tf.constant(2.0)
-        integrated_gradients = tf.math.reduce_mean(grads, axis=0)
+        grads = (gradients[:-1] + gradients[1:]) / 2
+        integrated_gradients = np.mean(grads, axis=0)
         return integrated_gradients
 
     def get_normalized_interpolated_images(self, interpolated_images):
@@ -86,22 +86,20 @@ class IntegratedGradients(Explainer):
         for i in interpolated_images:
             normimage = self.preprocess_image(i, image_size)
             new_interpolated_image.append(normimage)
-        new_interpolated_image = tf.concat(new_interpolated_image, axis=0)
+        new_interpolated_image = np.concatenate(new_interpolated_image, axis=0)
         return new_interpolated_image
 
     def get_saliency_map(self):
         # 1. Generate alphas.
         alphas = np.linspace(start=0.0, stop=1.0, num=self.steps + 1)
-
-        # Initialize TensorArray outside loop to collect gradients.
-        gradient_batches = tf.TensorArray(tf.float32, size=self.steps + 1)
+        gradient_batches = []
 
         # Iterate alphas range and batch computation for speed,
         # memory efficient, and scaling to larger m_steps
-        for alpha in tf.range(0, len(alphas), self.batch_size):
+        for alpha in range(0, len(alphas), self.batch_size):
             LOGGER.info('Performing IG for alpha: %s' % alpha)
             from_ = alpha
-            to = tf.minimum(from_ + self.batch_size, len(alphas))
+            to = np.minimum(from_ + self.batch_size, len(alphas))
             alpha_batch = alphas[from_: to]
 
             # 2. Generate interpolated inputs between baseline and input.
@@ -116,19 +114,16 @@ class IntegratedGradients(Explainer):
             gradient_batch = self.compute_gradients(
                 image=interpolated_path_input_batch)
 
-            # Write batch indices and gradients to extend TensorArray.
-            gradient_batches = gradient_batches.scatter(
-                tf.range(from_, to), gradient_batch)
+            gradient_batches.append(gradient_batch)
 
         # Stack path gradients together row-wise into single tensor.
-        total_gradients = gradient_batches.stack()
+        total_gradients = np.concatenate(gradient_batches)
 
         # 4. Integral approximation through averaging gradients.
         avg_gradients = self.integral_approximation(gradients=total_gradients)
 
         # Scale integrated gradients with respect to input.
         integrated_gradients = (self.image - self.baseline) * avg_gradients
-
         return integrated_gradients
 
     def plot_attributions(self, image, ig_attributions, save_path):
