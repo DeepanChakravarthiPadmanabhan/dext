@@ -125,8 +125,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                   interpretation_method="IntegratedGradients",
                   visualize_object_index=None, visualize_box_offset=None,
                   num_images=2, save_saliency_images=False,
-                  save_explanation_images=False, explain_top5_backgrounds=True,
-                  save_modified_images=True):
+                  save_explanation_images=False, continuous_run=False,
+                  explain_top5_backgrounds=True, save_modified_images=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     test_gpus()
@@ -139,7 +139,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
     inference_fn = InferenceFactory(model_name).factory()
 
     to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
-                                            num_images)
+                                            num_images, continuous_run,
+                                            result_dir)
     model = get_model(model_name)
     for count, data in enumerate(to_be_explained):
         raw_image_path = data["image"]

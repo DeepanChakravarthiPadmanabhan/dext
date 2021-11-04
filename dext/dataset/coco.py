@@ -31,9 +31,12 @@ class COCODataset(Loader):
 
     """
     def __init__(self, path='../datasets/MSCOCO', split='train',
-                 class_names='all', name='train2017', evaluate=False):
+                 class_names='all', name='train2017', evaluate=False,
+                 continuous_run=False, result_dir=None):
         super(COCODataset, self).__init__(path, split, class_names, name)
         self.evaluate = evaluate
+        self.continuous_run = continuous_run
+        self.result_dir = result_dir
         self._class_names = class_names
         if class_names == 'all':
             self._class_names = get_class_names('COCO')
@@ -58,11 +61,9 @@ class COCODataset(Loader):
         return ground_truth_data
 
     def _load_COCO(self, dataset_name, split):
-        self.parser = COCOParser(self.path,
-                                 split,
-                                 self._class_names,
-                                 dataset_name,
-                                 self.evaluate)
+        self.parser = COCOParser(self.path, split, self._class_names,
+                                 dataset_name, self.evaluate,
+                                 self.continuous_run, self.result_dir)
         self.images_path = self.parser.images_path
         self.arg_to_class = self.parser.arg_to_class
         ground_truth_data = self.parser.load_data()
@@ -80,13 +81,9 @@ class COCOParser(object):
         num_objects refers to the number of objects in that specific image
     """
 
-    def __init__(self,
-                 dataset_path='../datasets/MSCOCO',
-                 split='train',
-                 class_names='all',
-                 dataset_name='train2017',
-                 evaluate=False,
-                 continue_run=False):
+    def __init__(self, dataset_path='../datasets/MSCOCO', split='train',
+                 class_names='all', dataset_name='train2017', evaluate=False,
+                 continuous_run=False, result_dir=None):
 
         if dataset_name not in ['train2017', 'val2017', 'test2017']:
             raise Exception('Invalid dataset name.')
@@ -111,9 +108,9 @@ class COCOParser(object):
         #                       ]
         # else:
         #     self.image_ids = [347456, 459954]
-        if continue_run:
+        if continuous_run:
             LOGGER.info('Loading already ran ids from all excel files.')
-            load_ran_ids = filter_image_ids()
+            load_ran_ids = filter_image_ids(result_dir)
             LOGGER.info('Found previous run ids: %s ' % load_ran_ids)
             image_ids = [i for i in self.image_ids if i not in load_ran_ids]
             self.image_ids = image_ids

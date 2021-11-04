@@ -1,20 +1,18 @@
 import os
 import gin
-import pandas as pd
+import json
 import numpy as np
 
 
 @gin.configurable
 def filter_image_ids(results_dir):
     if os.path.exists(results_dir):
-        files = os.listdir(results_dir)
-        excel_files = [i for i in files if '.xlsx' in i]
-        ran_ids = []
-        for i in excel_files:
-            path = os.path.join(results_dir, i)
-            reg_error_sheet = pd.read_excel(path, sheet_name='reg_error_curve')
-            ran_ids.extend(list(reg_error_sheet['image_index'].unique()))
-        ran_ids = list(np.unique(np.array(ran_ids)))
+        file = os.path.join(results_dir, 'saliency_image_paths')
+        data = [json.loads(line) for line in open(file, 'r')]
+        data = np.array(data)
+        image_index = data[:, 0]
+        ran_ids = list(np.unique(image_index))
+        ran_ids = [int(i) for i in ran_ids]
         return ran_ids
     else:
         raise ValueError('Results directory not found.')

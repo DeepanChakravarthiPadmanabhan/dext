@@ -8,10 +8,7 @@ from dext.model.faster_rcnn.utils import get_resnet_features, build_rpn_model
 from dext.model.faster_rcnn.utils import generate_pyramid_anchors, norm_boxes
 from dext.model.faster_rcnn.utils import fpn_classifier_graph
 from dext.model.faster_rcnn.utils import compute_backbone_shapes
-from dext.model.faster_rcnn.layers import DetectionLayer, ProposalLayer
-from dext.model.faster_rcnn.faster_rcnn_preprocess import (
-    faster_rcnn_preprocess)
-from dext.model.faster_rcnn.utils import norm_boxes_graph
+from dext.model.faster_rcnn.layers import ProposalLayer
 
 
 def get_anchors(image_shape, backbone='resnet101', batch_size=1,

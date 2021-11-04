@@ -79,7 +79,8 @@ def get_model_class_name(model_name, dataset_name):
 
 @gin.configurable
 def get_images_to_explain(explain_mode, raw_image_path,
-                          num_images_to_explain=2, dataset_path=None):
+                          num_images_to_explain=2, continuous_run=False,
+                          result_dir=None, dataset_path=None):
     if explain_mode == 'single_image':
         data = {}
         index = (os.path.basename(
@@ -89,7 +90,9 @@ def get_images_to_explain(explain_mode, raw_image_path,
         data["boxes"] = None
         to_be_explained = [data]
     else:
-        to_be_explained = COCODataset(dataset_path, "val", name="val2017",)
+        to_be_explained = COCODataset(dataset_path, "val", name="val2017",
+                                      continuous_run=continuous_run,
+                                      result_dir=result_dir)
         to_be_explained = to_be_explained.load_data()[:num_images_to_explain]
     return to_be_explained
 
