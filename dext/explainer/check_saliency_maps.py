@@ -35,7 +35,3 @@ def manipulate_raw_image_by_saliency(raw_image, saliency):
     mask_3d = np.stack((mask_2d, mask_2d, mask_2d), axis=-1)
     result = np.where(mask_3d == 0, image, mask_3d).astype('uint8')
     return result
-
-
-def manipulate_object_by_bg(raw_image, labels, object_info):
-    pass
