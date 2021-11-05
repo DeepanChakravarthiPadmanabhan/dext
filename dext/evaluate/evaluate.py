@@ -26,7 +26,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--merge_method", default='pca',
               type=click.Choice(["pca", "tsne", "and_add", "and_average",
                                  "or_add", "or_average"]))
-@click.option("--save_modified_images", default=True)
+@click.option("--save_modified_images", default=False)
 @click.option("--coco_result_file", default="evaluation_result.json")
 @click.option("--image_adulteration_method", default='inpainting',
               type=click.Choice(["inpainting", "zeroing"]))
