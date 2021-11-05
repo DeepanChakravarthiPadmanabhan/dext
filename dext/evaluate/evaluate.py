@@ -18,7 +18,8 @@ LOGGER = logging.getLogger(__name__)
                                  "GuidedBackpropagation", "GradCAM"]))
 @click.option("--image_size", default=512)
 @click.option("--result_path", default="evaluation_result.json")
-@click.option("--result_dir", default="images/results/")
+@click.option("--results_dir", default="images/results/")
+@click.option("--num_images", default=5)  # 1 <
 @click.option("--ap_curve_linspace", default=3)
 @click.option("--eval_flip", default=True)
 @click.option("--eval_ap_explain", default=False)
@@ -31,16 +32,16 @@ LOGGER = logging.getLogger(__name__)
                                  "WARNING", "INFO", "DEBUG"]))
 @click.option("--log-dir", default="")
 def evaluator(config, mode, model_name, interpretation_method, image_size,
-              result_path, result_dir,
-              ap_curve_linspace, eval_flip, eval_ap_explain,
-              merge_saliency_maps, merge_method, log_level, log_dir):
+              result_path, results_dir, num_images, ap_curve_linspace,
+              eval_flip, eval_ap_explain, merge_saliency_maps, merge_method,
+              log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
     if mode == "explainer":
         evaluate_explainer(
             model_name, interpretation_method, image_size, result_path,
-            result_dir, ap_curve_linspace,
+            results_dir, num_images, ap_curve_linspace,
             eval_flip, eval_ap_explain, merge_saliency_maps, merge_method)
     else:
         evaluate_model(model_name, image_size, result_path)

@@ -25,6 +25,7 @@ dependencies = [
     "gin-config==0.3.0",
     "jupyter",
     "psutil",
+    "memory_profiler",
 ]
 
 setup(
