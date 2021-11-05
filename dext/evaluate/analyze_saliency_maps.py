@@ -14,6 +14,8 @@ from dext.evaluate.coco_evaluation import get_coco_metrics
 from paz.backend.boxes import compute_iou
 from dext.evaluate.utils import get_category_id
 from dext.utils.get_image import get_image
+from dext.factory.preprocess_factory import PreprocessorFactory
+from dext.factory.postprocess_factory import PostprocessorFactory
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,11 +55,9 @@ def calculate_variance(mask_2d):
     return np.var(mask_2d)
 
 
-def analyze_saliency_maps(detections, raw_image_path, saliency_map,
-                          visualize_object_index):
+def analyze_saliency_maps(detection, raw_image_path, saliency_map):
     image = get_image(raw_image_path)
-    box = detections[visualize_object_index]
-    box = resize_box(box, image.shape, saliency_map.shape)
+    box = resize_box(detection, image.shape, saliency_map.shape)
     mask_2d = get_saliency_mask(saliency_map)
     iou = calculate_saliency_iou(mask_2d, box)
     centroid = calculate_centroid(mask_2d)
@@ -119,13 +119,16 @@ def get_interest_det(detection):
     return det_interest
 
 
-def eval_numflip_maxprob_regerror(
-        saliency, raw_image_path, detections, preprocessor_fn,
-        postprocessor_fn, image_size=512, model_name='EFFICIENTDETD0',
-        object_index=None, ap_curve_linspace=10,
-        explain_top5_backgrounds=False, save_modified_images=True,
-        image_adulteration_method='subzero', result_dir=None):
-    det_matching_interest_det = get_interest_det(detections[object_index])
+def eval_numflip_maxprob_regerror(saliency, raw_image_path, detection,
+                                  image_size=512, model_name='EFFICIENTDETD0',
+                                  ap_curve_linspace=10,
+                                  explain_top5_backgrounds=False,
+                                  save_modified_images=True,
+                                  image_adulteration_method='subzero',
+                                  result_dir=None, model=None):
+    preprocessor_fn = PreprocessorFactory(model_name).factory()
+    postprocessor_fn = PostprocessorFactory(model_name).factory()
+    det_matching_interest_det = get_interest_det(detection)
     LOGGER.info('Evaluating numflip, maxprob, regerror on detection: %s'
                 % det_matching_interest_det)
     num_pixels = saliency.size
@@ -135,7 +138,6 @@ def eval_numflip_maxprob_regerror(
     sorted_indices = np.vstack(sorted_flat_indices).T
     max_prob_list = [0, ] * len(percentage_space)
     reg_error_list = [np.inf, ] * len(percentage_space)
-    model = get_model(model_name)
     raw_image_modifier = get_image(raw_image_path)
     for n, percent in enumerate(percentage_space[:-1]):
         resized_image, image_scales = preprocessor_fn(
@@ -143,7 +145,7 @@ def eval_numflip_maxprob_regerror(
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
         resized_image = resized_image[0].astype('uint8')
-        if image_adulteration_method == 'inpaint':
+        if image_adulteration_method == 'inpainting':
             mask = np.zeros(saliency.shape).astype('uint8')
             mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
             modified_image = cv2.inpaint(resized_image, mask, 3,
@@ -162,6 +164,8 @@ def eval_numflip_maxprob_regerror(
                        "/modified_image" + str(n) + ".jpg", modified_image)
             plt.imsave(modified_images_dir +
                        "/detection_flip" + str(n) + '.jpg', detection_image)
+        del detection_image
+        del modified_image
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections) and len(det_matching_interest_det):
@@ -205,19 +209,21 @@ def coco_eval_ap50(image_index, all_boxes, result_file, percent,
     return ap_50cent
 
 
-def eval_object_ap_curve(
-        saliency, raw_image_path, preprocessor_fn, postprocessor_fn,
-        image_size=512, model_name='SSD512', image_index=None,
-        ap_curve_linspace=10, explain_top5_backgrounds=False,
-        save_modified_images=False, image_adulteration_method='inpaint',
-        result_dir=None, result_file='ap_curve.json',):
+def eval_object_ap_curve(saliency, raw_image_path, image_size=512,
+                         model_name='SSD512', image_index=None,
+                         ap_curve_linspace=10, explain_top5_backgrounds=False,
+                         save_modified_images=False,
+                         image_adulteration_method='inpaint',
+                         result_dir=None, coco_result_file='ap_curve.json',
+                         model=None):
+    preprocessor_fn = PreprocessorFactory(model_name).factory()
+    postprocessor_fn = PostprocessorFactory(model_name).factory()
     num_pixels = saliency.size
     percentage_space = np.linspace(0, 1, ap_curve_linspace)
     sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
     sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
     sorted_indices = np.vstack(sorted_flat_indices).T
     ap_curve = [0, ] * len(percentage_space)
-    model = get_model(model_name)
     raw_image_modifier = get_image(raw_image_path)
     for n, percent in enumerate(percentage_space[:-1]):
         resized_image, image_scales = preprocessor_fn(
@@ -225,7 +231,7 @@ def eval_object_ap_curve(
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
         resized_image = resized_image[0].astype('uint8')
-        if image_adulteration_method == 'inpaint':
+        if image_adulteration_method == 'inpainting':
             mask = np.zeros(saliency.shape).astype('uint8')
             mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
             modified_image = cv2.inpaint(resized_image, mask, 3,
@@ -244,12 +250,14 @@ def eval_object_ap_curve(
                        "/modified_image" + str(n) + ".jpg", modified_image)
             plt.imsave(modified_images_dir +
                        "/detection_flip" + str(n) + '.jpg', detection_image)
+        del detection_image
+        del modified_image
         if len(detections) == 0 and n == 0:
             raise ValueError('Detections cannot be zero here for first run')
         if len(detections):
             all_boxes = get_evaluation_details(detections)
-            ap_50cent = coco_eval_ap50(image_index, all_boxes, result_file,
-                                       percent)
+            ap_50cent = coco_eval_ap50(
+                image_index, all_boxes, coco_result_file, percent)
             ap_curve[n] = ap_50cent
         else:
             LOGGER.info('No detections. Mapping AP to 0.')

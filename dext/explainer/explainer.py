@@ -20,17 +20,17 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
-@click.option("--result_dir", default="/scratch/dpadma2s/thesis/results/")
+@click.option("--result_dir", default="images/results/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
 @click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
-@click.option("--num_images", default=5)  # 1 <
+@click.option("--num_images", default=1)  # 1 <
 @click.option("--save_saliency_images", default=True)
 @click.option("--save_explanation_images", default=True)
-@click.option("--continuous_run", default=True)
+@click.option("--continuous_run", default=False)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
