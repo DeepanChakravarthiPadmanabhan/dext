@@ -10,3 +10,4 @@ evaluate_model.annotation_file = %COCO_VAL_ANNOTATION_FILE
 evaluate_model.dataset_path = %DATASET_PATH
 get_coco_metrics.annotation_file = %COCO_VAL_ANNOTATION_FILE
 EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH
+faster_rcnn_detection.weight_path = %FASTER_RCNN_WEIGHT_PATH
