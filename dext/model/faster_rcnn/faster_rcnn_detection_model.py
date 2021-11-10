@@ -112,7 +112,7 @@ def faster_rcnn_detection(image_size=(512, 512, 3), weights='COCO',
                           rpn_anchor_stride)
     rpn_rois = ProposalLayer(post_nms_rois_inference, rpn_nms_threshold,
                              rpn_bbox_std_dev, pre_nms_limit, images_per_gpu,
-                             name='ROI')([rpn_class, rpn_bbox, anchors])
+                             name='ROI')(rpn_class, rpn_bbox, anchors)
     _, classes, frcnn_bbox = fpn_classifier_graph(
         rpn_rois, feature_maps[:-1], pool_size, num_classes, image_max_dim,
         train_bn=train_bn)

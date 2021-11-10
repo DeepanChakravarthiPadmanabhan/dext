@@ -276,7 +276,7 @@ def fpn_classifier_graph(
     image_shape = (image_max_dim, image_max_dim, 3)
     image_shape = tf.convert_to_tensor(np.array(image_shape))
     x = PyramidROIAlign([pool_size, pool_size], name='roi_align_classifier')(
-        [rois, image_shape] + feature_maps)
+        rois, image_shape, feature_maps)
     conv_2d_layer = Conv2D(fc_layers_size, (pool_size, pool_size),
                            padding='valid')
     x = TimeDistributed(conv_2d_layer, name='mrcnn_class_conv1')(x)
