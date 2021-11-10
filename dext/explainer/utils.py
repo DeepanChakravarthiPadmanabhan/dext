@@ -50,18 +50,18 @@ def get_model(model_name):
     return model
 
 
-def get_custom_model(model_name, visualize_index, layer_name):
-    model = get_model(model_name)
-    if visualize_index:
-        custom_model = Model(
-            inputs=[model.inputs],
-            outputs=[model.output[visualize_index[0],
-                                  visualize_index[1],
-                                  visualize_index[2]]])
+def build_general_custom_model(model, class_layer_name, reg_layer_name):
+    if class_layer_name == reg_layer_name:
+        custom_model = Model(inputs=[model.inputs], outputs=[model.output])
     else:
-        custom_model = Model(
-            inputs=[model.inputs],
-            outputs=[model.get_layer(layer_name).output])
+        custom_model = None
+    return custom_model
+
+
+def build_layer_custom_model(model_name, layer_name):
+    model = get_model(model_name)
+    custom_model = Model(inputs=[model.inputs],
+                         outputs=[model.get_layer(layer_name).output])
     return custom_model
 
 

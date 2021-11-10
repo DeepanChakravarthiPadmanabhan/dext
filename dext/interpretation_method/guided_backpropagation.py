@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import tensorflow as tf
 
-from dext.explainer.utils import get_custom_model
+from dext.explainer.utils import build_layer_custom_model
 from dext.abstract.explanation import Explainer
 from dext.model.utils import get_all_layers
 from dext.postprocessing.saliency_visualization import (
@@ -20,7 +20,7 @@ def guided_relu(x):
 
 
 class GuidedBackpropagation(Explainer):
-    def __init__(self, model_name, image, explainer,
+    def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_index=None,
                  preprocessor_fn=None, image_size=512):
         super().__init__(model_name, image, explainer)
@@ -35,7 +35,13 @@ class GuidedBackpropagation(Explainer):
         self.image = self.check_image_size(self.image, self.image_size)
         self.image = self.preprocess_image(self.image, self.image_size)
         self.layer_name = layer_name
-        self.custom_model = self.build_custom_model()
+        if model:
+            self.custom_model = model
+            self.clean_custom_model()
+        else:
+            self.custom_model = build_layer_custom_model(self.model_name,
+                                                         self.layer_name)
+            self.clean_custom_model()
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
@@ -48,10 +54,8 @@ class GuidedBackpropagation(Explainer):
         input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
-    def build_custom_model(self):
-        custom_model = get_custom_model(
-            self.model_name, self.visualize_index, self.layer_name)
-        all_layers = get_all_layers(custom_model)
+    def clean_custom_model(self):
+        all_layers = get_all_layers(self.custom_model)
         all_layers = [act_layer for act_layer in all_layers
                       if hasattr(act_layer, 'activation')]
         for layer in all_layers:
@@ -59,8 +63,7 @@ class GuidedBackpropagation(Explainer):
                 layer.activation = guided_relu
         # To get logits without softmax
         if 'class' in self.layer_name:
-            custom_model.get_layer(self.layer_name).activation = None
-        return custom_model
+            self.custom_model.get_layer(self.layer_name).activation = None
 
     def get_saliency_map(self):
         """Guided backpropagation method for visualizing input saliency."""
@@ -68,21 +71,23 @@ class GuidedBackpropagation(Explainer):
             inputs = tf.cast(self.image, tf.float32)
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
+            conv_outs = conv_outs[self.visualize_index[0],
+                                  self.visualize_index[1],
+                                  self.visualize_index[2]]
         LOGGER.info('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         saliency = np.asarray(grads)
         return saliency
 
 
-def GuidedBackpropagationExplainer(model_name, image_path,
+def GuidedBackpropagationExplainer(model, model_name, image_path,
                                    interpretation_method, layer_name,
                                    visualize_index, preprocessor_fn,
                                    image_size):
     image = get_image(image_path)
-    explainer = GuidedBackpropagation(model_name, image,
-                                      interpretation_method, layer_name,
-                                      visualize_index, preprocessor_fn,
-                                      image_size)
+    explainer = GuidedBackpropagation(
+        model, model_name, image, interpretation_method, layer_name,
+        visualize_index, preprocessor_fn, image_size)
     saliency = explainer.get_saliency_map()
     saliency_stat = (np.min(saliency), np.max(saliency))
     saliency = visualize_saliency_grayscale(saliency)

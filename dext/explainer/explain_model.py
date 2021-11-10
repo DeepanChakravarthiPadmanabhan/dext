@@ -17,6 +17,7 @@ from dext.explainer.utils import get_explaining_info
 from dext.explainer.utils import get_images_to_explain
 from dext.explainer.utils import get_model_class_name
 from dext.explainer.utils import write_record
+from dext.explainer.utils import build_general_custom_model
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ LOGGER = logging.getLogger(__name__)
 def get_single_saliency(
         interpretation_method, box_index, explaining, visualize_object_index,
         visualize_box_offset, model_name, raw_image_path, layer_name,
-        preprocessor_fn, image_size):
+        preprocessor_fn, image_size, custom_model):
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
         box_index, explaining, visualize_object_index, model_name,
@@ -33,7 +34,7 @@ def get_single_saliency(
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
     saliency = interpretation_method_fn(
-        model_name, raw_image_path, interpretation_method,
+        custom_model, model_name, raw_image_path, interpretation_method,
         layer_name, box_features, preprocessor_fn, image_size)
     return saliency
 
@@ -49,7 +50,8 @@ def save_saliency_record(
 def explain_single_object(raw_image_path, image_size, preprocessor_fn,
                           detections, interpretation_method, box_index,
                           result_dir, explaining_info, model_name, image_index,
-                          class_name, class_confidence, save_saliency_images):
+                          class_name, class_confidence, save_saliency_images,
+                          custom_model):
     saliency_list = []
     saliency_stat_list = []
     for info in zip(*explaining_info):
@@ -61,8 +63,8 @@ def explain_single_object(raw_image_path, image_size, preprocessor_fn,
                     % (str(image_index), explaining, box_offset))
         saliency, saliency_stat = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
-            box_offset, model_name, raw_image_path,
-            layer_name, preprocessor_fn, image_size)
+            box_offset, model_name, raw_image_path, layer_name,
+            preprocessor_fn, image_size, custom_model)
         if save_saliency_images:
             save_name = str(image_index) + "_" + str(object_index) + "_" + (
                 explaining) + "_" + str(box_offset) + "_" + (
@@ -88,7 +90,8 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
                         interpretation_method, box_index, to_explain,
                         result_dir, class_layer_name, reg_layer_name,
                         visualize_box_offset, model_name, image_index,
-                        save_saliency_images, save_explanation_images):
+                        save_saliency_images, save_explanation_images,
+                        custom_model):
     for object_arg in objects_to_analyze:
         explaining_info = get_explaining_info(
             object_arg, box_index, to_explain, class_layer_name,
@@ -104,7 +107,7 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
             raw_image_path, image_size, preprocessor_fn, detections,
             interpretation_method, box_index, result_dir, explaining_info,
             model_name, image_index, class_name, class_confidence,
-            save_saliency_images)
+            save_saliency_images, custom_model)
         if save_explanation_images:
             explanation_images_dir = os.path.join(
                 result_dir, 'explanation_images')
@@ -142,6 +145,8 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                                             num_images, continuous_run,
                                             result_dir)
     model = get_model(model_name)
+    custom_model = build_general_custom_model(
+        model, class_layer_name, reg_layer_name)
     for count, data in enumerate(to_be_explained):
         raw_image_path = data["image"]
         image_index = data["image_index"]
@@ -167,7 +172,7 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
                 model_name, image_index, save_saliency_images,
-                save_explanation_images)
+                save_explanation_images, custom_model)
         else:
             LOGGER.info("No detections to analyze.")
     end_time = time.time()

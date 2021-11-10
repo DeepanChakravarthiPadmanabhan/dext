@@ -150,7 +150,7 @@ def get_plot_params(num_axes):
 
 
 def get_saliency_title(explaining, box_offset, box_index_to_arg):
-    if explaining == 'Box offset':
+    if explaining == 'Boxoffset':
         box_name = box_index_to_arg[box_offset]
         saliency_title = explaining + ', ' + box_name
     else:
