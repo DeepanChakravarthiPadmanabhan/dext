@@ -95,16 +95,15 @@ def check_overlay_image_shape(image, saliency, model_name):
     return image
 
 
-def plot_single_saliency(detection_image, image, saliency,
-                         confidence=0.5, class_name="BG",
-                         explaining="Classification",
+def plot_single_saliency(detection_image, image, saliency, confidence=0.5,
+                         class_name="BG", explaining="Classification",
                          interpretation_method="Integrated Gradients",
-                         model_name="EfficientDet"):
+                         model_name="EfficientDet", saliency_stat=None):
     image = check_overlay_image_shape(image, saliency, model_name)
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     ax1, ax2 = axes
     plot_detection_image(detection_image, ax1)
-    plot_saliency(saliency, ax2)
+    plot_saliency(saliency, ax2, saliency_stat=saliency_stat)
     ax2.imshow(image, alpha=0.4)
     text = '{:0.2f}, {}'.format(confidence, class_name)
     ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
@@ -141,11 +140,13 @@ def get_plot_params(num_axes):
         cols = 3
         rows = num_axes // cols
         rows += num_axes % cols
+        fig_width = 3.75 * cols
+        fig_height = 3 * rows
     else:
         cols = num_axes
         rows = 1
-    fig_width = 4.75 * cols
-    fig_height = 4.25 * rows
+        fig_width = 4.75 * cols
+        fig_height = 4.25 * rows
     return rows, cols, fig_width, fig_height
 
 
@@ -180,7 +181,7 @@ def plot_all_subplot(detection_image, image, saliency_list, saliency_stat_list,
         to_explain, interpretation_method, model_name))
     fig.tight_layout()
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.05,
-                        top=0.9, wspace=0.2, hspace=0.3)
+                        top=0.9, wspace=0.2, hspace=0.4)
     return fig
 
 

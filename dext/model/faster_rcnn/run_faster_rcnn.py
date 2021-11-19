@@ -95,6 +95,46 @@ def run_simple(image, weight_path, image_size):
         model, out, image_scales, deepcopy(image), image_size)
     print("Detections are here: ", detections)
     print(class_map_idx)
+
+    conv = 0
+    non_conv = 0
+    total_weights = len(model.weights)
+    percent_alter = 100
+    selected_weights = int((total_weights * percent_alter) / 100)
+    for n, i in enumerate(model.weights[::-1][:selected_weights]):
+        new_shape = model.weights[n].shape
+        print('Reinitializing weights for layer: ', model.weights[n].name)
+        if 'gamma' in model.weights[n].name:
+            model.weights[n].assign(
+                tf.constant(1, tf.float32, shape=list(new_shape)))
+            non_conv = non_conv + 1
+        elif 'beta' in model.weights[n].name:
+            model.weights[n].assign(
+                tf.constant(0, tf.float32, shape=list(new_shape)))
+            non_conv = non_conv + 1
+        elif 'WSM' in model.weights[n].name:
+            model.weights[n].assign(
+                tf.constant(1, tf.float32, shape=list(new_shape)))
+            non_conv = non_conv + 1
+        elif 'mean' in model.weights[n].name:
+            model.weights[n].assign(
+                tf.constant(0, tf.float32, shape=list(new_shape)))
+            non_conv = non_conv + 1
+        elif 'variance' in model.weights[n].name:
+            model.weights[n].assign(
+                tf.constant(1, tf.float32, shape=list(new_shape)))
+            non_conv = non_conv + 1
+        elif 'bias' in model.weights[n].name:
+            model.weights[n].assign(
+                tf.constant(0, tf.float32, shape=list(new_shape)))
+            non_conv = non_conv + 1
+        else:
+            model.weights[n].assign(tf.Variable(
+                tf.keras.initializers.GlorotUniform()(shape=list(new_shape),
+                                                      dtype=tf.float32)))
+            conv = conv + 1
+    print('CONV NONCONV', conv, non_conv, total_weights)
+
     gbp = GuidedBackpropagation(model, "Faster_RCNN", image, "GBP",
                                 "boxes", (0, int(class_map_idx[3][0]), 3),
                                 faster_rcnn_preprocess)

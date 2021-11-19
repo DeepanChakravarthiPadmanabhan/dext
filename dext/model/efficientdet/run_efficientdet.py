@@ -60,9 +60,7 @@ class GuidedBackpropagation:
     def build_custom_model(self):
         custom_model = tf.keras.models.Model(
             inputs=[self.model.inputs],
-            outputs=[self.model.output[self.visualize_idx[0],
-                                       self.visualize_idx[1],
-                                       self.visualize_idx[2]]])
+            outputs=[self.model.output])
         all_layers = get_all_layers(custom_model)
         all_layers = [act_layer for act_layer in all_layers
                       if hasattr(act_layer, 'activation')]
@@ -80,6 +78,9 @@ class GuidedBackpropagation:
             inputs = self.normalized_images
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
+            conv_outs = conv_outs[[self.visualize_idx[0],
+                                   self.visualize_idx[1],
+                                   self.visualize_idx[2]]]
         print('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         saliency = np.asarray(grads)
@@ -107,23 +108,44 @@ detection_image, detections, class_map_idx = efficientdet_postprocess(
     model, outputs, image_scales, raw_image)
 print(detections)
 plt.imsave("efficientdet.jpg", detection_image)
-explain_object = 1
+explain_object = 2
 visualize_idx = (0,
                  int(class_map_idx[explain_object][0]),
                  int(class_map_idx[explain_object][1]) + 4)
 print("class map idx: ", class_map_idx)
 print('visualizer: ', visualize_idx)
-gbp = GuidedBackpropagation(model, "EFFICIENTDETD0", raw_image, "IG",
-                            "boxes", visualize_idx, efficientdet_preprocess,
-                            512)
+
+total_weights = len(model.weights)
+percent_alter = 20
+selected_weights = int((total_weights * percent_alter)/100)
+for n, i in enumerate(model.weights[::-1][:selected_weights]):
+    # print('Reinitializing weights for layer: ', model.weights[n].name)
+    new_shape = model.weights[n].shape
+    if 'gamma' in model.weights[n].name:
+        model.weights[n].assign(tf.constant(1, tf.float32, shape=list(new_shape)))
+    elif 'beta' in model.weights[n].name:
+        model.weights[n].assign(tf.constant(0, tf.float32, shape=list(new_shape)))
+    elif 'WSM' in model.weights[n].name:
+        model.weights[n].assign(tf.constant(1, tf.float32, shape=list(new_shape)))
+    elif 'mean' in model.weights[n].name:
+        model.weights[n].assign(tf.constant(0, tf.float32, shape=list(new_shape)))
+    elif 'variance' in model.weights[n].name:
+        model.weights[n].assign(tf.constant(1, tf.float32, shape=list(new_shape)))
+    elif 'bias' in model.weights[n].name:
+        model.weights[n].assign(tf.constant(0, tf.float32, shape=list(new_shape)))
+    else:
+        model.weights[n].assign(tf.Variable(tf.keras.initializers.GlorotUniform()(shape=list(new_shape), dtype=tf.float32)))
+
+gbp = GuidedBackpropagation(model, "EFFICIENTDETD0", raw_image, "IG", "boxes",
+                            visualize_idx, efficientdet_preprocess, 512)
 saliency = gbp.get_saliency_map()
+saliency_stat = (np.min(saliency), np.max(saliency))
 saliency = visualize_saliency_grayscale(saliency)
-plt.imsave('saliency_mask.jpg', saliency)
-print('saliency.shape', saliency.shape, type(saliency))
 fig = plot_single_saliency(detection_image, raw_image, saliency,
                            class_map_idx[explain_object][2],
                            class_names[class_map_idx[explain_object][1]],
                            explaining='Classification',
                            interpretation_method='IG',
-                           model_name='EfficientDet')
+                           model_name='EfficientDet',
+                           saliency_stat=saliency_stat)
 fig.savefig("efficientdet_saliency.jpg")

@@ -33,11 +33,11 @@ class IntegratedGradients(Explainer):
         self.baseline = self.generate_baseline()
         if model:
             self.custom_model = model
-            self.clean_custom_model()
         else:
             self.custom_model = build_layer_custom_model(self.model_name,
                                                          self.layer_name)
-            self.clean_custom_model()
+        self.all_outs = [0]
+        self.all_grads = [0]
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
@@ -46,19 +46,17 @@ class IntegratedGradients(Explainer):
                 image = image[0]
         return image
 
-    def generate_baseline(self):
-        baseline = np.zeros(shape=(1, self.image_size,
-                            self.image_size, 3))
+    def generate_baseline(self, baseline_type='black'):
+        if baseline_type == 'black':
+            baseline = np.zeros(shape=(1, self.image_size, self.image_size, 3))
+        else:
+            baseline = np.random.uniform(0, 1, size=(1, self.image_size,
+                                                     self.image_size, 3))
         return baseline
 
     def preprocess_image(self, image, image_size):
         input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
-
-    def clean_custom_model(self):
-        # To get logits without softmax
-        if 'class' in self.layer_name:
-            self.custom_model.get_layer(self.layer_name).activation = None
 
     def interpolate_images(self, image, alphas):
         alphas_x = alphas[:, np.newaxis, np.newaxis, np.newaxis]
@@ -73,14 +71,16 @@ class IntegratedGradients(Explainer):
             inputs = tf.cast(image, tf.float32)
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
-            conv_outs = conv_outs[self.visualize_index[0],
+            conv_outs = conv_outs[:,
                                   self.visualize_index[1],
                                   self.visualize_index[2]]
+            self.all_outs.append(conv_outs.numpy())
         LOGGER.info('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
         return grads
 
     def integral_approximation(self, gradients):
+        """Riemann trapezoidal integral approximation."""
         grads = (gradients[:-1] + gradients[1:]) / 2
         integrated_gradients = np.mean(grads, axis=0)
         return integrated_gradients
@@ -94,7 +94,7 @@ class IntegratedGradients(Explainer):
         new_interpolated_image = np.concatenate(new_interpolated_image, axis=0)
         return new_interpolated_image
 
-    def get_saliency_map(self):
+    def get_saliency_map(self, save_stats=False):
         # 1. Generate alphas.
         alphas = np.linspace(start=0.0, stop=1.0, num=self.steps + 1)
         gradient_batches = []
@@ -124,11 +124,29 @@ class IntegratedGradients(Explainer):
         # Stack path gradients together row-wise into single tensor.
         total_gradients = np.concatenate(gradient_batches)
 
+        average_grads = tf.math.reduce_mean(total_gradients, axis=[1, 2, 3])
+        average_grads_norm = (average_grads - tf.math.reduce_min(
+            average_grads)) / (tf.math.reduce_max(average_grads) -
+                               tf.reduce_min(average_grads))
+        self.all_grads = [0] + list(average_grads_norm.numpy())
+
         # 4. Integral approximation through averaging gradients.
         avg_gradients = self.integral_approximation(gradients=total_gradients)
 
         # Scale integrated gradients with respect to input.
-        integrated_gradients = (self.image - self.baseline) * avg_gradients
+        process_image = self.preprocess_image(self.image, self.image_size)
+        integrated_gradients = (process_image - self.baseline) * avg_gradients
+
+        if save_stats:
+            fig, ax = plt.subplots()
+            ax.plot(np.linspace(start=0.0, stop=1.0, num=self.steps + 2),
+                    self.all_grads, marker='o')
+            fig.savefig('allgrads.jpg')
+            fig, ax = plt.subplots()
+            ax.plot(np.linspace(start=0.0, stop=1.0, num=self.steps + 2),
+                    self.all_outs, marker='o')
+            fig.savefig('allouts.jpg')
+
         return integrated_gradients
 
     def plot_attributions(self, image, ig_attributions, save_path):
@@ -160,14 +178,36 @@ class IntegratedGradients(Explainer):
         plt.savefig(save_path)
 
 
-def IntegratedGradientExplainer(model, model_name, image_path, interpretation_method,
-                                layer_name, visualize_index, preprocessor_fn,
-                                image_size, steps=2, batch_size=1):
+def check_convergence(model, saliency, baseline, image, visualize_index):
+    base_score = model(baseline)
+    base_score = base_score[visualize_index]
+
+    input_score = model(image)
+    input_score = input_score[visualize_index]
+
+    ig_score = np.sum(saliency)
+    delta = ig_score - (input_score - base_score)
+    LOGGER.info("IG Stats: %s", (delta, ig_score, input_score, base_score,))
+    # assert (delta.numpy() < 0.5) and (0 <= delta.numpy()), (
+    #     "Completeness fails. Increase or decrease IG steps.")
+
+
+def IntegratedGradientExplainer(model, model_name, image_path,
+                                interpretation_method, layer_name,
+                                visualize_index, preprocessor_fn,
+                                image_size, steps=20, batch_size=1):
+    """
+    https://github.com/GoogleCloudPlatform/training-data-analyst/blob/master/
+    blogs/integrated_gradients/integrated_gradients.ipynb
+    https://github.com/ankurtaly/Integrated-Gradients
+    """
     image = get_image(image_path)
     ig = IntegratedGradients(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
                              image_size, steps, batch_size)
     saliency = ig.get_saliency_map()
+    image = ig.preprocess_image(image, image_size)
+    check_convergence(model, saliency, ig.baseline, image, visualize_index)
     saliency_stat = (np.min(saliency), np.max(saliency))
     saliency = visualize_saliency_grayscale(saliency)
     return saliency, saliency_stat
