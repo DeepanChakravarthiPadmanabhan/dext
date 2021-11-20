@@ -36,7 +36,8 @@ def lincolor(num_colors, saturation=1, value=1, normalized=False):
     return RGB_colors
 
 
-def get_text_origin(image, text, scale, x_min, y_min, x_max, y_max):
+def get_text_origin(image, text, scale, x_min, y_min, x_max, y_max,
+                    max_size=512):
     image_y, image_x, _ = image.shape
     (tw, th), _ = cv2.getTextSize(
         text, cv2.FONT_HERSHEY_SIMPLEX, scale, 1)
@@ -46,13 +47,16 @@ def get_text_origin(image, text, scale, x_min, y_min, x_max, y_max):
         x_text = x_min
     if (y_min - th < 0):
         y_text = y_max + th + 10
+        if y_text > max_size:
+            y_text = y_min + 15
     else:
         y_text = y_min - 10
     return x_text, y_text
 
 
 def draw_bounding_boxes(image, boxes2D, class_names=None, colors=None,
-                        weighted=False, scale=0.7, with_score=True):
+                        weighted=False, scale=0.7, with_score=True,
+                        max_size=512):
     """Draws bounding boxes from Boxes2D messages.
 
     # Arguments
@@ -93,8 +97,8 @@ def draw_bounding_boxes(image, boxes2D, class_names=None, colors=None,
             text = '{:0.2f}, {}'.format(box2D.score, class_name)
         if not with_score:
             text = '{}'.format(class_name)
-        x_text, y_text = get_text_origin(image, text, scale,
-                                         x_min, y_min, x_max, y_max)
+        x_text, y_text = get_text_origin(image, text, scale, x_min, y_min,
+                                         x_max, y_max, max_size)
         cv2.putText(image, text, (x_text, y_text),
                     cv2.FONT_HERSHEY_SIMPLEX, scale, color, 2)
         cv2.rectangle(image, (x_min, y_min), (x_max, y_max), color, 2)

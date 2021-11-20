@@ -176,8 +176,8 @@ def efficientdet_postprocess(model, outputs, image_scales, raw_images=None,
     detections = scale_boxes(detections, image_scales)
     image = draw_bounding_boxes(raw_images.astype('uint8'),
                                 detections,
-                                get_class_name_efficientdet('COCO'))
-
+                                get_class_name_efficientdet('COCO'),
+                                max_size=image_size)
     if explain_top5_backgrounds:
         image, detections, class_map_idx = get_top5_bg_efficientdet(
             model, outputs, image_scales, raw_images)

@@ -160,7 +160,8 @@ def faster_rcnn_postprocess(model, outputs, image_scales, image,
     detections = np.concatenate([scaled_boxes, detections[:, 4:]], axis=1)
     detections = nms_per_class(detections, 0.3)
     detections, class_map_idx = filterboxes(detections, class_names, 0.7)
-    image = draw_bounding_boxes(image, detections, class_names)
+    image = draw_bounding_boxes(image, detections, class_names,
+                                max_size=image_size)
     return image, detections, class_map_idx
 
 

@@ -172,7 +172,8 @@ def ssd_postprocess(model, outputs, image_scale, raw_image, image_size=512,
                                             conf_thresh=0.4)
     detections = denormalize_boxes(detections, model.input_shape[1:3])
     detections = scale_boxes(detections, image_scale)
-    image = draw_bounding_boxes(raw_image, detections, get_class_names("COCO"))
+    image = draw_bounding_boxes(raw_image, detections, get_class_names("COCO"),
+                                max_size=image_size)
 
     if explain_top5_backgrounds:
         image, detections, class_map_idx = get_top5_bg_ssd(
