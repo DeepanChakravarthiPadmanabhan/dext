@@ -122,7 +122,8 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
 
 
 @profile
-def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
+def explain_model(model_name, explain_mode,  dataset_name, data_split,
+                  data_split_name, raw_image_path, image_size=512,
                   class_layer_name=None, reg_layer_name=None,
                   to_explain="Classification", result_dir='images/results/',
                   interpretation_method="IntegratedGradients",
@@ -140,10 +141,9 @@ def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     inference_fn = InferenceFactory(model_name).factory()
-
-    to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
-                                            num_images, continuous_run,
-                                            result_dir)
+    to_be_explained = get_images_to_explain(
+        explain_mode,  dataset_name, data_split, data_split_name,
+        raw_image_path, num_images, continuous_run, result_dir)
     model = get_model(model_name)
     custom_model = build_general_custom_model(
         model, class_layer_name, reg_layer_name)
