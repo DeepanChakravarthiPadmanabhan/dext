@@ -5,8 +5,6 @@ from paz.processors.image import LoadImage
 import matplotlib.pyplot as plt
 from dext.interpretation_method.guided_backpropagation import \
     GuidedBackpropagationExplainer
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
 from dext.model.ssd.utils import ssd_preprocess
 from dext.model.ssd.ssd_postprocess import ssd_postprocess
 from dext.postprocessing.saliency_visualization import plot_single_saliency

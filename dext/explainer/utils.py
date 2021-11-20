@@ -7,8 +7,9 @@ import tensorflow as tf
 from tensorflow.keras import Model
 
 from dext.dataset.coco import COCODataset
+from dext.dataset.voc import VOC
 from dext.factory.model_factory import ModelFactory
-from dext.utils.class_names import get_class_name_efficientdet
+from dext.utils.class_names import coco_class_names
 from paz.datasets.utils import get_class_names
 
 LOGGER = logging.getLogger(__name__)
@@ -67,7 +68,7 @@ def build_layer_custom_model(model_name, layer_name):
 
 def get_model_class_name(model_name, dataset_name):
     if "EFFICIENTDET" in model_name:
-        class_names = get_class_name_efficientdet(dataset_name)
+        class_names = coco_class_names
     elif "SSD" in model_name:
         class_names = get_class_names(dataset_name)
     elif model_name == "FasterRCNN":
@@ -98,6 +99,13 @@ def get_images_to_explain(explain_mode, dataset_name, data_split,
                                           result_dir=result_dir)
             to_be_explained = to_be_explained.load_data(
                 )[:num_images_to_explain]
+        elif dataset_name == 'VOC':
+            to_be_explained = VOC(dataset_path, data_split, 'all',
+                                  data_split_name,
+                                  continuous_run=continuous_run,
+                                  result_dir=result_dir)
+            to_be_explained = to_be_explained.load_data(
+            )[:num_images_to_explain]
         else:
             to_be_explained = None
     return to_be_explained

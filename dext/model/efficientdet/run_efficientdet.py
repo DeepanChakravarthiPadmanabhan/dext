@@ -7,8 +7,7 @@ from paz.processors.image import LoadImage
 from dext.model.efficientdet.utils import efficientdet_preprocess
 from dext.model.efficientdet.efficientdet_postprocess import \
     efficientdet_postprocess
-from dext.model.efficientdet.efficientdet_postprocess import \
-    get_class_name_efficientdet
+from dext.utils.class_names import coco_class_names
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
 from dext.postprocessing.saliency_visualization import plot_single_saliency
@@ -87,8 +86,8 @@ class GuidedBackpropagation:
         return saliency
 
 
-class_names = get_class_name_efficientdet('COCO')
-raw_image = "images/000000128224.jpg"
+class_names = coco_class_names
+raw_image = "images/000000229684.jpg"
 loader = LoadImage()
 raw_image = loader(raw_image)
 image = raw_image.copy()

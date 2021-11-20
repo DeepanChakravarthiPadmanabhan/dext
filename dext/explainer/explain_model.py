@@ -12,6 +12,7 @@ from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.interpretation_method_factory import ExplainerFactory
 from dext.factory.inference_factory import InferenceFactory
 from dext.postprocessing.saliency_visualization import plot_all
+from dext.postprocessing.detection_visualization import plot_gt_on_detection
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
 from dext.explainer.utils import get_images_to_explain
@@ -130,7 +131,8 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
                   visualize_object_index=None, visualize_box_offset=None,
                   num_images=2, save_saliency_images=False,
                   save_explanation_images=False, continuous_run=False,
-                  explain_top5_backgrounds=True, save_modified_images=True):
+                  explain_top5_backgrounds=True, plot_gt=False,
+                  save_modified_images=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     test_gpus()
@@ -150,6 +152,7 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
     for count, data in enumerate(to_be_explained):
         raw_image_path = data["image"]
         image_index = data["image_index"]
+        gt = data['boxes']
         LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
         LOGGER.info('Explaining image count: %s' % str(count + 1))
         LOGGER.info("Explanation input image ID: %s" % str(image_index))
@@ -162,6 +165,10 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
         box_index = forward_pass_outs[2]
         LOGGER.info("Detections: %s" % detections)
         if len(detections):
+            if plot_gt and dataset_name == 'VOC':
+                detection_image = plot_gt_on_detection(detection_image, gt)
+                LOGGER.info('No. of. detections: %s, No. of. GT labels: %s' %
+                            (len(detections), len(gt)))
             if visualize_object_index == 'all':
                 objects_to_analyze = list(range(1, len(detections) + 1))
             else:

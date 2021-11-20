@@ -11,7 +11,7 @@ from tensorflow.compat.v1.keras.backend import get_session
 from paz.backend.image import resize_image
 from dext.abstract.explanation import Explainer
 from paz.backend.image.opencv_image import load_image
-from dext.utils.class_names import get_class_name_efficientdet
+from dext.utils.class_names import coco_class_names
 from dext.dataset.coco import COCODataset
 from dext.explainer.utils import get_model
 
@@ -106,7 +106,7 @@ class GradientSHAP(Explainer):
             ranked_outputs=1)
 
         index_names = np.vectorize(
-            lambda x: get_class_name_efficientdet("COCO")[x])(indexes)
+            lambda x: coco_class_names[x])(indexes)
         LOGGER.info("Shap values: %s" % shap_values)
         shap.image_plot(shap_values, image, index_names)
         plt.savefig('GradientExplainer_shap_image_plot.jpg')

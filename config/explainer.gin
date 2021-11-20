@@ -1,11 +1,12 @@
-DATASET_PATH = "/scratch/dpadma2s/coco/"
+COCO_DATASET_PATH = "/scratch/dpadma2s/coco/"
+VOC_DATASET_PATH = "/scratch/dpadma2s/voc/VOCdevkit/"
 
 COCO_VAL_ANNOTATION_FILE = "/scratch/dpadma2s/coco/annotations/instances_val2017.json"
 
 EFFICIENTDET_WEIGHT_PATH = "/scratch/dpadma2s/paz_efficientdet_weights/"
 FASTER_RCNN_WEIGHT_PATH = "/scratch/dpadma2s/paz_faster_rcnn_weights/"
 
-get_images_to_explain.dataset_path = %DATASET_PATH
+get_images_to_explain.dataset_path = %COCO_DATASET_PATH
 EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH
 faster_rcnn_detection.weight_path = %FASTER_RCNN_WEIGHT_PATH
 

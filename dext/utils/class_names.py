@@ -19,6 +19,14 @@ coco_class_names = ['person', 'bicycle', 'car', 'motorcycle',
                     'toothbrush']
 
 
-def get_class_name_efficientdet(dataset_name):
+voc_class_names = ['background', 'aeroplane', 'bicycle', 'bird', 'boat',
+                   'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
+                   'diningtable', 'dog', 'horse', 'motorbike', 'person',
+                   'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+
+
+def get_classes(dataset_name):
     if dataset_name == 'COCO':
         return coco_class_names
+    else:
+        return voc_class_names
