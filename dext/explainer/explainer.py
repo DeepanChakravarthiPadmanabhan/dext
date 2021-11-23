@@ -13,11 +13,11 @@ LOGGER = logging.getLogger(__name__)
               default="EFFICIENTDETD0")
 @click.option("--explain_mode", default="dataset",
               type=click.Choice(["single_image", "dataset"]))
-@click.option("--dataset_name", default="VOC",
+@click.option("--dataset_name", default="COCO",
               type=click.Choice(["COCO", "VOC"]))
-@click.option("--data_split", default="train",  # VOC - train, COCO - test
+@click.option("--data_split", default="test",  # VOC - train, COCO - test
               type=click.Choice(["test", "train", "val"]))
-@click.option("--data_split_name", default="VOC2012",
+@click.option("--data_split_name", default="test2017",
               type=click.Choice(["test2017", "train2017", "val2017",
                                  "VOC2012"]))  # VOC - VOC2012, COCO -test2017
 @click.option("--input_image_path", default="images/000000309391.jpg")
@@ -27,14 +27,14 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
-@click.option("--result_dir", default="images/results/")
+@click.option("--result_dir", default="/gluster/home/dcpadmanabhan/SCRATCH/thesis/results/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
 @click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
-@click.option("--num_images", default=1)  # 1 <
+@click.option("--num_images", default=100)  # 1 <
 @click.option("--save_saliency_images", default=True)
 @click.option("--save_explanation_images", default=True)
 @click.option("--continuous_run", default=False)

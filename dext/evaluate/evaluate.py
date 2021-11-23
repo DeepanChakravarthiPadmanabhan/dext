@@ -17,8 +17,8 @@ LOGGER = logging.getLogger(__name__)
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
 @click.option("--image_size", default=512)
-@click.option("--results_dir", default="/scratch/dpadma2s/thesis/results/")
-@click.option("--num_images", default=10)  # 1 <
+@click.option("--results_dir", default="images/results/")
+@click.option("--num_images", default=1)  # 1 <
 @click.option("--ap_curve_linspace", default=100)
 @click.option("--eval_flip", default=True)
 @click.option("--eval_ap_explain", default=False)
@@ -31,7 +31,8 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_adulteration_method", default='inpainting',
               type=click.Choice(["inpainting", "zeroing"]))
 @click.option("--explain_top5_backgrounds", default=False)
-@click.option("--continuous_run", default=True)
+@click.option("--continuous_run", default=False)
+@click.option("--save_all_map_metrics", default=False)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))
@@ -41,7 +42,7 @@ def evaluator(config, mode, model_name, interpretation_method, image_size,
               eval_ap_explain, merge_saliency_maps, merge_method,
               save_modified_images, coco_result_file,
               image_adulteration_method, explain_top5_backgrounds,
-              continuous_run, log_level, log_dir):
+              continuous_run, save_all_map_metrics, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -51,7 +52,7 @@ def evaluator(config, mode, model_name, interpretation_method, image_size,
             num_images, ap_curve_linspace, eval_flip, eval_ap_explain,
             merge_saliency_maps, merge_method, save_modified_images,
             coco_result_file, image_adulteration_method,
-            explain_top5_backgrounds, continuous_run)
+            explain_top5_backgrounds, continuous_run, save_all_map_metrics)
     else:
         evaluate_model(model_name, image_size, coco_result_file)
 

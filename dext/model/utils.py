@@ -38,7 +38,7 @@ def resize_image(image, size):
         raise ValueError(
             'Recieved Image is not of type numpy array', type(image))
     else:
-        if (image.shape[0] != size[0]) and (image.shape[1] != size[1]):
+        if (image.shape[0] != size[0]) or (image.shape[1] != size[1]):
             new_image = cv2.resize(image, size)
         else:
             new_image = image

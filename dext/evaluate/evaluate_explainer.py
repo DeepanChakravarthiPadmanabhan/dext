@@ -67,7 +67,8 @@ def evaluate_image_index(sequence, model_name, image_size, ap_curve_linspace,
                          result_dir, explain_top5_backgrounds,
                          save_modified_images, image_adulteration_method,
                          eval_flip, eval_ap_explain, merge_saliency_maps,
-                         merge_method, coco_result_file, model):
+                         merge_method, save_all_map_metrics, coco_result_file,
+                         model):
     column_names = ['image_index', 'object_index', 'box', 'confidence',
                     'class', 'explaining', 'boxoffset', 'saliency_path',
                     'image_path']
@@ -85,11 +86,13 @@ def evaluate_image_index(sequence, model_name, image_size, ap_curve_linspace,
         boxoffset = i[column_names.index('boxoffset')]
         saliency = np.load(saliency_path)
         saliency_list.append(saliency)
-        get_metrics(detection, image_path, saliency, image_index, object_index,
-                    boxoffset, model_name, image_size, explaining,
-                    ap_curve_linspace, result_dir, explain_top5_backgrounds,
-                    save_modified_images, image_adulteration_method, eval_flip,
-                    eval_ap_explain, coco_result_file, model)
+        if save_all_map_metrics:
+            get_metrics(detection, image_path, saliency, image_index,
+                        object_index, boxoffset, model_name, image_size,
+                        explaining, ap_curve_linspace, result_dir,
+                        explain_top5_backgrounds, save_modified_images,
+                        image_adulteration_method, eval_flip, eval_ap_explain,
+                        coco_result_file, model)
     if merge_saliency_maps:
         merge_all_maps(detection, image_path, saliency_list, image_index,
                        object_index, 'combined', model_name, image_size,
@@ -105,7 +108,7 @@ def evaluate_explainer(model_name, interpretation_method, image_size,
                        eval_flip, eval_ap_explain, merge_saliency_maps,
                        merge_method, save_modified_images, coco_result_file,
                        image_adulteration_method, explain_top5_backgrounds,
-                       continuous_run):
+                       continuous_run, save_all_map_metrics):
     results_dir = os.path.join(results_dir,
                                model_name + '_' + interpretation_method)
     data = load_data(results_dir, num_images, continuous_run)
@@ -117,4 +120,5 @@ def evaluate_explainer(model_name, interpretation_method, image_size,
                              explain_top5_backgrounds, save_modified_images,
                              image_adulteration_method, eval_flip,
                              eval_ap_explain, merge_saliency_maps,
-                             merge_method, coco_result_file, model)
+                             merge_method, save_all_map_metrics,
+                             coco_result_file, model)

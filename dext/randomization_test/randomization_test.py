@@ -23,6 +23,7 @@ def get_random_model(model_name, percent_alter):
     non_conv = 0
     total_weights = len(model.weights)
     selected_weights = int(total_weights * percent_alter)
+    # Alter from the output layer weights
     for n, i in enumerate(model.weights[::-1][:selected_weights]):
         new_shape = model.weights[n].shape
         if 'gamma' in model.weights[n].name:
