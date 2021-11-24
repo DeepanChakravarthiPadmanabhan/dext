@@ -13,6 +13,13 @@ LOGGER = logging.getLogger(__name__)
               default="EFFICIENTDETD0")
 @click.option("--explain_mode", default="coco",
               type=click.Choice(["single_image", "coco"]))
+@click.option("--dataset_name", default="COCO",
+              type=click.Choice(["COCO", "VOC"]))
+@click.option("--data_split", default="test",  # VOC - train, COCO - test
+              type=click.Choice(["test", "train", "val"]))
+@click.option("--data_split_name", default="test2017",
+              type=click.Choice(["test2017", "train2017", "val2017",
+                                 "VOC2012"]))  # VOC - VOC2012, COCO -test2017
 @click.option("--input_image_path", default="images/000000309391.jpg")
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
@@ -20,15 +27,14 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
-@click.option("--result_dir", default="images/results/random/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
 @click.option("--visualize_object_index", default=1)  # 1 <
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
-@click.option("--cascade_study", default=False)  # 1 <
-@click.option("--randomize_weights_percent", default=0.1)  # 0<=
+@click.option("--cascade_study", default=True)  # 1 <
+@click.option("--randomize_weights_percent", default=0.5)  # 0<=
 @click.option("--random_linspace", default=5)  # 1
 @click.option("--num_images", default=1)  # 1 <
 @click.option("--save_saliency_images", default=True)
@@ -39,23 +45,23 @@ LOGGER = logging.getLogger(__name__)
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
                                  "DEBUG"]))
 @click.option("--log-dir", default="")
-def randomizer(config, model_name, explain_mode, input_image_path, image_size,
-               class_layer_name, reg_layer_name, to_explain, result_dir,
-               interpretation_method, visualize_object_index,
-               visualize_box_offset, cascade_study, randomize_weights_percent,
-               random_linspace, num_images, save_saliency_images,
-               save_explanation_images, continuous_run,
+def randomizer(config, model_name, explain_mode, dataset_name, data_split,
+               data_split_name, input_image_path, image_size, class_layer_name,
+               reg_layer_name, to_explain, interpretation_method,
+               visualize_object_index, visualize_box_offset, cascade_study,
+               randomize_weights_percent, random_linspace, num_images,
+               save_saliency_images, save_explanation_images, continuous_run,
                explain_top5_backgrounds, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
     randomization_test(
-        model_name, explain_mode, input_image_path, image_size,
-        class_layer_name, reg_layer_name, to_explain, result_dir,
-        interpretation_method, visualize_object_index, visualize_box_offset,
-        cascade_study, randomize_weights_percent, random_linspace,
-        num_images, save_saliency_images, save_explanation_images,
-        continuous_run, explain_top5_backgrounds)
+        model_name, explain_mode, dataset_name, data_split, data_split_name,
+        input_image_path, image_size, class_layer_name, reg_layer_name,
+        to_explain, interpretation_method, visualize_object_index,
+        visualize_box_offset, cascade_study, randomize_weights_percent,
+        random_linspace, num_images, save_saliency_images,
+        save_explanation_images, continuous_run, explain_top5_backgrounds)
 
 
 if __name__ == "__main__":

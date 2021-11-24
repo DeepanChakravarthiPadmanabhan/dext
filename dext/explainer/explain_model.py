@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import gin
 import numpy as np
 import psutil
 import gc
@@ -123,16 +124,17 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
 
 
 @profile
+@gin.configurable
 def explain_model(model_name, explain_mode,  dataset_name, data_split,
                   data_split_name, raw_image_path, image_size=512,
                   class_layer_name=None, reg_layer_name=None,
-                  to_explain="Classification", result_dir='images/results/',
+                  to_explain="Classification",
                   interpretation_method="IntegratedGradients",
                   visualize_object_index=None, visualize_box_offset=None,
                   num_images=2, save_saliency_images=False,
                   save_explanation_images=False, continuous_run=False,
                   explain_top5_backgrounds=True, plot_gt=False,
-                  save_modified_images=True):
+                  result_dir='images/results/', save_modified_images=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     test_gpus()

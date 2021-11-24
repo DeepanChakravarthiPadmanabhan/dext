@@ -20,3 +20,6 @@ RESULT_DIR = '/scratch/dpadma2s/thesis/results'
 RESULT_DIR_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/results/'
 filter_image_ids.results_dir = %RESULT_DIR_DFKI
 
+RANDOM_RESULT_DIR = '/scratch/dpadma2s/thesis/results_random'
+RANDOM_RESULT_DIR_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/results_random/'
+randomization_test.result_dir = %RANDOM_RESULT_DIR_DFKI

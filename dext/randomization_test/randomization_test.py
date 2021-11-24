@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import gin
 import tensorflow as tf
 import numpy as np
 import psutil
@@ -59,14 +60,15 @@ def get_random_model(model_name, percent_alter):
                 (conv, non_conv, total_weights))
     return model
 
-
+@gin.configurable
 def randomization_test(
-        model_name, explain_mode, raw_image_path, image_size, class_layer_name,
-        reg_layer_name, to_explain, main_result_dir, interpretation_method,
-        visualize_object_index, visualize_box_offset, cascade_study,
-        randomize_weights_percent, random_linspace, num_images,
-        save_saliency_images, save_explanation_images, continuous_run,
-        explain_top5_backgrounds):
+        model_name, explain_mode, dataset_name, data_split, data_split_name,
+        raw_image_path, image_size, class_layer_name, reg_layer_name,
+        to_explain, interpretation_method, visualize_object_index,
+        visualize_box_offset, cascade_study, randomize_weights_percent,
+        random_linspace, num_images, save_saliency_images,
+        save_explanation_images, continuous_run, explain_top5_backgrounds,
+        result_dir):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     test_gpus()
@@ -83,16 +85,16 @@ def randomization_test(
         random_model = get_random_model(model_name, percent_alter)
         custom_model = build_general_custom_model(
             random_model, class_layer_name, reg_layer_name)
-        result_dir = os.path.join(
-            main_result_dir,
+        out_result_dir = os.path.join(
+            result_dir,
             model_name + '_' + interpretation_method + '_random' +
             str(int(percent_alter * 100)))
-        create_directories(result_dir, False, save_saliency_images,
+        create_directories(out_result_dir, False, save_saliency_images,
                            save_explanation_images)
         if not to_be_explained:
             to_be_explained = get_images_to_explain(
-                explain_mode, raw_image_path, num_images, continuous_run,
-                result_dir)
+                explain_mode,  dataset_name, data_split, data_split_name,
+                raw_image_path, num_images, continuous_run, out_result_dir)
         for count, data in enumerate(to_be_explained):
             raw_image_path = data["image"]
             image_index = data["image_index"]
@@ -115,10 +117,11 @@ def randomization_test(
                 explain_all_objects(
                     objects_to_analyze, raw_image_path, image_size,
                     preprocessor_fn, detections, detection_image,
-                    interpretation_method, box_index, to_explain, result_dir,
-                    class_layer_name, reg_layer_name, visualize_box_offset,
-                    model_name, image_index, save_saliency_images,
-                    save_explanation_images, custom_model)
+                    interpretation_method, box_index, to_explain,
+                    out_result_dir, class_layer_name, reg_layer_name,
+                    visualize_box_offset, model_name, image_index,
+                    save_saliency_images, save_explanation_images,
+                    custom_model)
             else:
                 LOGGER.info("No detections to analyze.")
         end_time = time.time()

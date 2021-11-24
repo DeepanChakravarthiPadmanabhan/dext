@@ -104,16 +104,19 @@ class COCOParser(object):
                                             self.dataset_name)
             self.coco = COCO(self.annotations_path)
             self.image_ids = self.coco.getImgIds()
-            if "train" in self.dataset_name:
-                self.image_ids = [114540, 117156, 128224, 130733,
-                                  253710, 438751, 487851, 581929]
-            elif "val" in self.dataset_name:
-                self.image_ids = [252219,
-                                  191672, 309391, 344611, 347456, 459954,
-                                  397133, 37777]
-            else:
-                self.image_ids = [347456, 459954]
+            # Uncomment below line to run on single image index alone
+            # if "train" in self.dataset_name:
+            #     self.image_ids = [114540, 117156, 128224, 130733,
+            #                       253710, 438751, 487851, 581929]
+            # elif "val" in self.dataset_name:
+            #     self.image_ids = [252219,
+            #                       191672, 309391, 344611, 347456, 459954,
+            #                       397133, 37777]
+            # else:
+            #     self.image_ids = [347456, 459954]
         else:
+            # Uncomment below line to run on single image index alone
+            # self.image_ids = [347456, 459954]
             self.annotations_path = os.path.join(
                 self.dataset_path, 'annotations', 'image_info_test2017.json')
             with open(self.annotations_path, 'r') as json_file:

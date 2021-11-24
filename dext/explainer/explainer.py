@@ -27,7 +27,6 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Box offset"]))
-@click.option("--result_dir", default="/gluster/home/dcpadmanabhan/SCRATCH/thesis/results/")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
                                  "GuidedBackpropagation", "GradCAM"]))
@@ -45,18 +44,17 @@ LOGGER = logging.getLogger(__name__)
                                  "DEBUG"]))
 @click.option("--log-dir", default="")
 def explainer(config, model_name, explain_mode, dataset_name, data_split,
-              data_split_name, input_image_path, image_size,
-              class_layer_name, reg_layer_name, to_explain, result_dir,
-              interpretation_method, visualize_object_index,
-              visualize_box_offset, num_images, save_saliency_images,
-              save_explanation_images, continuous_run,
+              data_split_name, input_image_path, image_size, class_layer_name,
+              reg_layer_name, to_explain, interpretation_method,
+              visualize_object_index, visualize_box_offset, num_images,
+              save_saliency_images, save_explanation_images, continuous_run,
               explain_top5_backgrounds, plot_gt, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
     explain_model(model_name, explain_mode, dataset_name, data_split,
                   data_split_name, input_image_path, image_size,
-                  class_layer_name, reg_layer_name, to_explain, result_dir,
+                  class_layer_name, reg_layer_name, to_explain,
                   interpretation_method, visualize_object_index,
                   visualize_box_offset, num_images, save_saliency_images,
                   save_explanation_images, continuous_run,

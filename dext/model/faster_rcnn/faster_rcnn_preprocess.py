@@ -25,7 +25,7 @@ class ResizeImages(Processor):
 
     def call(self, image):
         if (image.shape[0] != self.IMAGE_MIN_DIM
-            or image.shape[0] != self.IMAGE_MAX_DIM) and (
+            or image.shape[0] != self.IMAGE_MAX_DIM) or (
                 image.shape[1] != self.IMAGE_MIN_DIM or
                 image.shape[1] != self.IMAGE_MAX_DIM):
             resized_image, window, _, _, _ = resize_image(
