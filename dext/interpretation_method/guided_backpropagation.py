@@ -83,12 +83,16 @@ class GuidedBackpropagation(Explainer):
 def GuidedBackpropagationExplainer(model, model_name, image_path,
                                    interpretation_method, layer_name,
                                    visualize_index, preprocessor_fn,
-                                   image_size):
-    image = get_image(image_path)
+                                   image_size, normalize=True):
+    if isinstance(image_path, str):
+        image = get_image(image_path)
+    else:
+        image = image_path
     explainer = GuidedBackpropagation(
         model, model_name, image, interpretation_method, layer_name,
         visualize_index, preprocessor_fn, image_size)
     saliency = explainer.get_saliency_map()
     saliency_stat = (np.min(saliency), np.max(saliency))
-    saliency = visualize_saliency_grayscale(saliency)
+    if normalize:
+        saliency = visualize_saliency_grayscale(saliency)
     return saliency, saliency_stat

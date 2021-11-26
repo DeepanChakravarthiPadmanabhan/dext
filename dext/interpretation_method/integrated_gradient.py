@@ -194,14 +194,17 @@ def check_convergence(model, saliency, baseline, image, visualize_index):
 
 def IntegratedGradientExplainer(model, model_name, image_path,
                                 interpretation_method, layer_name,
-                                visualize_index, preprocessor_fn,
-                                image_size, steps=20, batch_size=1):
+                                visualize_index, preprocessor_fn, image_size,
+                                steps=20, batch_size=1, normalize=True):
     """
     https://github.com/GoogleCloudPlatform/training-data-analyst/blob/master/
     blogs/integrated_gradients/integrated_gradients.ipynb
     https://github.com/ankurtaly/Integrated-Gradients
     """
-    image = get_image(image_path)
+    if isinstance(image_path, str):
+        image = get_image(image_path)
+    else:
+        image = image_path
     ig = IntegratedGradients(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
                              image_size, steps, batch_size)
@@ -209,5 +212,6 @@ def IntegratedGradientExplainer(model, model_name, image_path,
     image = ig.preprocess_image(image, image_size)
     check_convergence(model, saliency, ig.baseline, image, visualize_index)
     saliency_stat = (np.min(saliency), np.max(saliency))
-    saliency = visualize_saliency_grayscale(saliency)
+    if normalize:
+        saliency = visualize_saliency_grayscale(saliency)
     return saliency, saliency_stat

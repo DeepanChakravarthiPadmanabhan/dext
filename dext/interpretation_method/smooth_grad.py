@@ -8,21 +8,22 @@ from dext.interpretation_method.guided_backpropagation import (
     GuidedBackpropagationExplainer)
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
-from dext.explainer.utils import get_model
+from dext.utils.get_image import get_image
 
 LOGGER = logging.getLogger(__name__)
 
 
 class SmoothGrad(Explainer):
-    def __init__(self, model, model_name, image,
+    def __init__(self, model, model_name, image_path,
                  explainer="SmoothGrad_IntegreatedGradients", layer_name=None,
                  visualize_index=None, preprocessor_fn=None, image_size=512,
                  standard_deviation=0.15, nsamples=5, magnitude=1, steps=5,
                  batch_size=1):
-        super().__init__(model, model_name, image, explainer)
+        super().__init__(model_name, image_path, explainer)
         self.model = model
         self.model_name = model_name
-        self.image = image
+        self.image_path = image_path
+        self.image = get_image(self.image_path)
         self.image_size = image_size
         self.explainer = explainer
         self.layer_name = layer_name
@@ -54,17 +55,17 @@ class SmoothGrad(Explainer):
 
             if self.explainer == "SmoothGrad_IntegratedGradients":
                 LOGGER.info('Explanation method %s' % self.explainer)
-                saliency = IntegratedGradientExplainer(
-                    self.model_name, image_noise, self.explainer,
-                    self.layer_name, self.visualize_index,
+                saliency, _ = IntegratedGradientExplainer(
+                    self.model, self.model_name, image_noise,
+                    self.explainer, self.layer_name, self.visualize_index,
                     self.preprocessor_fn, self.image_size, self.steps,
-                    self.batch_size)
+                    self.batch_size, normalize=False)
             elif self.explainer == 'SmoothGrad_GuidedBackpropagation':
                 LOGGER.info('Explanation method %s' % self.explainer)
-                saliency = GuidedBackpropagationExplainer(
-                    self.model_name, image_noise, self.explainer,
-                    self.layer_name, self.visualize_index,
-                    self.preprocessor_fn, self.image_size)
+                saliency, _ = GuidedBackpropagationExplainer(
+                    self.model, self.model_name, image_noise,
+                    self.explainer, self.layer_name, self.visualize_index,
+                    self.preprocessor_fn, self.image_size, normalize=False)
             else:
                 raise ValueError("Explanation method not implemented %s"
                                  % self.explainer)
@@ -77,13 +78,11 @@ class SmoothGrad(Explainer):
         return total_gradients / self.nsamples
 
 
-def SmoothGradExplainer(model_name, image, interpretation_method,
-                        layer_name, visualize_index,
-                        preprocessor_fn, image_size,
-                        standard_deviation=0.15,
-                        nsamples=1, magnitude=True, steps=5, batch_size=1):
-    model = get_model(model_name)
-    sg = SmoothGrad(model, model_name, image,
+def SmoothGradExplainer(model, model_name, image_path, interpretation_method,
+                        layer_name, visualize_index, preprocessor_fn,
+                        image_size, standard_deviation=0.15, nsamples=1,
+                        magnitude=True, steps=5, batch_size=1):
+    sg = SmoothGrad(model, model_name, image_path,
                     interpretation_method,
                     layer_name, visualize_index, preprocessor_fn,
                     image_size, standard_deviation, nsamples,
