@@ -27,7 +27,7 @@ LOGGER = logging.getLogger(__name__)
 def get_single_saliency(
         interpretation_method, box_index, explaining, visualize_object_index,
         visualize_box_offset, model_name, raw_image_path, layer_name,
-        preprocessor_fn, image_size, custom_model):
+        preprocessor_fn, image_size, custom_model, prior_boxes):
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
         box_index, explaining, visualize_object_index, model_name,
@@ -37,7 +37,8 @@ def get_single_saliency(
         interpretation_method).factory()
     saliency = interpretation_method_fn(
         custom_model, model_name, raw_image_path, interpretation_method,
-        layer_name, box_features, preprocessor_fn, image_size)
+        layer_name, box_features, preprocessor_fn, image_size,
+        prior_boxes=prior_boxes, explaining=explaining)
     return saliency
 
 
@@ -53,7 +54,7 @@ def explain_single_object(raw_image_path, image_size, preprocessor_fn,
                           detections, interpretation_method, box_index,
                           result_dir, explaining_info, model_name, image_index,
                           class_name, class_confidence, save_saliency_images,
-                          custom_model):
+                          custom_model, prior_boxes):
     saliency_list = []
     saliency_stat_list = []
     for info in zip(*explaining_info):
@@ -66,7 +67,7 @@ def explain_single_object(raw_image_path, image_size, preprocessor_fn,
         saliency, saliency_stat = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
             box_offset, model_name, raw_image_path, layer_name,
-            preprocessor_fn, image_size, custom_model)
+            preprocessor_fn, image_size, custom_model, prior_boxes)
         if save_saliency_images:
             save_name = str(image_index) + "_" + str(object_index) + "_" + (
                 explaining) + "_" + str(box_offset) + "_" + (
@@ -93,7 +94,7 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
                         result_dir, class_layer_name, reg_layer_name,
                         visualize_box_offset, model_name, image_index,
                         save_saliency_images, save_explanation_images,
-                        custom_model):
+                        custom_model, prior_boxes):
     for object_arg in objects_to_analyze:
         explaining_info = get_explaining_info(
             object_arg, box_index, to_explain, class_layer_name,
@@ -109,7 +110,7 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
             raw_image_path, image_size, preprocessor_fn, detections,
             interpretation_method, box_index, result_dir, explaining_info,
             model_name, image_index, class_name, class_confidence,
-            save_saliency_images, custom_model)
+            save_saliency_images, custom_model, prior_boxes)
         if save_explanation_images:
             explanation_images_dir = os.path.join(
                 result_dir, 'explanation_images')
@@ -151,6 +152,10 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
     model = get_model(model_name)
     custom_model = build_general_custom_model(
         model, class_layer_name, reg_layer_name)
+    if model_name != 'FasterRCNN':
+        prior_boxes = model.prior_boxes
+    else:
+        prior_boxes = None
     for count, data in enumerate(to_be_explained):
         raw_image_path = data["image"]
         image_index = data["image_index"]
@@ -181,7 +186,7 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
                 model_name, image_index, save_saliency_images,
-                save_explanation_images, custom_model)
+                save_explanation_images, custom_model, prior_boxes)
         else:
             LOGGER.info("No detections to analyze.")
     end_time = time.time()

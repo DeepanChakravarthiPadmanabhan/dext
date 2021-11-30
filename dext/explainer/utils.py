@@ -112,18 +112,18 @@ def get_images_to_explain(explain_mode, dataset_name, data_split,
 
 
 def get_box_arg_to_index(model_name):
-    if 'EFFICIENTDET' in model_name or model_name == 'FasterRCNN':
-        box_arg_to_index = {'y_min': 0, 'x_min': 1, 'y_max': 2, 'x_max': 3}
-    else:
+    if model_name:
         box_arg_to_index = {'x_min': 0, 'y_min': 1, 'x_max': 2, 'y_max': 3}
+    else:
+        box_arg_to_index = {'y_min': 0, 'x_min': 1, 'y_max': 2, 'x_max': 3}
     return box_arg_to_index
 
 
 def get_box_index_to_arg(model_name):
-    if 'EFFICIENTDET' in model_name or model_name == 'FasterRCNN':
-        box_index_to_arg = {0: 'y_min', 1: 'x_min', 2: 'y_max', 3: 'x_max'}
-    else:
+    if model_name:
         box_index_to_arg = {0: 'x_min', 1: 'y_min', 2: 'x_max', 3: 'y_max'}
+    else:
+        box_index_to_arg = {0: 'y_min', 1: 'x_min', 2: 'y_max', 3: 'x_max'}
     return box_index_to_arg
 
 

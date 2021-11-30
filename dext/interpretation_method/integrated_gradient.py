@@ -6,6 +6,8 @@ import tensorflow as tf
 from dext.abstract.explanation import Explainer
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
+from dext.interpretation_method.convert_box.utils import (
+    convert_to_image_coordinates)
 from dext.explainer.utils import build_layer_custom_model
 from dext.utils.get_image import get_image
 
@@ -14,14 +16,14 @@ LOGGER = logging.getLogger(__name__)
 
 class IntegratedGradients(Explainer):
     def __init__(self, model, model_name, image,
-                 explainer="IntegratedGradients",
-                 layer_name=None, visualize_index=None,
-                 preprocessor_fn=None, image_size=512,
-                 steps=5, batch_size=1):
+                 explainer="IntegratedGradients", layer_name=None,
+                 visualize_index=None, preprocessor_fn=None, image_size=512,
+                 steps=5, batch_size=1, prior_boxes=None, explaining=None):
         super().__init__(model_name, image, explainer)
         LOGGER.info('STARTING INTEGRATED GRADIENTS')
         self.model_name = model_name
         self.image = image
+        self.original_shape = image.shape
         self.image_size = image_size
         self.explainer = explainer
         self.layer_name = layer_name
@@ -29,7 +31,10 @@ class IntegratedGradients(Explainer):
         self.batch_size = batch_size
         self.visualize_index = visualize_index
         self.preprocessor_fn = preprocessor_fn
-        self.image = self.check_image_size(self.image, self.image_size)
+        self.image, self.image_scale = self.check_image_size(self.image,
+                                                             self.image_size)
+        self.prior_boxes = prior_boxes
+        self.explaining = explaining
         self.baseline = self.generate_baseline()
         if model:
             self.custom_model = model
@@ -41,10 +46,14 @@ class IntegratedGradients(Explainer):
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image, _ = self.preprocessor_fn(image, image_size, True)
+            image, image_scale = self.preprocessor_fn(image, image_size, True)
             if len(image.shape) != 3:
                 image = image[0]
-        return image
+        else:
+            image = image
+            image_scale = None
+        assert image_scale, 'Image scale cannot be None'
+        return image, image_scale
 
     def generate_baseline(self, baseline_type='black'):
         if baseline_type == 'black':
@@ -57,6 +66,12 @@ class IntegratedGradients(Explainer):
     def preprocess_image(self, image, image_size):
         input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
+
+    def convert_to_image_coordinates(self, conv_outs):
+        conv_outs = convert_to_image_coordinates(
+            self.model_name, conv_outs, self.prior_boxes, self.visualize_index,
+            self.image_size, self.image_scale, self.original_shape)
+        return conv_outs
 
     def interpolate_images(self, image, alphas):
         alphas_x = alphas[:, np.newaxis, np.newaxis, np.newaxis]
@@ -71,9 +86,12 @@ class IntegratedGradients(Explainer):
             inputs = tf.cast(image, tf.float32)
             tape.watch(inputs)
             conv_outs = self.custom_model(inputs)
-            conv_outs = conv_outs[:,
-                                  self.visualize_index[1],
-                                  self.visualize_index[2]]
+            conv_outs = conv_outs[0]
+            if self.explaining == 'Boxoffset':
+                conv_outs = self.convert_to_image_coordinates(conv_outs)
+            else:
+                conv_outs = conv_outs[self.visualize_index[1]]
+            conv_outs = conv_outs[self.visualize_index[2]]
             self.all_outs.append(conv_outs.numpy())
         LOGGER.info('Conv outs from custom model: %s' % conv_outs)
         grads = tape.gradient(conv_outs, inputs)
@@ -195,7 +213,8 @@ def check_convergence(model, saliency, baseline, image, visualize_index):
 def IntegratedGradientExplainer(model, model_name, image_path,
                                 interpretation_method, layer_name,
                                 visualize_index, preprocessor_fn, image_size,
-                                steps=20, batch_size=1, normalize=True):
+                                steps=3, batch_size=1, normalize=True,
+                                prior_boxes=None, explaining=None):
     """
     https://github.com/GoogleCloudPlatform/training-data-analyst/blob/master/
     blogs/integrated_gradients/integrated_gradients.ipynb
@@ -207,7 +226,8 @@ def IntegratedGradientExplainer(model, model_name, image_path,
         image = image_path
     ig = IntegratedGradients(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
-                             image_size, steps, batch_size)
+                             image_size, steps, batch_size, prior_boxes,
+                             explaining)
     saliency = ig.get_saliency_map()
     image = ig.preprocess_image(image, image_size)
     check_convergence(model, saliency, ig.baseline, image, visualize_index)

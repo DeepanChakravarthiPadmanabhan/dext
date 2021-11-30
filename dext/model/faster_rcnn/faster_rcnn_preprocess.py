@@ -33,7 +33,7 @@ class ResizeImages(Processor):
                 min_scale=self.IMAGE_MIN_SCALE, max_dim=self.IMAGE_MAX_DIM,
                 mode=self.IMAGE_RESIZE_MODE)
         else:
-            resized_image, window = image, None
+            resized_image, window = image, (0, 0, 512, 512)
         return resized_image, window
 
 
