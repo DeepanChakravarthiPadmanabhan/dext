@@ -1,9 +1,9 @@
 import os
 from xml.etree import ElementTree
-from dext.utils.class_names import voc_class_names
-
 import numpy as np
+
 from dext.abstract.loader import Loader
+from dext.utils.class_names import voc_class_names
 from dext.utils.select_image_ids_coco import filter_image_ids
 
 

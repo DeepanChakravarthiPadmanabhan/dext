@@ -213,7 +213,7 @@ def check_convergence(model, saliency, baseline, image, visualize_index):
 def IntegratedGradientExplainer(model, model_name, image_path,
                                 interpretation_method, layer_name,
                                 visualize_index, preprocessor_fn, image_size,
-                                steps=3, batch_size=1, normalize=True,
+                                steps=20, batch_size=1, normalize=True,
                                 prior_boxes=None, explaining=None):
     """
     https://github.com/GoogleCloudPlatform/training-data-analyst/blob/master/

@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import random
+
 import numpy as np
 from dext.abstract.loader import Loader
 from paz.datasets.utils import get_class_names
@@ -123,12 +125,21 @@ class COCOParser(object):
                 image_info = json.loads(json_file.read())['images']
                 self.image_ids = [i["id"] for i in image_info]
                 self.file_names = [i["file_name"] for i in image_info]
+            print('BEFORE: ', self.image_ids[:5], self.file_names[:5])
+            all_list = list(zip(self.image_ids, self.file_names))
+            random.shuffle(all_list)
+            self.image_ids, self.file_names = zip(*all_list)
+            print('AFTER: ', self.image_ids[:5], self.file_names[:5])
         if continuous_run:
             LOGGER.info('Loading already ran ids from all excel files.')
             load_ran_ids = filter_image_ids(result_dir)
             LOGGER.info('Found previous run ids: %s ' % load_ran_ids)
-            image_ids = [i for i in self.image_ids if i not in load_ran_ids]
-            self.image_ids = image_ids
+            filtered_id_idx = [n for n, i in enumerate(self.image_ids)
+                               if i not in load_ran_ids]
+            filtered_ids = [self.image_ids[i] for i in filtered_id_idx]
+            filtered_file_names = [self.file_names[i] for i in filtered_id_idx]
+            self.image_ids = filtered_ids
+            self.file_names = filtered_file_names
         if self.dataset_name != 'test2017':
             self.evaluate = evaluate
             self.class_names = class_names

@@ -77,8 +77,8 @@ class SmoothGrad(Explainer):
 
 def SmoothGradExplainer(model, model_name, image_path, interpretation_method,
                         layer_name, visualize_index, preprocessor_fn,
-                        image_size, standard_deviation=0.15, nsamples=3,
-                        magnitude=True, steps=5, batch_size=1,
+                        image_size, standard_deviation=0.15, nsamples=5,
+                        magnitude=True, steps=10, batch_size=1,
                         prior_boxes=None, explaining=None):
     sg = SmoothGrad(model, model_name, image_path,
                     interpretation_method,
