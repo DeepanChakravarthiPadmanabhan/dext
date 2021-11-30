@@ -125,11 +125,9 @@ class COCOParser(object):
                 image_info = json.loads(json_file.read())['images']
                 self.image_ids = [i["id"] for i in image_info]
                 self.file_names = [i["file_name"] for i in image_info]
-            print('BEFORE: ', self.image_ids[:5], self.file_names[:5])
             all_list = list(zip(self.image_ids, self.file_names))
             random.shuffle(all_list)
             self.image_ids, self.file_names = zip(*all_list)
-            print('AFTER: ', self.image_ids[:5], self.file_names[:5])
         if continuous_run:
             LOGGER.info('Loading already ran ids from all excel files.')
             load_ran_ids = filter_image_ids(result_dir)
