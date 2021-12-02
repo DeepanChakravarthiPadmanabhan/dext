@@ -106,6 +106,7 @@ class COCOParser(object):
                                             self.dataset_name)
             self.coco = COCO(self.annotations_path)
             self.image_ids = self.coco.getImgIds()
+
             # Uncomment below line to run on single image index alone
             # if "train" in self.dataset_name:
             #     self.image_ids = [114540, 117156, 128224, 130733,
@@ -116,6 +117,7 @@ class COCOParser(object):
             #                       397133, 37777]
             # else:
             #     self.image_ids = [347456, 459954]
+
         else:
             # Uncomment below line to run on single image index alone
             # self.image_ids = [347456, 459954]
@@ -125,19 +127,38 @@ class COCOParser(object):
                 image_info = json.loads(json_file.read())['images']
                 self.image_ids = [i["id"] for i in image_info]
                 self.file_names = [i["file_name"] for i in image_info]
-            all_list = list(zip(self.image_ids, self.file_names))
-            random.shuffle(all_list)
-            self.image_ids, self.file_names = zip(*all_list)
+
+            # all_list = list(zip(self.image_ids, self.file_names))
+            # random.shuffle(all_list)
+            # random.shuffle(all_list)
+            # self.image_ids, self.file_names = zip(*all_list)
+            # np.savetxt("ids.txt", self.image_ids)
+
+            ids_list = np.loadtxt('data/coco_shuffled_index.txt')
+            LOGGER.info('Successfully loaded shuffled index file')
+            predefined_image_ids = [int(i) for i in ids_list]
+            predefined_ids_idx = [n for n, i in enumerate(self.image_ids)
+                                  if i in predefined_image_ids]
+            selected_image_ids = [self.image_ids[i]
+                                  for i in predefined_ids_idx]
+            selected_file_names = [self.file_names[i]
+                                   for i in predefined_ids_idx]
+            self.image_ids = selected_image_ids
+            self.file_names = selected_file_names
+
         if continuous_run:
             LOGGER.info('Loading already ran ids from all excel files.')
             load_ran_ids = filter_image_ids(result_dir)
             LOGGER.info('Found previous run ids: %s ' % load_ran_ids)
-            filtered_id_idx = [n for n, i in enumerate(self.image_ids)
-                               if i not in load_ran_ids]
-            filtered_ids = [self.image_ids[i] for i in filtered_id_idx]
-            filtered_file_names = [self.file_names[i] for i in filtered_id_idx]
-            self.image_ids = filtered_ids
+            filtered_image_ids_idx = [n for n, i in enumerate(self.image_ids)
+                                      if i not in load_ran_ids]
+            filtered_image_ids = [self.image_ids[i]
+                                  for i in filtered_image_ids_idx]
+            filtered_file_names = [self.file_names[i]
+                                   for i in filtered_image_ids_idx]
+            self.image_ids = filtered_image_ids
             self.file_names = filtered_file_names
+
         if self.dataset_name != 'test2017':
             self.evaluate = evaluate
             self.class_names = class_names
