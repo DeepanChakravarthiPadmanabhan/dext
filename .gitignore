@@ -4,7 +4,6 @@
 *.pkl
 *.json
 *.pdf
-*.txt
 *.png
 *.jpg
 *.xml
