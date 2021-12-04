@@ -39,6 +39,7 @@ setup(
     entry_points=dict(
         console_scripts=[
             "dext_explainer=dext.explainer.explainer:explainer",
+            "dext_evaluator=dext.evaluator.evaluator:evaluator",
         ]
     ),
     data_files=[

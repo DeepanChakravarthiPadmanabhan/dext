@@ -18,7 +18,7 @@ def denorm_boxes(boxes, shape):
     return tf.multiply(boxes, scale) + shift
 
 
-def scale_boxes(boxes, window, original_image_shape):
+def scale_boxes(boxes, window, original_image_shape, to_ic):
     """Translate normalized coordinates in the resized image to pixel
     coordinates in the original image."""
     # Window - normalized window on the resized image size
@@ -34,7 +34,8 @@ def scale_boxes(boxes, window, original_image_shape):
     # Convert boxes to normalized coordinates on the window in original image
     boxes = tf.math.divide(boxes - shift, scale)
     # Convert boxes to pixel coordinates on the original image
-    # boxes = denorm_boxes(boxes, original_image_shape[:2])
+    if to_ic:
+        boxes = denorm_boxes(boxes, original_image_shape[:2])
     return boxes
 
 
@@ -46,7 +47,8 @@ def process_outputs(outputs):
 
 
 def fasterrcnn_convert_coordinates(conv_outs, original_image_shape,
-                                   visualize_idx, image_size, image_scale):
+                                   visualize_idx, image_size, image_scale,
+                                   to_ic=False):
     """Converts the detection of one image from the format of the neural
     network output to a format suitable for use in the rest of the
     application. """
@@ -62,7 +64,8 @@ def fasterrcnn_convert_coordinates(conv_outs, original_image_shape,
     # Clip ROI boxes to the resized window size
     refined_rois = clip_boxes_graph(refined_rois, config_window)
     # detections = tf.concat([refined_rois, class_confidences], axis=1)
-    conv_outs = scale_boxes(refined_rois, config_window, original_image_shape)
+    conv_outs = scale_boxes(refined_rois, config_window, original_image_shape,
+                            to_ic)
     conv_outs = process_outputs(conv_outs)
     conv_outs = conv_outs[visualize_idx[1], :4]
     return conv_outs

@@ -14,13 +14,15 @@ def process_outputs(outputs):
 
 
 def efficientdet_convert_coordinates(conv_outs, prior_boxes, visualize_index,
-                                     image_size, image_scale):
+                                     image_size, image_scale, to_ic=False):
     conv_outs = process_outputs(conv_outs)
     conv_outs = conv_outs[0]
     conv_outs = decode(conv_outs, prior_boxes,  variances=[1, 1, 1, 1])
     conv_outs = conv_outs[visualize_index[1], :4]
     image_size = tf.constant(image_size, dtype=tf.float32)
     conv_outs = tf.math.divide(conv_outs, image_size)
-    # Anchor boxes are in the image coordinates level
-    # conv_outs = scale_box(conv_outs, image_scale)
+    if to_ic:
+        # Anchor boxes are in the image coordinates level
+        conv_outs = tf.math.multiply(conv_outs, image_size)
+        conv_outs = scale_box(conv_outs, image_scale)
     return conv_outs

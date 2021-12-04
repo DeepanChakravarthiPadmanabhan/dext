@@ -66,10 +66,11 @@ def scale_box(box, image_scale):
 
 
 def ssd_convert_coordinates(conv_outs, prior_boxes, visualize_index,
-                            image_size, image_scale):
+                            image_size, image_scale, to_ic=False):
     conv_outs = decode(conv_outs, prior_boxes)
     conv_outs = conv_outs[visualize_index[1], :4]
     # Anchor boxes are in the normalized image coordinates level
-    # conv_outs = denormalize_box(conv_outs, (image_size, image_size))
-    # conv_outs = scale_box(conv_outs, image_scale)
+    if to_ic:
+        conv_outs = denormalize_box(conv_outs, (image_size, image_size))
+        conv_outs = scale_box(conv_outs, image_scale)
     return conv_outs

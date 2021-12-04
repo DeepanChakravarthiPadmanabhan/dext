@@ -4,8 +4,8 @@ import numpy as np
 import json
 
 from paz.abstract.messages import Box2D
-from dext.evaluate.explainer_metrics import get_metrics
-from dext.evaluate.explainer_metrics import merge_all_maps
+from dext.evaluator.explainer_metrics import get_metrics
+from dext.evaluator.explainer_metrics import merge_all_maps
 from dext.explainer.utils import get_model
 from dext.utils.select_image_ids_coco import filter_image_ids
 from dext.utils.select_image_ids_coco import get_history_file
@@ -42,7 +42,7 @@ def get_eval_image_index(results_dir, data, num_images, continuous_run):
     all_image_index = list(np.unique(data[:, 0]))
     LOGGER.info('No. of image ids: %s' % len(all_image_index))
     if continuous_run:
-        load_ran_ids = filter_image_ids(results_dir, 'class_flip')
+        load_ran_ids = filter_image_ids(results_dir, 'real_class_flip')
         LOGGER.info('Image ids already evaluated: %s' % load_ran_ids)
         all_image_index = [i for i in all_image_index if int(i) not in
                            load_ran_ids]
@@ -93,7 +93,7 @@ def evaluate_image_index(sequence, model_name, image_size, ap_curve_linspace,
                         explain_top5_backgrounds, save_modified_images,
                         image_adulteration_method, eval_flip, eval_ap_explain,
                         coco_result_file, model)
-    if merge_saliency_maps:
+    if merge_saliency_maps and save_all_map_metrics:
         merge_all_maps(detection, image_path, saliency_list, image_index,
                        object_index, 'combined', model_name, image_size,
                        'combined', ap_curve_linspace, result_dir,

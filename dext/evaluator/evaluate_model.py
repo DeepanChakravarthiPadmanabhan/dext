@@ -1,17 +1,17 @@
 import os
 import logging
+import gin
 import json
 import matplotlib.pyplot as plt
 
 from paz.processors.image import LoadImage
 from dext.dataset.coco import COCODataset
-from dext.evaluate.utils import get_evaluation_details
+from dext.evaluator.utils import get_evaluation_details
 from dext.factory.preprocess_factory import PreprocessorFactory
 from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.inference_factory import InferenceFactory
 from dext.explainer.utils import get_model
-from dext.evaluate.coco_evaluation import get_coco_metrics
-import gin
+from dext.evaluator.coco_evaluation import get_coco_metrics
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def evaluate_model(model_name, image_size=512, result_file=None,
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     inference_fn = InferenceFactory(model_name).factory()
-    eval_images = COCODataset(dataset_path, "val", name="val2017")
+    eval_images = COCODataset(dataset_path, "test", name="test2017")
     datasets = eval_images.load_data()
     LOGGER.info('Number of images in the dataset %s' % len(datasets))
     eval_json = []

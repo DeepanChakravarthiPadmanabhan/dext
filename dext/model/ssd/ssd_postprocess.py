@@ -120,7 +120,7 @@ def filterboxes(boxes, class_names, conf_thresh=0.5):
     return boxes2D, class_map_idx
 
 
-def denormalize_box(box, image_shape):
+def denormalize_box(box, image_shape, image_scale):
     """Scales corner box coordinates from normalized values to image dimensions.
 
     # Arguments
@@ -132,32 +132,17 @@ def denormalize_box(box, image_shape):
     """
     x_min, y_min, x_max, y_max = box[:4]
     height, width = image_shape
-    x_min = int(x_min * width)
-    y_min = int(y_min * height)
-    x_max = int(x_max * width)
-    y_max = int(y_max * height)
+    x_min = int(x_min * width * image_scale[1])
+    y_min = int(y_min * height * image_scale[0])
+    x_max = int(x_max * width * image_scale[1])
+    y_max = int(y_max * height * image_scale[0])
     return (x_min, y_min, x_max, y_max)
 
 
-def denormalize_boxes(boxes2D, image_shape):
+def denormalize_boxes(boxes2D, image_shape, image_scale):
     for box2D in boxes2D:
-        box2D.coordinates = denormalize_box(box2D.coordinates, image_shape)
-    return boxes2D
-
-
-def scale_box(box, image_scale):
-    x_min, y_min, x_max, y_max = box[:4]
-    x_min = int(x_min * image_scale[1])
-    y_min = int(y_min * image_scale[0])
-    x_max = int(x_max * image_scale[1])
-    y_max = int(y_max * image_scale[0])
-    return (x_min, y_min, x_max, y_max)
-
-
-def scale_boxes(boxes2D, image_scale):
-    image_scale = image_scale
-    for box2D in boxes2D:
-        box2D.coordinates = scale_box(box2D.coordinates, image_scale)
+        box2D.coordinates = denormalize_box(box2D.coordinates, image_shape,
+                                            image_scale)
     return boxes2D
 
 
@@ -170,8 +155,8 @@ def ssd_postprocess(model, outputs, image_scale, raw_image, image_size=512,
     detections, class_map_idx = filterboxes(detections,
                                             get_class_names('COCO'),
                                             conf_thresh=0.4)
-    detections = denormalize_boxes(detections, model.input_shape[1:3])
-    detections = scale_boxes(detections, image_scale)
+    detections = denormalize_boxes(detections, model.input_shape[1:3],
+                                   image_scale)
     image = draw_bounding_boxes(raw_image, detections, get_class_names("COCO"),
                                 max_size=image_size)
 

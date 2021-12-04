@@ -1,8 +1,8 @@
 import logging
 import click
 import gin
-from dext.evaluate.evaluate_model import evaluate_model
-from dext.evaluate.evaluate_explainer import evaluate_explainer
+from dext.evaluator.evaluate_model import evaluate_model
+from dext.evaluator.evaluate_explainer import evaluate_explainer
 from dext.utils import setup_logging
 
 LOGGER = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
                                  "GuidedBackpropagation", "GradCAM"]))
 @click.option("--image_size", default=512)
 @click.option("--results_dir", default="images/results/")
-@click.option("--num_images", default=1)  # 1 <
+@click.option("--num_images", default=100)  # 1 <
 @click.option("--ap_curve_linspace", default=100)
 @click.option("--eval_flip", default=True)
 @click.option("--eval_ap_explain", default=False)
@@ -32,7 +32,7 @@ LOGGER = logging.getLogger(__name__)
               type=click.Choice(["inpainting", "zeroing"]))
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--continuous_run", default=False)
-@click.option("--save_all_map_metrics", default=False)
+@click.option("--save_all_map_metrics", default=True)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR",
                                  "WARNING", "INFO", "DEBUG"]))

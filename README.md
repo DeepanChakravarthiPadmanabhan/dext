@@ -10,6 +10,11 @@ pip install -e .
 dext_explainer -c config/explainer.gin -i GuidedBackpropagation -m SSD512
 ```
 
+## Evaluate explanations
+```
+dext_evaluator -c config/evaluator.gin -i GuidedBackpropagation -m SSD512
+```
+
 ## Object detectors with weights available
 1. EfficientDet - COCO
 2. SSD512 - COCO
