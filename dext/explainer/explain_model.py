@@ -17,7 +17,7 @@ from dext.postprocessing.detection_visualization import plot_gt_on_detection
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
 from dext.explainer.utils import get_images_to_explain
-from dext.explainer.utils import get_model_class_name
+from dext.utils.class_names import get_classes
 from dext.explainer.utils import write_record
 from dext.explainer.utils import build_general_custom_model
 
@@ -100,7 +100,7 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
             object_arg, box_index, to_explain, class_layer_name,
             reg_layer_name,
             visualize_box_offset, model_name)
-        class_name = get_model_class_name(model_name, 'COCO')[
+        class_name = get_classes('COCO', model_name)[
             box_index[explaining_info[0][0]][1]]
         class_confidence = box_index[explaining_info[0][0]][2]
         LOGGER.info('Explaining - image index: %s, confidence: %s, class: %s'

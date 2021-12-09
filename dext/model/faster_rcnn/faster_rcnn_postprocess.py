@@ -7,23 +7,7 @@ from dext.postprocessing.detection_visualization import draw_bounding_boxes
 from dext.model.faster_rcnn.layer_utils import apply_box_deltas_graph
 from dext.model.faster_rcnn.layer_utils import clip_boxes_graph
 from dext.model.faster_rcnn.utils import norm_boxes_graph
-
-
-class_names = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
-               'bus', 'train', 'truck', 'boat', 'traffic light',
-               'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird',
-               'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear',
-               'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
-               'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-               'kite', 'baseball bat', 'baseball glove', 'skateboard',
-               'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
-               'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-               'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-               'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed',
-               'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
-               'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
-               'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
-               'teddy bear', 'hair drier', 'toothbrush']
+from dext.utils.class_names import get_classes
 
 
 def apply_non_max_suppression(boxes, scores, iou_thresh=.45, top_k=200):
@@ -159,8 +143,10 @@ def faster_rcnn_postprocess(model, outputs, image_scales, image,
                                (image_size, image_size, 3), image.shape)
     detections = np.concatenate([scaled_boxes, detections[:, 4:]], axis=1)
     detections = nms_per_class(detections, 0.3)
-    detections, class_map_idx = filterboxes(detections, class_names, 0.7)
-    image = draw_bounding_boxes(image, detections, class_names,
+    detections, class_map_idx = filterboxes(
+        detections, get_classes('COCO', 'FasterRCNN'), 0.7)
+    image = draw_bounding_boxes(image, detections,
+                                get_classes('COCO', 'FasterRCNN'),
                                 max_size=image_size)
     return image, detections, class_map_idx
 

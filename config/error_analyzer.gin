@@ -1,0 +1,28 @@
+import dext.randomization_test.randomization_test
+
+COCO_DATASET_PATH = "/scratch/dpadma2s/coco/"
+VOC_DATASET_PATH = "/scratch/dpadma2s/voc/VOCdevkit/"
+COCO_DATASET_PATH_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/coco/"
+VOC_DATASET_PATH_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/voc/VOCdevkit/"
+get_images_to_explain.dataset_path = %VOC_DATASET_PATH_DFKI
+SHAP_DeepExplainer.dataset_path = %COCO_DATASET_PATH_DFKI
+SHAP_GradientExplainer.dataset_path = %COCO_DATASET_PATH_DFKI
+
+COCO_VAL_ANNOTATION_FILE = "/scratch/dpadma2s/coco/annotations/instances_val2017.json"
+COCO_VAL_ANNOTATION_FILE_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/coco/annotations/instances_val2017.json"
+
+EFFICIENTDET_WEIGHT_PATH = "/scratch/dpadma2s/paz_efficientdet_weights/"
+FASTER_RCNN_WEIGHT_PATH = "/scratch/dpadma2s/paz_faster_rcnn_weights/"
+EFFICIENTDET_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz_efficientdet_weights/'
+FASTER_RCNN_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz_faster_rcnn_weights/'
+EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH_DFKI
+faster_rcnn_detection.weight_path = %FASTER_RCNN_WEIGHT_PATH_DFKI
+
+RESULT_DIR = '/scratch/dpadma2s/thesis/results'
+RESULT_DIR_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/results/'
+filter_image_ids.results_dir = %RESULT_DIR_DFKI
+explain_model.result_dir = %RESULT_DIR_DFKI
+
+RANDOM_RESULT_DIR = '/scratch/dpadma2s/thesis/results_random'
+RANDOM_RESULT_DIR_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/results_random/'
+randomization_test.result_dir = %RANDOM_RESULT_DIR_DFKI

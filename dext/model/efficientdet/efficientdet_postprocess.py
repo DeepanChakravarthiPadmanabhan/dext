@@ -1,7 +1,7 @@
 import numpy as np
 import paz.processors as pr
 from paz.abstract import SequentialProcessor, Box2D
-from dext.utils.class_names import coco_class_names
+from dext.utils.class_names import get_classes
 from dext.postprocessing.detection_visualization import draw_bounding_boxes
 
 
@@ -171,10 +171,12 @@ def efficientdet_postprocess(model, outputs, image_scales, raw_images=None,
         pr.DecodeBoxes(model.prior_boxes, variances=[1, 1, 1, 1])])
     detections = postprocessing(outputs)
     detections = nms_per_class(detections, 0.4)
-    detections, class_map_idx = filterboxes(detections, coco_class_names, 0.4)
+    detections, class_map_idx = filterboxes(
+        detections, get_classes('COCO', 'EFFICIENTDET'), 0.4)
     detections = scale_boxes(detections, image_scales)
     image = draw_bounding_boxes(raw_images.astype('uint8'), detections,
-                                coco_class_names, max_size=image_size)
+                                get_classes('COCO', 'EFFICIENTDET'),
+                                max_size=image_size)
     if explain_top5_backgrounds:
         image, detections, class_map_idx = get_top5_bg_efficientdet(
             model, outputs, image_scales, raw_images)
@@ -222,11 +224,12 @@ def select_top5_bg_det(detections, class_map_idx, order='top5'):
 
 
 def get_bg_dets(detections, image_scales, raw_images):
-    bg_det, class_map_idx = filterboxes_bg(detections, coco_class_names, 0.4)
+    bg_det, class_map_idx = filterboxes_bg(
+        detections, get_classes('COCO', 'EFFICIENTDET'), 0.4)
     bg_det = scale_boxes(bg_det, image_scales)
     bg_det, class_map_idx = select_top5_bg_det(bg_det, class_map_idx, 'top5')
     image = draw_bounding_boxes(raw_images.astype('uint8'), bg_det,
-                                coco_class_names)
+                                get_classes('COCO', 'EFFICIENTDET'))
     return image, bg_det, class_map_idx
 
 

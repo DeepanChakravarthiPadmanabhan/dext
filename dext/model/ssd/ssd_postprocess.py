@@ -1,7 +1,7 @@
 import numpy as np
 from paz.abstract import SequentialProcessor, Box2D
 from dext.postprocessing.detection_visualization import draw_bounding_boxes
-from paz.datasets.utils import get_class_names
+from dext.utils.class_names import get_classes
 from paz import processors as pr
 
 
@@ -153,11 +153,12 @@ def ssd_postprocess(model, outputs, image_scale, raw_image, image_size=512,
     detections = postprocess(outputs)
     detections = nms_per_class(detections, nms_thresh=0.4, conf_thresh=0.01)
     detections, class_map_idx = filterboxes(detections,
-                                            get_class_names('COCO'),
+                                            get_classes('COCO', 'SSD512'),
                                             conf_thresh=0.4)
     detections = denormalize_boxes(detections, model.input_shape[1:3],
                                    image_scale)
-    image = draw_bounding_boxes(raw_image, detections, get_class_names("COCO"),
+    image = draw_bounding_boxes(raw_image, detections,
+                                get_classes('COCO', 'SSD512'),
                                 max_size=image_size)
 
     if explain_top5_backgrounds:
@@ -209,13 +210,12 @@ def select_top5_bg_det(detections, class_map_idx, order='top5'):
 
 def get_bg_dets(detections, image_scales, raw_images, model):
     bg_det, class_map_idx = filterboxes_bg(detections,
-                                           get_class_names('COCO'),
+                                           get_classes('COCO', 'SSD512'),
                                            conf_thresh=0.4)
-    bg_det = denormalize_boxes(bg_det, model.input_shape[1:3])
-    bg_det = scale_boxes(bg_det, image_scales)
+    bg_det = denormalize_boxes(bg_det, model.input_shape[1:3], image_scales)
     bg_det, class_map_idx = select_top5_bg_det(bg_det, class_map_idx, 'top5')
     image = draw_bounding_boxes(raw_images.astype('uint8'),
-                                bg_det, get_class_names("COCO"))
+                                bg_det, get_classes('COCO', 'SSD512'))
     return image, bg_det, class_map_idx
 
 

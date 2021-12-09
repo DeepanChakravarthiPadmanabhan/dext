@@ -9,8 +9,6 @@ from tensorflow.keras import Model
 from dext.dataset.coco import COCODataset
 from dext.dataset.voc import VOC
 from dext.factory.model_factory import ModelFactory
-from dext.utils.class_names import coco_class_names
-from paz.datasets.utils import get_class_names
 
 LOGGER = logging.getLogger(__name__)
 
@@ -64,18 +62,6 @@ def build_layer_custom_model(model_name, layer_name):
     custom_model = Model(inputs=[model.inputs],
                          outputs=[model.get_layer(layer_name).output])
     return custom_model
-
-
-def get_model_class_name(model_name, dataset_name):
-    if "EFFICIENTDET" in model_name:
-        class_names = coco_class_names
-    elif "SSD" in model_name:
-        class_names = get_class_names(dataset_name)
-    elif model_name == "FasterRCNN":
-        class_names = get_class_names(dataset_name)
-    else:
-        raise ValueError("Model not implemented %s" % model_name)
-    return class_names
 
 
 @gin.configurable

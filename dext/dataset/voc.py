@@ -48,7 +48,7 @@ class VOC(Loader):
         self.arg_to_class = None
 
     def load_data(self):
-        if ((self.name == 'VOC2007') or (self.name == 'VOC2012')):
+        if (self.name == 'VOC2007') or (self.name == 'VOC2012'):
             ground_truth_data = self._load_VOC(self.name, self.split)
         elif isinstance(self.name, list):
             if not isinstance(self.split, list):
@@ -137,7 +137,7 @@ class VOCParser(object):
     def _preprocess_XML(self):
         filenames = self._load_filenames()
         # Uncomment below line to run on single image index alone
-        # filenames = ['2008_000105.xml']
+        # filenames = ['2008_000132.xml']
         for filename in filenames:
             image_index = filename.split('.')[0].replace('_', '')
             if self.check_availability(image_index) == 'available':

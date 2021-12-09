@@ -132,9 +132,9 @@ def to_image_coordinates(boxes, image):
     return image_boxes
 
 
-def plot_gt_on_detection(image, gt, dataset_name='VOC'):
+def plot_gt_on_detection(image, gt, dataset_name='VOC', model_name='SSD512'):
     boxes_in_img_coordinate = to_image_coordinates(gt, image)
-    class_name = get_classes(dataset_name)
+    class_name = get_classes(dataset_name, model_name)
     boxes = []
     class_names = []
     colors = []

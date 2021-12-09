@@ -11,7 +11,7 @@ from tensorflow.compat.v1.keras.backend import get_session
 from paz.backend.image import resize_image
 from dext.abstract.explanation import Explainer
 from paz.backend.image.opencv_image import load_image
-from dext.utils.class_names import coco_class_names
+from dext.utils.class_names import get_classes
 from dext.dataset.coco import COCODataset
 from dext.explainer.utils import get_model
 
