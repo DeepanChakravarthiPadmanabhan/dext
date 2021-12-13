@@ -46,12 +46,8 @@ def process_outputs(outputs):
     return boxes
 
 
-def fasterrcnn_convert_coordinates(conv_outs, original_image_shape,
-                                   visualize_idx, image_size, image_scale,
-                                   to_ic=False):
-    """Converts the detection of one image from the format of the neural
-    network output to a format suitable for use in the rest of the
-    application. """
+def get_fasterrcnn_boxes(conv_outs, original_image_shape, image_size,
+                         image_scale, to_ic):
     rois = conv_outs[:, 85:]
     offsets = conv_outs[:, :4]
     # class_confidences = conv_outs[:, 4:-4]
@@ -67,5 +63,16 @@ def fasterrcnn_convert_coordinates(conv_outs, original_image_shape,
     conv_outs = scale_boxes(refined_rois, config_window, original_image_shape,
                             to_ic)
     conv_outs = process_outputs(conv_outs)
+    return conv_outs
+
+
+def fasterrcnn_convert_coordinates(conv_outs, original_image_shape,
+                                   visualize_idx, image_size, image_scale,
+                                   to_ic=False):
+    """Converts the detection of one image from the format of the neural
+    network output to a format suitable for use in the rest of the
+    application. """
+    conv_outs = get_fasterrcnn_boxes(conv_outs, original_image_shape,
+                                     image_size, image_scale, to_ic)
     conv_outs = conv_outs[visualize_idx[1], :4]
     return conv_outs

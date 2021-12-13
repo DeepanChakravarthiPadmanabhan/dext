@@ -24,6 +24,14 @@ def get_all_layers(model):
     return all_layers
 
 
+def find_image_scale(input_image_shape, processed_image_shape):
+    input_h, input_w, _ = input_image_shape
+    _, processed_h, processed_w, _ = processed_image_shape
+    image_scale_y = np.array(processed_h).astype('float32') / input_h
+    image_scale_x = np.array(processed_w).astype('float32') / input_w
+    return 1/image_scale_y, 1/image_scale_x
+
+
 def resize_image(image, size):
     """Resize image.
 

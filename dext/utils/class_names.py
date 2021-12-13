@@ -21,6 +21,22 @@ coco_efficientdet = ['person', 'bicycle', 'car', 'motorcycle',
                      'toothbrush']
 
 
+coco_to_voc = {'airplane': 'aeroplane',
+               'motorcycle': 'motorbike',
+               'dining table': 'diningtable',
+               'potted plant': 'pottedplant',
+               'tv': 'tvmonitor',
+               'couch': 'sofa'}
+
+
+voc_to_coco = {'aeroplane': 'airplane',
+               'motorbike': 'motorcycle',
+               'diningtable': 'dining table',
+               'pottedplant': 'potted plant',
+               'tvmonitor': 'tv',
+               'sofa': 'couch'}
+
+
 voc_class_names = ['background', 'aeroplane', 'bicycle', 'bird', 'boat',
                    'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
                    'diningtable', 'dog', 'horse', 'motorbike', 'person',
