@@ -2,6 +2,7 @@ import os
 import logging
 import psutil
 import time
+import matplotlib.pyplot as plt
 
 from dext.explainer.utils import create_directories, get_model
 from dext.factory.preprocess_factory import PreprocessorFactory
@@ -10,8 +11,15 @@ from dext.factory.inference_factory import InferenceFactory
 from dext.postprocessing.detection_visualization import plot_gt_on_detection
 from dext.explainer.utils import get_images_to_explain
 from dext.explainer.utils import build_general_custom_model
-from dext.explainer.explain_model import explain_all_objects
-from dext.error_analyzer.utils import find_errors
+from dext.factory.interpretation_method_factory import ExplainerFactory
+from dext.error_analyzer.utils import get_scaled_gt
+from dext.error_analyzer.utils import get_detection_list, get_tp_gt_det
+from dext.error_analyzer.utils import get_closest_outbox_to_fn
+from dext.error_analyzer.utils import get_missed_gt_det
+from dext.utils.get_image import get_image
+from dext.postprocessing.saliency_visualization import plot_single_saliency
+from dext.error_analyzer.utils import get_interest_neuron
+from dext.utils.class_names import get_classes
 
 LOGGER = logging.getLogger(__name__)
 
@@ -22,9 +30,11 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                    to_explain="Classification",
                    interpretation_method="IntegratedGradients",
                    visualize_object_index=None, visualize_box_offset=None,
-                   num_images=1, save_saliency_images=True,
+                   visualize_class='dog', num_images=1, save_saliency_images=True,
                    save_explanation_images=True, continuous_run=False,
-                   plot_gt=False, result_dir='images/error_analysis/',
+                   plot_gt=False, analyze_error_type='missed',
+                   use_own_class=False, saliency_threshold=None,
+                   result_dir='images/error_analysis/',
                    save_modified_images=False):
     start_time = time.time()
     process = psutil.Process(os.getpid())
@@ -32,6 +42,7 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                               model_name + '_' + interpretation_method)
     create_directories(result_dir, save_modified_images, save_saliency_images,
                        save_explanation_images)
+
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     inference_fn = InferenceFactory(model_name).factory()
@@ -39,57 +50,184 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
         explain_mode,  dataset_name, data_split, data_split_name,
         raw_image_path, num_images, continuous_run, result_dir)
     model = get_model(model_name)
-    custom_model = build_general_custom_model(
-        model, class_layer_name, reg_layer_name)
+    custom_model = build_general_custom_model(model, class_layer_name,
+                                              reg_layer_name)
+    class_names = get_classes('COCO', model_name)
+
     if model_name != 'FasterRCNN':
         prior_boxes = model.prior_boxes
     else:
         prior_boxes = None
-    for count, data in enumerate(to_be_explained):
-        raw_image_path = data["image"]
-        image_index = data["image_index"]
-        gt = data['boxes']
-        LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
-        LOGGER.info('Explaining image count: %s' % str(count + 1))
-        LOGGER.info("Explanation input image ID: %s" % str(image_index))
-        # forward pass - get model outputs for input image
-        forward_pass_outs = inference_fn(
-            model, raw_image_path, preprocessor_fn, postprocessor_fn,
-            image_size)
-        detection_image = forward_pass_outs[0]
-        detections = forward_pass_outs[1]
-        box_index = forward_pass_outs[2]
-        LOGGER.info("Detections: %s" % detections)
-        if len(detections):
-            if plot_gt and dataset_name == 'VOC':
-                detection_image = plot_gt_on_detection(detection_image, gt)
-                LOGGER.info('No. of. detections: %s, No. of. GT labels: %s' %
-                            (len(detections), len(gt)))
-            if visualize_object_index == 'all':
-                objects_to_analyze = list(range(1, len(detections) + 1))
+
+    if to_explain == 'Classification':
+        layer_name = class_layer_name
+    else:
+        layer_name = reg_layer_name
+
+    if isinstance(visualize_class, str) and use_own_class:
+        visualize_class = class_names.index(visualize_class)
+
+    data = to_be_explained[0]
+    raw_image_path = data["image"]
+    image = get_image(raw_image_path)
+    image_index = data["image_index"]
+    gt = data['boxes']
+    gt_list = get_scaled_gt(gt, data['width'], data['height'], model_name)
+    LOGGER.info('GT loaded: %s' % gt_list)
+    LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
+    LOGGER.info("Explanation input image ID: %s" % str(image_index))
+
+    # forward pass - get model outputs for input image
+    forward_pass_outs = inference_fn(
+        model, raw_image_path, preprocessor_fn, postprocessor_fn,
+        image_size)
+    detection_image = forward_pass_outs[0]
+    detections = forward_pass_outs[1]
+    box_index = forward_pass_outs[2]
+    outputs = forward_pass_outs[3]
+    LOGGER.info("Detections: %s" % detections)
+    LOGGER.info("Box index of detections: %s" % box_index)
+
+    if len(detections):
+        if plot_gt and dataset_name == 'VOC':
+            detection_image = plot_gt_on_detection(detection_image, gt)
+            LOGGER.info('No. of. detections: %s, No. of. GT labels: %s' %
+                        (len(detections), len(gt_list)))
+            plt.imsave('det_' + str(image_index) + '.jpg',
+                       detection_image)
+
+        # metrics for analysis
+        det_list = get_detection_list(detections, model_name)
+
+        # Det with correct pre (TP) and gt matching correct det (GT_TP)
+        tp_list, gt_tp_list, tp_iou = get_tp_gt_det(
+            det_list, gt_list)
+        poor_localization_tp = []
+        for i in range(len(tp_list)):
+            if tp_iou[i] < 0.7:
+                poor_localization_tp.append(tp_list[i])
+
+        # Det with wrong pred (FP) and missed GT (FN)
+        fp_list, fn_list = get_missed_gt_det(tp_list, gt_tp_list,
+                                             det_list, gt_list)
+        LOGGER.info('TP detection index: %s' % tp_list)
+        LOGGER.info('FP detection index: %s' % fp_list)
+        LOGGER.info('FN detection index: %s' % fn_list)
+        LOGGER.info('GT as TP, GT index: %s' % gt_tp_list)
+        LOGGER.info('GT as detection index, GT index: %s' % gt_tp_list)
+        LOGGER.info('TP IoUs: %s' % tp_iou)
+
+        if analyze_error_type == 'missed' and len(fn_list) > 0 and (
+                len(fn_list) <= visualize_object_index + 1):
+            # Visually check if the detection and gt matches
+            # If missed detections -- FN
+            # method 1: get prior box matching the missed gt position and
+            # propagate class and offset. Answers why did the best box miss?
+            fn_box_index_pred, fn_box_index_gt = get_closest_outbox_to_fn(
+                prior_boxes, fn_list, gt_list, model_name, detection_image,
+                outputs, image_size, raw_image_path)
+
+            study_with_pred = True
+            if study_with_pred:
+                box_index = fn_box_index_pred
             else:
-                objects_to_analyze = [int(visualize_object_index)]
-            explain_all_objects(
-                objects_to_analyze, raw_image_path, image_size,
-                preprocessor_fn, detections, detection_image,
-                interpretation_method, box_index, to_explain, result_dir,
-                class_layer_name, reg_layer_name, visualize_box_offset,
-                model_name, image_index, save_saliency_images,
-                save_explanation_images, custom_model, prior_boxes)
+                box_index = fn_box_index_gt
+            # box_index contains (0, box, classid)
+
+            # get box index from the object index to visualize
+            box_features = box_index[visualize_object_index]
+            box_features[-1] = get_interest_neuron(
+                to_explain, box_features[-1], visualize_box_offset,
+                visualize_class, use_own_class)
+            confidence = round(outputs[0, box_features[1],
+                                       box_features[2]].numpy(), 3)
+            class_name = class_names[box_features[2] - 4]
+            LOGGER.info('Box feature for wrong class study: %s' % box_features)
+            interpretation_method_fn = ExplainerFactory(
+                interpretation_method).factory()
+            saliency, saliency_stats = interpretation_method_fn(
+                custom_model, model_name, raw_image_path,
+                interpretation_method, layer_name, box_features,
+                preprocessor_fn, image_size, prior_boxes=prior_boxes,
+                explaining=to_explain)
+            if saliency_threshold:
+                saliency[saliency <= saliency_threshold] = 0
+            print('SALIENCY: ', saliency.shape, saliency_stats)
+            fig = plot_single_saliency(
+                detection_image, image, saliency, confidence, class_name,
+                to_explain, interpretation_method, model_name, saliency_stats)
+            fig.savefig('sal_' + str(image_index) + '.jpg')
+
+        elif analyze_error_type == 'wrong_class' and len(fp_list) > 0 and (
+                len(fp_list) <= visualize_object_index + 1):
+            # If wrong class -- FP
+            # method 1: get the output box and propagate the wrong class and
+            # correct class region
+            # --> Finding the features resemble the wrong class feature
+            selected_fp = fp_list[visualize_object_index]
+            box_features = [0, int(box_index[selected_fp][0]),
+                            int(box_index[selected_fp][1])]
+            box_features[-1] = get_interest_neuron(
+                to_explain, box_features[-1], visualize_box_offset,
+                visualize_class, use_own_class)
+            confidence = round(outputs[0, box_features[1],
+                                       box_features[2]].numpy(), 3)
+            class_name = class_names[box_features[2] - 4]
+            LOGGER.info('Box feature for wrong class study: %s' % box_features)
+            interpretation_method_fn = ExplainerFactory(
+                interpretation_method).factory()
+            saliency, saliency_stats = interpretation_method_fn(
+                custom_model, model_name, raw_image_path,
+                interpretation_method, layer_name, box_features,
+                preprocessor_fn, image_size, prior_boxes=prior_boxes,
+                explaining=to_explain)
+            if saliency_threshold:
+                saliency[saliency <= saliency_threshold] = 0
+            print('SALIENCY: ', saliency.shape, saliency_stats)
+            fig = plot_single_saliency(
+                detection_image, image, saliency, confidence, class_name,
+                to_explain, interpretation_method, model_name, saliency_stats)
+            fig.savefig('sal_' + str(image_index) + '.jpg')
+
+        elif analyze_error_type == 'poor_localization' and (
+                len(poor_localization_tp) > 0) and (
+                len(poor_localization_tp) <= visualize_object_index + 1):
+            # If poor localization -- TP but less IOU
+            # method 1: get the output box and propagate the offsets
+            # method 2: get the prior box matching the gt box and
+            # propagate the offsets
+            selected_tp = poor_localization_tp[visualize_object_index]
+            box_features = [0, int(box_index[selected_tp][0]),
+                            int(box_index[selected_tp][1])]
+            box_features[-1] = get_interest_neuron(
+                to_explain, box_features[-1], visualize_box_offset,
+                visualize_class, use_own_class)
+            confidence = round(outputs[0, box_features[1],
+                                       box_features[2]].numpy(), 3)
+            class_name = class_names[box_features[2] - 4]
+            LOGGER.info('Box feature for wrong class study: %s' % box_features)
+            interpretation_method_fn = ExplainerFactory(
+                interpretation_method).factory()
+            saliency, saliency_stats = interpretation_method_fn(
+                custom_model, model_name, raw_image_path,
+                interpretation_method, layer_name, box_features,
+                preprocessor_fn, image_size, prior_boxes=prior_boxes,
+                explaining=to_explain)
+            if saliency_threshold:
+                saliency[saliency <= saliency_threshold] = 0
+            print('SALIENCY: ', saliency.shape, saliency_stats)
+            fig = plot_single_saliency(
+                detection_image, image, saliency, confidence, class_name,
+                to_explain, interpretation_method, model_name, saliency_stats)
+            fig.savefig('sal_' + str(image_index) + '.jpg')
+
         else:
-            LOGGER.info("No detections to analyze.")
+            print('Analysis type is not possible')
+
+    else:
+        LOGGER.info("No detections to analyze.")
     end_time = time.time()
     memory_profile_in_mb = process.memory_info().rss / 1024 ** 2
     LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)
     LOGGER.info('Time taken: %s' % (end_time - start_time))
-    LOGGER.info('%%% INTERPRETATION DONE %%%')
-    print('\n')
-    LOGGER.info('%%% ERROR ANALYSIS STARTS %%%')
-    errors = find_errors(gt, detections, dataset_name, model_name)
-    missed_detections = []
-    poor_localizations = []
-    wrong_classifications = []
-    excess_detections = []
-
-
-
+    LOGGER.info('%%% ERROR ANALYSIS DONE %%%')

@@ -197,8 +197,8 @@ def filterboxes_bg(boxes, class_names, conf_thresh=0.5):
         class_name = arg_to_class[class_arg]
         for confident_class_detection in confident_class_detections:
             coordinates = confident_class_detection[:4]
-            if (coordinates[0] >= coordinates[2]) and\
-                    (coordinates[1] >= coordinates[3]):
+            if (coordinates[0] >= coordinates[2]
+                    and coordinates[1] >= coordinates[3]):
                 continue
             score = confident_class_detection[4]
             feature_map_position = confident_class_detection[5]

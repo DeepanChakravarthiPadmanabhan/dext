@@ -1,13 +1,22 @@
 # DExT: Detector Explanation Toolkit
 
+The objective of the repository is to provide a toolkit to explain the multiple detections from an object detector using both the bounding box and class information predictions.
+
+A poster with preliminary results and research proposal can be found [here](https://github.com/DeepanChakravarthiPadmanabhan/mtdocuments).
+
 ## Installation
 ```
 pip install -e .
 ```
 
-## Generate explanations
+## Generate explanations for a single image
 ```
-dext_explainer -c config/explainer.gin -i GuidedBackpropagation -m SSD512
+dext_explainer -c config/explainer.gin -i <interpretation_method> -m <model_name> --explain_mode single_image --input_image_path <image_path>
+```
+
+## Generate explanations on COCO dataset images
+```
+dext_explainer -c config/explainer.gin -i <interpretation_method> -m <model_name> --num_images <number_of_images>
 ```
 
 ## Evaluate explanations
@@ -15,20 +24,32 @@ dext_explainer -c config/explainer.gin -i GuidedBackpropagation -m SSD512
 dext_evaluator -c config/evaluator.gin -i GuidedBackpropagation -m SSD512
 ```
 
-## Object detectors with weights available
-1. EfficientDet - COCO
-2. SSD512 - COCO
-3. FasterRCNN - COCO
+## Important explainer arguments
+| Argument                 | Description                                                    |
+|--------------------------|----------------------------------------------------------------|
+| config, c                | configuration file with dataset paths                          |
+| interpretation_method, i | name of the explanation method                                 |
+| model_name, m            | name of the model to explain                                   |
+| explain_mode             | single image explanation or explain random images from dataset |
+| dataset_name             | name of the dataset                                            |
+
+
+## Object detectors available
+1. EFFICIENTDETD{x}, x = 0, 1, 2, 3, 4, 5, 6, 7, 7x
+2. SSD512
+3. FasterRCNN
+
+All above detectors are available with COCO weights.
 
 ## Interpretation methods available
-1. Intergrated Gradients (IG)
-2. Guided Backpropagation (GBP)
-3. SmoothGrad (SG) with Integrated Gradients (SIG)
-4. SmoothGrad (SG) with Guided Backpropagation (SGBP)
-5. Gradient-weighted Class Activation Mapping (GradCAM)
-6. Local Interpretable Model-agnostic Explanations (LIME)
-7. DeepExplainer (DE) - SHapley Additive exPlanations (SHAP) + DeepLIFT
-8. GradientExplainer (GE) - SHapley Additive exPlanations (SHAP) + Integrated Gradients (IG) + SmoothGrad (SG)
+1. IntergratedGradients (IG)
+2. GuidedBackpropagation (GBP)
+3. SmoothGrad_Integrated Gradients (SIG)
+4. SmoothGrad_GuidedBackpropagation (SGBP)
+5. GradCAM, Gradient-weighted Class Activation Mapping (GradCAM)
+6. LIME, Local Interpretable Model-agnostic Explanations (LIME)
+7. DeepExplainer, SHapley Additive exPlanations (SHAP) + DeepLIFT
+8. GradientExplainer, SHapley Additive exPlanations (SHAP) + Integrated Gradients (IG) + SmoothGrad (SG)
 
 ## References
 [1] Octavio Arriaga, Matias Valdenegro-Toro, Mohandass Muthuraja, Sushma Devaramani, and Frank Kirchner. "Perception for Autonomous Systems (PAZ)." arXiv preprint arXiv:2010.14541. 2020.
