@@ -1,7 +1,7 @@
 import numpy as np
 from paz.abstract import SequentialProcessor, Box2D
 from dext.postprocessing.detection_visualization import draw_bounding_boxes
-from paz.datasets.utils import get_class_names
+from dext.utils.class_names import get_classes
 from paz import processors as pr
 
 
@@ -120,7 +120,7 @@ def filterboxes(boxes, class_names, conf_thresh=0.5):
     return boxes2D, class_map_idx
 
 
-def denormalize_box(box, image_shape):
+def denormalize_box(box, image_shape, image_scale):
     """Scales corner box coordinates from normalized values to image dimensions.
 
     # Arguments
@@ -132,32 +132,17 @@ def denormalize_box(box, image_shape):
     """
     x_min, y_min, x_max, y_max = box[:4]
     height, width = image_shape
-    x_min = int(x_min * width)
-    y_min = int(y_min * height)
-    x_max = int(x_max * width)
-    y_max = int(y_max * height)
+    x_min = int(x_min * width * image_scale[1])
+    y_min = int(y_min * height * image_scale[0])
+    x_max = int(x_max * width * image_scale[1])
+    y_max = int(y_max * height * image_scale[0])
     return (x_min, y_min, x_max, y_max)
 
 
-def denormalize_boxes(boxes2D, image_shape):
+def denormalize_boxes(boxes2D, image_shape, image_scale):
     for box2D in boxes2D:
-        box2D.coordinates = denormalize_box(box2D.coordinates, image_shape)
-    return boxes2D
-
-
-def scale_box(box, image_scale):
-    x_min, y_min, x_max, y_max = box[:4]
-    x_min = int(x_min * image_scale[1])
-    y_min = int(y_min * image_scale[0])
-    x_max = int(x_max * image_scale[1])
-    y_max = int(y_max * image_scale[0])
-    return (x_min, y_min, x_max, y_max)
-
-
-def scale_boxes(boxes2D, image_scale):
-    image_scale = image_scale
-    for box2D in boxes2D:
-        box2D.coordinates = scale_box(box2D.coordinates, image_scale)
+        box2D.coordinates = denormalize_box(box2D.coordinates, image_shape,
+                                            image_scale)
     return boxes2D
 
 
@@ -168,11 +153,13 @@ def ssd_postprocess(model, outputs, image_scale, raw_image, image_size=512,
     detections = postprocess(outputs)
     detections = nms_per_class(detections, nms_thresh=0.4, conf_thresh=0.01)
     detections, class_map_idx = filterboxes(detections,
-                                            get_class_names('COCO'),
+                                            get_classes('COCO', 'SSD512'),
                                             conf_thresh=0.4)
-    detections = denormalize_boxes(detections, model.input_shape[1:3])
-    detections = scale_boxes(detections, image_scale)
-    image = draw_bounding_boxes(raw_image, detections, get_class_names("COCO"))
+    detections = denormalize_boxes(detections, model.input_shape[1:3],
+                                   image_scale)
+    image = draw_bounding_boxes(raw_image, detections,
+                                get_classes('COCO', 'SSD512'),
+                                max_size=image_size)
 
     if explain_top5_backgrounds:
         image, detections, class_map_idx = get_top5_bg_ssd(
@@ -223,13 +210,12 @@ def select_top5_bg_det(detections, class_map_idx, order='top5'):
 
 def get_bg_dets(detections, image_scales, raw_images, model):
     bg_det, class_map_idx = filterboxes_bg(detections,
-                                           get_class_names('COCO'),
+                                           get_classes('COCO', 'SSD512'),
                                            conf_thresh=0.4)
-    bg_det = denormalize_boxes(bg_det, model.input_shape[1:3])
-    bg_det = scale_boxes(bg_det, image_scales)
+    bg_det = denormalize_boxes(bg_det, model.input_shape[1:3], image_scales)
     bg_det, class_map_idx = select_top5_bg_det(bg_det, class_map_idx, 'top5')
     image = draw_bounding_boxes(raw_images.astype('uint8'),
-                                bg_det, get_class_names("COCO"))
+                                bg_det, get_classes('COCO', 'SSD512'))
     return image, bg_det, class_map_idx
 
 

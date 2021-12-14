@@ -148,8 +148,7 @@ class ProposalLayer(Layer):
         self.proposal_count = proposal_count
         self.nms_threshold = nms_threshold
 
-    def call(self, inputs):
-        scores, deltas, anchors = inputs
+    def call(self, scores, deltas, anchors):
         scores = scores[:, :, 1]
         deltas = deltas * np.reshape(self.RPN_BBOX_STD_DEV, [1, 1, 4])
 
@@ -225,10 +224,7 @@ class PyramidROIAlign(Layer):
         super(PyramidROIAlign, self).__init__(**kwargs)
         self.pool_shape = tuple(pool_shape)
 
-    def call(self, inputs):
-        boxes, image_shape = inputs[0], inputs[1]
-        feature_maps = inputs[2:]
-
+    def call(self, boxes, image_shape, feature_maps):
         ROI_level = self.compute_ROI_level(boxes, image_shape)
         pooled, box_to_level = self.apply_ROI_pooling(ROI_level, boxes,
                                                       feature_maps)

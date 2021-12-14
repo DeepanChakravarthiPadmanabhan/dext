@@ -1,35 +1,30 @@
 import logging
 import numpy as np
 
-from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
 from dext.abstract.explanation import Explainer
-from dext.interpretation_method.integrated_gradient \
-    import IntegratedGradientExplainer
-from dext.interpretation_method.guided_backpropagation \
-    import GuidedBackpropagationExplainer
-from dext.postprocessing.saliency_visualization import \
-    visualize_saliency_grayscale
-from dext.explainer.utils import get_model
+from dext.interpretation_method.integrated_gradient import (
+    IntegratedGradientExplainer)
+from dext.interpretation_method.guided_backpropagation import (
+    GuidedBackpropagationExplainer)
+from dext.postprocessing.saliency_visualization import (
+    visualize_saliency_grayscale)
+from dext.utils.get_image import get_image
 
 LOGGER = logging.getLogger(__name__)
 
 
 class SmoothGrad(Explainer):
-    def __init__(self, model, model_name, image,
-                 explainer="SmoothGrad_IntegreatedGradients",
-                 layer_name=None, visualize_index=None,
-                 preprocessor_fn=None, image_size=512, standard_deviation=0.15,
-                 nsamples=5, magnitude=1, steps=5, batch_size=1):
-        """
-        Model: pre-softmax layer (logit layer)
-        :param model:
-        :param layer_name:
-        """
-        super().__init__(model, model_name, image, explainer)
+    def __init__(self, model, model_name, image_path,
+                 explainer="SmoothGrad_IntegreatedGradients", layer_name=None,
+                 visualize_index=None, preprocessor_fn=None, image_size=512,
+                 standard_deviation=0.15, nsamples=5, magnitude=1, steps=5,
+                 batch_size=1, prior_boxes=None, explaining=None):
+        super().__init__(model_name, image_path, explainer)
         self.model = model
         self.model_name = model_name
-        self.image = image
+        self.image_path = image_path
+        self.image = get_image(self.image_path)
+        self.original_shape = self.image.shape
         self.image_size = image_size
         self.explainer = explainer
         self.layer_name = layer_name
@@ -40,16 +35,8 @@ class SmoothGrad(Explainer):
         self.batch_size = batch_size
         self.visualize_index = visualize_index
         self.preprocessor_fn = preprocessor_fn
-        self.image = self.check_image_size(self.image, self.image_size)
-
-    def check_image_size(self, image, image_size):
-        if image.shape != (image_size, image_size, 3):
-            if self.model_name == 'FasterRCNN':
-                resizer = ResizeImages(image_size, 0, image_size, "square")
-                image = resizer(image)[0]
-            else:
-                image = resize_image(image, (image_size, image_size))
-        return image
+        self.prior_boxes = prior_boxes
+        self.explaining = explaining
 
     def get_saliency_map(self):
         stddev = self.standard_deviation * (np.max(self.image) -
@@ -58,22 +45,24 @@ class SmoothGrad(Explainer):
                                    dtype=np.float32)
         for i in range(self.nsamples):
             image = self.image.copy()
-            noise = np.random.normal(0, stddev, self.image.shape)
+            noise = np.random.normal(0, stddev, self.original_shape)
             image_noise = image + noise
 
             if self.explainer == "SmoothGrad_IntegratedGradients":
                 LOGGER.info('Explanation method %s' % self.explainer)
-                saliency = IntegratedGradientExplainer(
-                    get_model(self.model_name), self.model_name, image_noise,
+                saliency, _ = IntegratedGradientExplainer(
+                    self.model, self.model_name, image_noise,
                     self.explainer, self.layer_name, self.visualize_index,
                     self.preprocessor_fn, self.image_size, self.steps,
-                    self.batch_size)
+                    self.batch_size, normalize=False,
+                    prior_boxes=self.prior_boxes, explaining=self.explaining)
             elif self.explainer == 'SmoothGrad_GuidedBackpropagation':
                 LOGGER.info('Explanation method %s' % self.explainer)
-                saliency = GuidedBackpropagationExplainer(
-                    get_model(self.model_name), self.model_name, image_noise,
+                saliency, _ = GuidedBackpropagationExplainer(
+                    self.model, self.model_name, image_noise,
                     self.explainer, self.layer_name, self.visualize_index,
-                    self.preprocessor_fn, self.image_size)
+                    self.preprocessor_fn, self.image_size, normalize=False,
+                    prior_boxes=self.prior_boxes, explaining=self.explaining)
             else:
                 raise ValueError("Explanation method not implemented %s"
                                  % self.explainer)
@@ -86,17 +75,17 @@ class SmoothGrad(Explainer):
         return total_gradients / self.nsamples
 
 
-def SmoothGradExplainer(model_name, image, interpretation_method,
-                        layer_name, visualize_index,
-                        preprocessor_fn, image_size,
-                        standard_deviation=0.15,
-                        nsamples=1, magnitude=True, steps=5, batch_size=1):
-    model = get_model(model_name, image, image_size)
-    sg = SmoothGrad(model, model_name, image,
+def SmoothGradExplainer(model, model_name, image_path, interpretation_method,
+                        layer_name, visualize_index, preprocessor_fn,
+                        image_size, standard_deviation=0.15, nsamples=5,
+                        magnitude=True, steps=10, batch_size=1,
+                        prior_boxes=None, explaining=None):
+    sg = SmoothGrad(model, model_name, image_path,
                     interpretation_method,
                     layer_name, visualize_index, preprocessor_fn,
                     image_size, standard_deviation, nsamples,
-                    magnitude, steps, batch_size)
+                    magnitude, steps, batch_size, prior_boxes, explaining)
     saliency = sg.get_saliency_map()
+    saliency_stat = (np.min(saliency), np.max(saliency))
     saliency = visualize_saliency_grayscale(saliency)
-    return saliency
+    return saliency, saliency_stat

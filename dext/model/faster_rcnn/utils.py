@@ -132,43 +132,14 @@ def resize_image(image, min_dim=None, max_dim=None,
     if scale != 1:
         image = resize(image, (round(H * scale), round(W * scale)),
                        preserve_range=True)
-
-    if mode == 'square':
-        H, W = image.shape[:2]
-        top_pad = (max_dim - H) // 2
-        bottom_pad = max_dim - H - top_pad
-        left_pad = (max_dim - W) // 2
-        right_pad = max_dim - W - left_pad
-        padding = [(top_pad, bottom_pad), (left_pad, right_pad), (0, 0)]
-        image = np.pad(image, padding, mode='constant', constant_values=0)
-        window = (top_pad, left_pad, H + top_pad, W + left_pad)
-    elif mode == 'pad64':
-        H, W = image.shape[:2]
-        assert min_dim % 64 == 0, 'Minimum dimension must be a multiple of 64'
-        if H % 64 > 0:
-            max_H = H - (H % 64) + 64
-            top_pad = (max_H - H) // 2
-            bottom_pad = max_H - H - top_pad
-        else:
-            top_pad = bottom_pad = 0
-        if W % 64 > 0:
-            max_W = W - (W % 64) + 64
-            left_pad = (max_W - W) // 2
-            right_pad = max_W - W - left_pad
-        else:
-            left_pad = right_pad = 0
-        padding = [(top_pad, bottom_pad), (left_pad, right_pad), (0, 0)]
-        image = np.pad(image, padding, mode='constant', constant_values=0)
-        window = (top_pad, left_pad, H + top_pad, W + left_pad)
-    elif mode == 'crop':
-        H, W = image.shape[:2]
-        Y = np.random.randint(0, (H - min_dim))
-        X = np.random.randint(0, (W - min_dim))
-        crop = (Y, X, min_dim, min_dim)
-        image = image[Y:Y + min_dim, X:X + min_dim]
-        window = (0, 0, min_dim, min_dim)
-    else:
-        raise Exception('Mode {} not supported'.format(mode))
+    H, W = image.shape[:2]
+    top_pad = (max_dim - H) // 2
+    bottom_pad = max_dim - H - top_pad
+    left_pad = (max_dim - W) // 2
+    right_pad = max_dim - W - left_pad
+    padding = [(top_pad, bottom_pad), (left_pad, right_pad), (0, 0)]
+    image = np.pad(image, padding, mode='constant', constant_values=0)
+    window = (top_pad, left_pad, H + top_pad, W + left_pad)
     return image.astype(image_dtype), window, scale, padding, crop
 
 
@@ -305,7 +276,7 @@ def fpn_classifier_graph(
     image_shape = (image_max_dim, image_max_dim, 3)
     image_shape = tf.convert_to_tensor(np.array(image_shape))
     x = PyramidROIAlign([pool_size, pool_size], name='roi_align_classifier')(
-        [rois, image_shape] + feature_maps)
+        rois, image_shape, feature_maps)
     conv_2d_layer = Conv2D(fc_layers_size, (pool_size, pool_size),
                            padding='valid')
     x = TimeDistributed(conv_2d_layer, name='mrcnn_class_conv1')(x)

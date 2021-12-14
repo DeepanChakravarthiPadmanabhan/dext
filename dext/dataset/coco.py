@@ -1,8 +1,15 @@
+import json
+import logging
 import os
+import random
+
 import numpy as np
 from dext.abstract.loader import Loader
 from paz.datasets.utils import get_class_names
 from pycocotools.coco import COCO
+from dext.utils.select_image_ids_coco import filter_image_ids
+
+LOGGER = logging.getLogger(__name__)
 
 
 class COCODataset(Loader):
@@ -27,9 +34,12 @@ class COCODataset(Loader):
 
     """
     def __init__(self, path='../datasets/MSCOCO', split='train',
-                 class_names='all', name='train2017', evaluate=False):
+                 class_names='all', name='train2017', evaluate=False,
+                 continuous_run=False, result_dir=None):
         super(COCODataset, self).__init__(path, split, class_names, name)
         self.evaluate = evaluate
+        self.continuous_run = continuous_run
+        self.result_dir = result_dir
         self._class_names = class_names
         if class_names == 'all':
             self._class_names = get_class_names('COCO')
@@ -54,14 +64,15 @@ class COCODataset(Loader):
         return ground_truth_data
 
     def _load_COCO(self, dataset_name, split):
-        self.parser = COCOParser(self.path,
-                                 split,
-                                 self._class_names,
-                                 dataset_name,
-                                 self.evaluate)
-        self.images_path = self.parser.images_path
-        self.arg_to_class = self.parser.arg_to_class
-        ground_truth_data = self.parser.load_data()
+        self.parser = COCOParser(self.path, split, self._class_names,
+                                 dataset_name, self.evaluate,
+                                 self.continuous_run, self.result_dir)
+        if self.name != 'test2017':
+            self.images_path = self.parser.images_path
+            self.arg_to_class = self.parser.arg_to_class
+            ground_truth_data = self.parser.load_data()
+        else:
+            ground_truth_data = self.parser.load_data()
         return ground_truth_data
 
 
@@ -76,12 +87,9 @@ class COCOParser(object):
         num_objects refers to the number of objects in that specific image
     """
 
-    def __init__(self,
-                 dataset_path='../datasets/MSCOCO',
-                 split='train',
-                 class_names='all',
-                 dataset_name='train2017',
-                 evaluate=False):
+    def __init__(self, dataset_path='../datasets/MSCOCO', split='train',
+                 class_names='all', dataset_name='train2017', evaluate=False,
+                 continuous_run=False, result_dir=None):
 
         if dataset_name not in ['train2017', 'val2017', 'test2017']:
             raise Exception('Invalid dataset name.')
@@ -90,30 +98,79 @@ class COCOParser(object):
         self.dataset_name = dataset_name
         self.dataset_path = dataset_path
         self.split = split
-        self.annotations_path = os.path.join(
-            self.dataset_path, 'annotations',
-            'instances_' + self.dataset_name + '.json')
-        self.images_path = os.path.join(self.dataset_path, self.dataset_name)
-        self.coco = COCO(self.annotations_path)
-        self.image_ids = self.coco.getImgIds()
-        # if "train" in self.dataset_name:
-        #     self.image_ids = [114540, 117156, 128224, 130733,
-        #                       253710, 438751, 487851, 581929]
-        # elif "val" in self.dataset_name:
-        #     self.image_ids = [37777,
-        #                       191672, 309391, 344611, 347456, 459954, 397133,
-        #                       252219,
-        #                       ]
-        # else:
-        #     self.image_ids = [347456, 459954]
-        self.evaluate = evaluate
-        self.class_names = class_names
-        if self.class_names == 'all':
-            self.class_names = get_class_names('COCO')
-        self.num_classes = len(self.class_names)
-        self.class_to_arg, self.arg_to_class = self.load_classes()
-        self.data = []
-        self._process_image_labels()
+        if self.dataset_name != 'test2017':
+            self.annotations_path = os.path.join(
+                self.dataset_path, 'annotations',
+                'instances_' + self.dataset_name + '.json')
+            self.images_path = os.path.join(self.dataset_path,
+                                            self.dataset_name)
+            self.coco = COCO(self.annotations_path)
+            self.image_ids = self.coco.getImgIds()
+
+            # Uncomment below line to run on single image index alone
+            # if "train" in self.dataset_name:
+            #     self.image_ids = [114540, 117156, 128224, 130733,
+            #                       253710, 438751, 487851, 581929]
+            # elif "val" in self.dataset_name:
+            #     self.image_ids = [252219,
+            #                       191672, 309391, 344611, 347456, 459954,
+            #                       397133, 37777]
+            # else:
+            #     self.image_ids = [347456, 459954]
+
+        else:
+            # Uncomment below line to run on single image index alone
+            # self.image_ids = [347456, 459954]
+            self.annotations_path = os.path.join(
+                self.dataset_path, 'annotations', 'image_info_test2017.json')
+            with open(self.annotations_path, 'r') as json_file:
+                image_info = json.loads(json_file.read())['images']
+                self.image_ids = [i["id"] for i in image_info]
+                self.file_names = [i["file_name"] for i in image_info]
+
+            # all_list = list(zip(self.image_ids, self.file_names))
+            # random.shuffle(all_list)
+            # random.shuffle(all_list)
+            # self.image_ids, self.file_names = zip(*all_list)
+            # np.savetxt("ids.txt", self.image_ids)
+
+            ids_list = np.loadtxt('data/coco_shuffled_index.txt')
+            LOGGER.info('Successfully loaded shuffled index file')
+            predefined_image_ids = [int(i) for i in ids_list]
+            predefined_ids_idx = [n for n, i in enumerate(self.image_ids)
+                                  if i in predefined_image_ids]
+            selected_image_ids = [self.image_ids[i]
+                                  for i in predefined_ids_idx]
+            selected_file_names = [self.file_names[i]
+                                   for i in predefined_ids_idx]
+            self.image_ids = selected_image_ids
+            self.file_names = selected_file_names
+
+        if continuous_run:
+            LOGGER.info('Loading already ran ids from all excel files.')
+            load_ran_ids = filter_image_ids(result_dir)
+            LOGGER.info('Found previous run ids: %s ' % load_ran_ids)
+            filtered_image_ids_idx = [n for n, i in enumerate(self.image_ids)
+                                      if i not in load_ran_ids]
+            filtered_image_ids = [self.image_ids[i]
+                                  for i in filtered_image_ids_idx]
+            filtered_file_names = [self.file_names[i]
+                                   for i in filtered_image_ids_idx]
+            self.image_ids = filtered_image_ids
+            self.file_names = filtered_file_names
+
+        if self.dataset_name != 'test2017':
+            self.evaluate = evaluate
+            self.class_names = class_names
+            if self.class_names == 'all':
+                self.class_names = get_class_names('COCO')
+            self.num_classes = len(self.class_names)
+            self.class_to_arg, self.arg_to_class = self.load_classes()
+            self.data = []
+            self._process_train_val_image()
+        else:
+            self.data = []
+            self._process_test_image()
 
     def name_to_label(self, name):
         """Map name to label."""
@@ -183,7 +240,7 @@ class COCOParser(object):
             class_to_arg[value] = key
         return class_to_arg, arg_to_class
 
-    def _process_image_labels(self):
+    def _process_train_val_image(self):
         for image_index in self.image_ids:
             image_path = self.get_image_path(image_index)
             if not(os.path.exists(image_path)):
@@ -196,6 +253,15 @@ class COCOParser(object):
             box_data = self.get_box_coordinates(annotations, image_index)
             box_data = np.asarray(box_data)
             self.data.append({'image': image_path, 'boxes': box_data,
+                              'image_index': image_index})
+
+    def _process_test_image(self):
+        for image_index, file_name in zip(self.image_ids, self.file_names):
+            image_path = os.path.join(self.dataset_path, self.dataset_name,
+                                      file_name)
+            if not(os.path.exists(image_path)):
+                continue
+            self.data.append({'image': image_path, 'boxes': None,
                               'image_index': image_index})
 
     def load_data(self):

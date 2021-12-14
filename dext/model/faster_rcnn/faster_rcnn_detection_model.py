@@ -8,10 +8,7 @@ from dext.model.faster_rcnn.utils import get_resnet_features, build_rpn_model
 from dext.model.faster_rcnn.utils import generate_pyramid_anchors, norm_boxes
 from dext.model.faster_rcnn.utils import fpn_classifier_graph
 from dext.model.faster_rcnn.utils import compute_backbone_shapes
-from dext.model.faster_rcnn.layers import DetectionLayer, ProposalLayer
-from dext.model.faster_rcnn.faster_rcnn_preprocess import (
-    faster_rcnn_preprocess)
-from dext.model.faster_rcnn.utils import norm_boxes_graph
+from dext.model.faster_rcnn.layers import ProposalLayer
 
 
 def get_anchors(image_shape, backbone='resnet101', batch_size=1,
@@ -47,9 +44,22 @@ def rpn_layer(rpn_feature_maps, rpn_anchor_stride=1,
                for output, name in zip(outputs, names)]
     return outputs
 
+def create_multibox_head(classes, frcnn_bbox, proposals):
+    classes = classes[0]
+    frcnn_bbox = frcnn_bbox[0]
+    proposals = proposals[0]
+    class_ids = tf.argmax(classes, axis=1, output_type=tf.int32)
+    indices = tf.stack([tf.range(classes.shape[0]), class_ids], axis=1)
+    delta_specifics = tf.gather_nd(frcnn_bbox, indices)
+    outputs = Concatenate(axis=1, name='boxes')(
+        [delta_specifics, classes, proposals])
+    outputs = tf.expand_dims(outputs, axis=0)
+    return outputs
 
-def faster_rcnn_detection(image_size, window, train_bn=False,
-                          backbone="resnet101", top_down_pyramid_size=256,
+@gin.configurable
+def faster_rcnn_detection(image_size=(512, 512, 3), weights='COCO',
+                          train_bn=False, backbone="resnet101",
+                          top_down_pyramid_size=256,
                           post_nms_rois_inference=1000, rpn_nms_threshold=0.7,
                           batch_size=1, compute_backbone_shape=None,
                           rpn_anchor_scales=(32, 64, 128, 256, 512),
@@ -59,13 +69,9 @@ def faster_rcnn_detection(image_size, window, train_bn=False,
                           rpn_bbox_std_dev=np.array([0.1, 0.1, 0.2, 0.2]),
                           pre_nms_limit=6000, images_per_gpu=1, pool_size=7,
                           num_classes=81, image_max_dim=1024,
-                          bbox_std_dev=np.array([0.1, 0.1, 0.2, 0.2]),
-                          detection_max_instances=100,
-                          detection_min_confidence=0.7,
-                          detection_nms_threshold=0.3):
+                          weight_path=None):
     input_image = tf.keras.layers.Input(shape=image_size,
                                         name='input_image')
-
     _, C2, C3, C4, C5 = get_resnet_features(
         input_image, backbone, True, train_bn)
     P5 = Conv2D(top_down_pyramid_size, (1, 1), name='fpn_c5p5')(C5)
@@ -106,26 +112,12 @@ def faster_rcnn_detection(image_size, window, train_bn=False,
                           rpn_anchor_stride)
     rpn_rois = ProposalLayer(post_nms_rois_inference, rpn_nms_threshold,
                              rpn_bbox_std_dev, pre_nms_limit, images_per_gpu,
-                             name='ROI')([rpn_class, rpn_bbox, anchors])
+                             name='ROI')(rpn_class, rpn_bbox, anchors)
     _, classes, frcnn_bbox = fpn_classifier_graph(
         rpn_rois, feature_maps[:-1], pool_size, num_classes, image_max_dim,
         train_bn=train_bn)
-    detections = DetectionLayer(
-        batch_size, window, bbox_std_dev, images_per_gpu,
-        detection_max_instances, detection_min_confidence,
-        detection_nms_threshold,
-        name='faster_rcnn_detection')([rpn_rois, classes, frcnn_bbox])
+    detections = create_multibox_head(classes, frcnn_bbox, rpn_rois)
     model = tf.keras.models.Model(
         inputs=input_image, outputs=detections, name='faster_rcnn')
-    return model
-
-
-@gin.configurable
-def get_faster_rcnn_model(image, image_size, weight_path):
-    normalized_images, image_scales = faster_rcnn_preprocess(image, image_size)
-    normalized_image_size = normalized_images[0].shape
-    config_window = norm_boxes_graph(image_scales, (image_size, image_size))
-    model = faster_rcnn_detection(image_size=normalized_image_size,
-                                  window=config_window)
     model.load_weights(weight_path + 'faster_rcnn.h5')
     return model

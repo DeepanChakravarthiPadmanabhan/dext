@@ -25,7 +25,8 @@ def get_category_id(class_name):
 
 
 def get_evaluation_box(box, box_format):
-    """Scales corner box coordinates from normalized values to image dimensions.
+    """Scales corner box coordinates from normalized values to image
+    dimensions.
 
     # Arguments
         box: paz datatype Box.

@@ -9,20 +9,21 @@ import shap
 from tensorflow.compat.v1.keras.backend import get_session
 
 from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+from dext.abstract.explanation import Explainer
 from paz.backend.image.opencv_image import load_image
-from dext.utils.class_names import get_class_name_efficientdet
+from dext.utils.class_names import get_classes
 from dext.dataset.coco import COCODataset
 from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 
 
-class GradientSHAP:
+class GradientSHAP(Explainer):
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512,
                  num_background_images=5, dataset_path=None):
+        super().__init__(model, model_name, image, explainer)
         self.model = model
         self.model_name = model_name
         self.image = image
@@ -43,11 +44,9 @@ class GradientSHAP:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            if self.model_name == 'FasterRCNN':
-                resizer = ResizeImages(image_size, 0, image_size, "square")
-                image = resizer(image)[0]
-            else:
-                image = resize_image(image, (image_size, image_size))
+            image, _ = self.preprocessor_fn(image, image_size, True)
+            if len(image.shape) != 3:
+                image = image[0]
         return image
 
     def find_target_layer(self):
@@ -58,11 +57,7 @@ class GradientSHAP:
             "Could not find 4D layer. Cannot apply guided backpropagation.")
 
     def preprocess_image(self, image, image_size):
-        preprocessed_image = self.preprocessor_fn(image, image_size)
-        if type(preprocessed_image) == tuple:
-            input_image, image_scales = preprocessed_image
-        else:
-            input_image = preprocessed_image
+        input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
     def get_background_images(self, image_size, num_background_images):
@@ -111,20 +106,22 @@ class GradientSHAP:
             ranked_outputs=1)
 
         index_names = np.vectorize(
-            lambda x: get_class_name_efficientdet("COCO")[x])(indexes)
+            lambda x: coco_class_names[x])(indexes)
         LOGGER.info("Shap values: %s" % shap_values)
         shap.image_plot(shap_values, image, index_names)
         plt.savefig('GradientExplainer_shap_image_plot.jpg')
         return 1
+
 
 @gin.configurable
 def SHAP_GradientExplainer(model_name, image, interpretation_method,
                            layer_name, visualize_index, preprocessor_fn,
                            image_size, num_background_images=5,
                            dataset_path=None):
-    model = get_model(model_name, image, image_size)
+    model = get_model(model_name)
     explainer = GradientSHAP(model, model_name, image, interpretation_method,
                              layer_name, visualize_index, preprocessor_fn,
                              image_size, num_background_images, dataset_path)
     saliency = explainer.get_saliency_map()
-    return saliency
+    saliency_stat = (np.min(saliency), np.max(saliency))
+    return saliency, saliency_stat

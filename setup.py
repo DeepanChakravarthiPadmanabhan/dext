@@ -12,8 +12,8 @@ else:
 dependencies = [
     "numpy",
     "opencv-python",
-    "tensorflow",
-    "pypaz",
+    #"tensorflow_gpu==2.3.0",
+    #"pypaz",
     "click",
     "pandas",
     "pycocotools",
@@ -24,6 +24,8 @@ dependencies = [
     "shap",
     "gin-config==0.3.0",
     "jupyter",
+    "psutil",
+    "memory_profiler",
 ]
 
 setup(
@@ -37,6 +39,7 @@ setup(
     entry_points=dict(
         console_scripts=[
             "dext_explainer=dext.explainer.explainer:explainer",
+            "dext_evaluator=dext.evaluator.evaluator:evaluator",
         ]
     ),
     data_files=[

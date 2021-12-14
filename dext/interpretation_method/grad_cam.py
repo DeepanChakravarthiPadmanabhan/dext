@@ -4,17 +4,21 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 
 from paz.backend.image import resize_image
+from dext.abstract.explanation import Explainer
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
+from dext.explainer.utils import get_model
 
 LOGGER = logging.getLogger(__name__)
 
 
-class GradCAM:
+class GradCAM(Explainer):
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512,
                  grad_cam_layer=None, guided_grad_cam=True):
+        super().__init__(model, model_name, image, explainer)
+        LOGGER.info('STARTING GRADCAM')
         self.model = model
         self.model_name = model_name
         self.image = image
@@ -39,7 +43,9 @@ class GradCAM:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            image = resize_image(image, (image_size, image_size))
+            image, _ = self.preprocessor_fn(image, image_size, True)
+            if len(image.shape) != 3:
+                image = image[0]
         return image
 
     def find_target_layer(self):
@@ -50,11 +56,7 @@ class GradCAM:
             "Could not find 4D layer. Cannot apply guided backpropagation.")
 
     def preprocess_image(self, image, image_size):
-        preprocessed_image = self.preprocessor_fn(image, image_size)
-        if type(preprocessed_image) == tuple:
-            input_image, image_scales = preprocessed_image
-        else:
-            input_image = preprocessed_image
+        input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
     def build_custom_model(self):
@@ -103,9 +105,11 @@ class GradCAM:
         return saliency
 
 
-def GradCAMExplainer(model, model_name, image, interpretation_method,
+def GradCAMExplainer(model_name, image, interpretation_method,
                      layer_name, visualize_index, preprocessor_fn,
                      image_size, grad_cam_layer=None, guided_grad_cam=False):
+    model = get_model(model_name)
+    model.summary()
     if 'SSD' in model_name:
         if visualize_index[-1] <= 3:
             grad_cam_layer = 45
@@ -117,5 +121,6 @@ def GradCAMExplainer(model, model_name, image, interpretation_method,
                         layer_name, visualize_index, preprocessor_fn,
                         image_size, grad_cam_layer, guided_grad_cam)
     saliency = explainer.get_saliency_map()
+    saliency_stat = (np.min(saliency), np.max(saliency))
     saliency = visualize_saliency_grayscale(saliency, 100)
-    return saliency
+    return saliency, saliency_stat

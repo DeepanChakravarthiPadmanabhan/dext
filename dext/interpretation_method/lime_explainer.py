@@ -5,17 +5,17 @@ from lime import lime_image
 # import matplotlib.pyplot as plt
 # from skimage.segmentation import  mark_boundaries
 
-from paz.backend.image import resize_image
-from dext.model.mask_rcnn.mask_rcnn_preprocess import ResizeImages
+from dext.abstract.explanation import Explainer
 
 LOGGER = logging.getLogger(__name__)
 
 
-class LIME:
+class LIME(Explainer):
     def __init__(self, model, model_name, image, explainer,
                  layer_name=None, visualize_idx=None,
                  preprocessor_fn=None, image_size=512,
                  num_samples=30, min_weight=1e-3, num_features=5):
+        super().__init__(model, model_name, image, explainer)
         self.model = model
         self.model_name = model_name
         self.image = image
@@ -34,11 +34,9 @@ class LIME:
 
     def check_image_size(self, image, image_size):
         if image.shape != (image_size, image_size, 3):
-            if self.model_name == 'FasterRCNN':
-                resizer = ResizeImages(image_size, 0, image_size, "square")
-                image = resizer(image)[0]
-            else:
-                image = resize_image(image, (image_size, image_size))
+            image, _ = self.preprocessor_fn(image, image_size, True)
+            if len(image.shape) != 3:
+                image = image[0]
         return image
 
     def find_target_layer(self):
@@ -49,11 +47,7 @@ class LIME:
             "Could not find 4D layer. Cannot apply guided backpropagation.")
 
     def preprocess_image(self, image, image_size):
-        preprocessed_image = self.preprocessor_fn(image, image_size)
-        if type(preprocessed_image) == tuple:
-            input_image, image_scales = preprocessed_image
-        else:
-            input_image = preprocessed_image
+        input_image, _ = self.preprocessor_fn(image, image_size)
         return input_image
 
     def build_custom_model(self):
@@ -114,4 +108,5 @@ def LimeExplainer(model, model_name, image,
                      preprocessor_fn, image_size,
                      num_samples, min_weight, num_features)
     saliency = explainer.get_saliency_map()
-    return saliency
+    saliency_stat = (np.min(saliency), np.max(saliency))
+    return saliency, saliency_stat

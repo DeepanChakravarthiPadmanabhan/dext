@@ -1,35 +1,33 @@
 import logging
 import os
-from copy import deepcopy
-import pandas as pd
+import time
+import gin
 import numpy as np
+import psutil
+import gc
+from memory_profiler import profile
 
-from paz.backend.image.opencv_image import write_image
-from paz.processors.image import LoadImage
-
-from dext.explainer.utils import get_model
+from dext.explainer.utils import test_gpus, create_directories, get_model
 from dext.factory.preprocess_factory import PreprocessorFactory
 from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.interpretation_method_factory import ExplainerFactory
 from dext.factory.inference_factory import InferenceFactory
 from dext.postprocessing.saliency_visualization import plot_all
+from dext.postprocessing.detection_visualization import plot_gt_on_detection
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
 from dext.explainer.utils import get_images_to_explain
-from dext.explainer.analyze_saliency_maps import analyze_saliency_maps
-from dext.explainer.utils import get_model_class_name
-from dext.explainer.postprocess_saliency import merge_saliency
-from dext.explainer.analyze_saliency_maps import eval_object_ap_curve
-from dext.explainer.analyze_saliency_maps import eval_numflip_maxprob_regerror
-
+from dext.utils.class_names import get_classes
+from dext.explainer.utils import write_record
+from dext.explainer.utils import build_general_custom_model
 
 LOGGER = logging.getLogger(__name__)
 
 
 def get_single_saliency(
         interpretation_method, box_index, explaining, visualize_object_index,
-        visualize_box_offset, model_name, raw_image, layer_name,
-        preprocessor_fn, image_size):
+        visualize_box_offset, model_name, raw_image_path, layer_name,
+        preprocessor_fn, image_size, custom_model, prior_boxes):
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
         box_index, explaining, visualize_object_index, model_name,
@@ -38,256 +36,161 @@ def get_single_saliency(
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
     saliency = interpretation_method_fn(
-        model_name, deepcopy(raw_image), interpretation_method,
-        layer_name, box_features, preprocessor_fn, image_size)
+        custom_model, model_name, raw_image_path, interpretation_method,
+        layer_name, box_features, preprocessor_fn, image_size,
+        prior_boxes=prior_boxes, explaining=explaining)
     return saliency
 
 
-def get_metrics(detections, raw_image, gt_boxes, saliency, object_arg,
-                preprocessor_fn, postprocessor_fn, model_name, image_size,
-                explaining, ap_curve_linspace, image_index,
-                explain_top5_backgrounds, df_class_flip, df_ap_curve,
-                df_max_prob, df_reg_error):
-    saliency_iou, saliency_centroid, saliency_variance = analyze_saliency_maps(
-        detections, raw_image, saliency, object_arg)
-    eval_metrics = eval_numflip_maxprob_regerror(
-        saliency, deepcopy(raw_image), gt_boxes, detections, preprocessor_fn,
-        postprocessor_fn, image_size, model_name, object_arg,
-        ap_curve_linspace, explain_top5_backgrounds)
-    num_pixels_flipped, max_prob_curve, reg_error_curve = eval_metrics
-    df_class_flip_entry = [
-        str(image_index), object_arg, explaining,
-        detections[object_arg], saliency_iou, saliency_centroid,
-        saliency_variance, num_pixels_flipped]
-    df_class_flip.loc[len(df_class_flip)] = df_class_flip_entry
-    ap_curve = eval_object_ap_curve(
-        saliency, deepcopy(raw_image), preprocessor_fn, postprocessor_fn,
-        image_size, model_name, image_index, ap_curve_linspace,
-        explain_top5_backgrounds)
-    df_ap_curve_entry = [str(image_index), object_arg,
-                         num_pixels_flipped,
-                         explaining, ]
-    df_ap_curve_entry = df_ap_curve_entry + ap_curve
-    df_ap_curve.loc[len(df_ap_curve)] = df_ap_curve_entry
-    df_max_prob_entry = [str(image_index), object_arg,
-                         num_pixels_flipped, explaining, ]
-    df_max_prob_entry = df_max_prob_entry + max_prob_curve
-    df_max_prob.loc[len(df_max_prob)] = df_max_prob_entry
-    df_reg_error_entry = [str(image_index), object_arg,
-                          num_pixels_flipped, explaining, ]
-    df_reg_error_entry = df_reg_error_entry + reg_error_curve
-    df_reg_error.loc[len(df_reg_error)] = df_reg_error_entry
-    return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
+def save_saliency_record(
+        result_dir, image_index, object_index, coordinates, score, class_name,
+        explaining, box_offset, save_path, raw_image_path):
+    record = [image_index, object_index, coordinates, score, class_name,
+              explaining, box_offset, save_path, raw_image_path]
+    write_record(record, "saliency_image_paths", result_dir)
 
 
-def merge_all_maps(saliency_list, merge_method, analyze_each_maps,
-                   detections, raw_image, gt_boxes, preprocessor_fn,
-                   postprocessor_fn, image_size, model_name,
-                   ap_curve_linspace, image_index, explain_top5_backgrounds,
-                   object_arg, df_class_flip, df_ap_curve, df_max_prob,
-                   df_reg_error):
-    combined_saliency = merge_saliency(saliency_list, merge_method)
-    if analyze_each_maps:
-        df_class_flip, df_ap_curve, df_max_prob, df_reg_error = get_metrics(
-            detections, deepcopy(raw_image), gt_boxes, combined_saliency,
-            object_arg, preprocessor_fn, postprocessor_fn, model_name,
-            image_size, 'combined', ap_curve_linspace, image_index,
-            explain_top5_backgrounds, df_class_flip, df_ap_curve, df_max_prob,
-            df_reg_error)
-    return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
-
-
-def explain_single_object(
-        raw_image, image_size, gt_boxes, preprocessor_fn, postprocessor_fn,
-        detections, detection_image, interpretation_method, object_arg,
-        box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, ap_curve_linspace, df_class_flip,
-        df_ap_curve, df_max_prob, df_reg_error, merge_saliency_maps,
-        explain_top5_backgrounds):
-    explaining_info = get_explaining_info(
-        object_arg, box_index, to_explain, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name)
-    LOGGER.info('Explaining image index: %s' % str(image_index))
-    LOGGER.info("Information used for explanation: %s" %
-                (explaining_info,))
-    object_index_list = explaining_info[0]
-    explaining_list = explaining_info[1]
-    layer_name_list = explaining_info[2]
-    box_offset_list = explaining_info[3]
+def explain_single_object(raw_image_path, image_size, preprocessor_fn,
+                          detections, interpretation_method, box_index,
+                          result_dir, explaining_info, model_name, image_index,
+                          class_name, class_confidence, save_saliency_images,
+                          custom_model, prior_boxes):
     saliency_list = []
-    confidence_list = []
-    class_name_list = []
-    explaining_info = zip(object_index_list,
-                          explaining_list,
-                          layer_name_list,
-                          box_offset_list)
-    for info in explaining_info:
+    saliency_stat_list = []
+    for info in zip(*explaining_info):
         object_index = info[0]
         explaining = info[1]
         layer_name = info[2]
         box_offset = info[3]
-        class_name = get_model_class_name(model_name, 'COCO')[
-            box_index[object_index][1]]
-        class_confidence = box_index[object_index][2]
-        LOGGER.info("Generating saliency: Image index - %s, Object - %s, "
-                    "Confidence - %s, Explaining - %s, Box offset - %s"
-                    % (str(image_index), class_name, class_confidence,
-                       explaining, box_offset))
-        saliency = get_single_saliency(
+        LOGGER.info("Generating - image index: %s, explaining: %s, offset: %s"
+                    % (str(image_index), explaining, box_offset))
+        saliency, saliency_stat = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
-            box_offset, model_name, raw_image,
-            layer_name, preprocessor_fn, image_size)
-
+            box_offset, model_name, raw_image_path, layer_name,
+            preprocessor_fn, image_size, custom_model, prior_boxes)
+        if save_saliency_images:
+            save_name = str(image_index) + "_" + str(object_index) + "_" + (
+                explaining) + "_" + str(box_offset) + "_" + (
+                interpretation_method)
+            saliency_images_dir = os.path.join(result_dir, 'saliency_images')
+            save_path = os.path.join(saliency_images_dir, save_name + ".npy")
+            np.save(save_path, saliency)
+            save_saliency_record(
+                result_dir, str(image_index), str(object_index),
+                detections[object_index].coordinates, class_confidence,
+                class_name, explaining, box_offset, save_path, raw_image_path)
         saliency_list.append(saliency)
-        confidence_list.append(class_confidence)
-        class_name_list.append(class_name)
-        # analyze saliency maps
-        if analyze_each_maps:
-            all_dfs = get_metrics(
-                detections, deepcopy(raw_image), gt_boxes, saliency,
-                object_index, preprocessor_fn, postprocessor_fn, model_name,
-                image_size, explaining + str(box_offset), ap_curve_linspace,
-                image_index, explain_top5_backgrounds, df_class_flip,
-                df_ap_curve, df_max_prob, df_reg_error)
-            df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
-
-    if merge_saliency_maps:
-        df_class_flip, df_ap_curve, df_max_prob, reg_error = merge_all_maps(
-            saliency_list, merge_method, analyze_each_maps, detections,
-            deepcopy(raw_image), gt_boxes, preprocessor_fn, postprocessor_fn,
-            image_size, model_name, ap_curve_linspace, image_index,
-            explain_top5_backgrounds, object_index_list[0],
-            df_class_flip, df_ap_curve, df_max_prob, df_reg_error)
-
-    if save_explanations:
-        explanation_result_dir = os.path.join(result_dir, 'explanations')
-        if not os.path.exists(explanation_result_dir):
-            os.makedirs(explanation_result_dir)
-        f = plot_all(detection_image, raw_image, saliency_list,
-                     confidence_list, class_name_list, explaining_list,
-                     box_offset_list, to_explain, interpretation_method,
-                     model_name, "subplot")
-        f.savefig(os.path.join(explanation_result_dir, 'explanation_'
-                  + str(image_index) + "_" + "obj" + str(object_arg) + '.jpg'))
-    LOGGER.info("Box and class labels, after post-processing: %s"
-                % box_index)
+        saliency_stat_list.append(saliency_stat)
     LOGGER.info("Completed explaining image index: %s" % str(image_index))
-    return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
+    del saliency
+    del saliency_stat
+    gc.collect()
+    return saliency_list, saliency_stat_list
 
 
-def explain_all_objects(
-        objects_to_analyze, raw_image, image_size, gt_boxes, preprocessor_fn,
-        postprocessor_fn, detections, detection_image, interpretation_method,
-        box_index, to_explain, result_dir, class_layer_name, reg_layer_name,
-        visualize_box_offset, model_name, merge_method, image_index,
-        save_explanations, analyze_each_maps, ap_curve_linspace, df_class_flip,
-        df_ap_curve, df_max_prob, df_reg_error, merge_saliency_maps,
-        explain_top5_backgrounds):
+def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
+                        preprocessor_fn, detections, detection_image,
+                        interpretation_method, box_index, to_explain,
+                        result_dir, class_layer_name, reg_layer_name,
+                        visualize_box_offset, model_name, image_index,
+                        save_saliency_images, save_explanation_images,
+                        custom_model, prior_boxes):
     for object_arg in objects_to_analyze:
-        all_dfs = explain_single_object(
-            raw_image, image_size, gt_boxes, preprocessor_fn, postprocessor_fn,
-            detections, detection_image, interpretation_method,
-            object_arg, box_index, to_explain, result_dir, class_layer_name,
-            reg_layer_name, visualize_box_offset, model_name, merge_method,
-            image_index, save_explanations, analyze_each_maps,
-            ap_curve_linspace, df_class_flip, df_ap_curve, df_max_prob,
-            df_reg_error, merge_saliency_maps, explain_top5_backgrounds)
-        df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
-    return df_class_flip, df_ap_curve, df_max_prob, df_reg_error
+        explaining_info = get_explaining_info(
+            object_arg, box_index, to_explain, class_layer_name,
+            reg_layer_name,
+            visualize_box_offset, model_name)
+        class_name = get_classes('COCO', model_name)[
+            box_index[explaining_info[0][0]][1]]
+        class_confidence = box_index[explaining_info[0][0]][2]
+        LOGGER.info('Explaining - image index: %s, confidence: %s, class: %s'
+                    % (str(image_index), class_confidence, class_name))
+        LOGGER.info("Information - %s" % (explaining_info,))
+        saliency_list, saliency_stat_list = explain_single_object(
+            raw_image_path, image_size, preprocessor_fn, detections,
+            interpretation_method, box_index, result_dir, explaining_info,
+            model_name, image_index, class_name, class_confidence,
+            save_saliency_images, custom_model, prior_boxes)
+        if save_explanation_images:
+            explanation_images_dir = os.path.join(
+                result_dir, 'explanation_images')
+            plot_all(detection_image, raw_image_path, saliency_list,
+                     saliency_stat_list, class_confidence, class_name,
+                     explaining_info[1], explaining_info[3], to_explain,
+                     interpretation_method, model_name, "subplot",
+                     explanation_images_dir, image_index, object_arg)
+        del saliency_list
+        del saliency_stat_list
+        gc.collect()
 
 
-def explain_model(model_name, explain_mode, raw_image_path, image_size=512,
+@profile
+@gin.configurable
+def explain_model(model_name, explain_mode,  dataset_name, data_split,
+                  data_split_name, raw_image_path, image_size=512,
                   class_layer_name=None, reg_layer_name=None,
-                  to_explain="Classification", result_dir='images/results/',
+                  to_explain="Classification",
                   interpretation_method="IntegratedGradients",
                   visualize_object_index=None, visualize_box_offset=None,
-                  num_images=2, merge_method='add', save_detections=False,
-                  save_explanations=False, analyze_each_maps=False,
-                  ap_curve_linspace=20, merge_saliency_maps=False,
-                  explain_top5_backgrounds=True):
-    if not os.path.exists(result_dir):
-        os.makedirs(result_dir)
+                  num_images=2, save_saliency_images=False,
+                  save_explanation_images=False, continuous_run=False,
+                  explain_top5_backgrounds=True, plot_gt=False,
+                  result_dir='images/results/', save_modified_images=True):
+    start_time = time.time()
+    process = psutil.Process(os.getpid())
+    test_gpus()
+    result_dir = os.path.join(result_dir,
+                              model_name + '_' + interpretation_method)
+    create_directories(result_dir, save_modified_images, save_saliency_images,
+                       save_explanation_images)
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     inference_fn = InferenceFactory(model_name).factory()
-
-    to_be_explained = get_images_to_explain(explain_mode, raw_image_path,
-                                            num_images)
-    df_class_flip_columns = ["image_index", "object_index", "explaining",
-                             "detection", "saliency_iou", "saliency_centroid",
-                             "saliency_variance", "pixels_flipped"]
-    df_ap_curve_columns = ["image_index", "object_index", "pixels_flipped",
-                           "explaining"]
-    ap_50percent_columns = ["ap_50percent_" + str(round(n, 2))
-                            for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_max_prob_columns = ["image_index", "object_index", "pixels_flipped",
-                           "explaining"]
-    max_prob_percent = ["max_prob_" + str(round(n, 2))
-                        for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_reg_error_columns = ["image_index", "object_index", "pixels_flipped",
-                            "explaining"]
-    reg_error_percent = ["reg_error_" + str(round(n, 2))
-                         for n in np.linspace(0, 1, ap_curve_linspace)]
-    df_ap_curve_columns = df_ap_curve_columns + ap_50percent_columns
-    df_max_prob_columns = df_max_prob_columns + max_prob_percent
-    df_reg_error_columns = df_reg_error_columns + reg_error_percent
-    df_class_flip = pd.DataFrame(columns=df_class_flip_columns)
-    df_ap_curve = pd.DataFrame(columns=df_ap_curve_columns)
-    df_max_prob = pd.DataFrame(columns=df_max_prob_columns)
-    df_reg_error = pd.DataFrame(columns=df_reg_error_columns)
-
+    to_be_explained = get_images_to_explain(
+        explain_mode,  dataset_name, data_split, data_split_name,
+        raw_image_path, num_images, continuous_run, result_dir)
+    model = get_model(model_name)
+    custom_model = build_general_custom_model(
+        model, class_layer_name, reg_layer_name)
+    if model_name != 'FasterRCNN':
+        prior_boxes = model.prior_boxes
+    else:
+        prior_boxes = None
     for count, data in enumerate(to_be_explained):
-        raw_image = data["image"]
+        raw_image_path = data["image"]
         image_index = data["image_index"]
-        gt_boxes = data["boxes"]
-        loader = LoadImage()
-        raw_image = loader(raw_image)
-        raw_image = raw_image.astype('uint8')
-        image = deepcopy(raw_image)
-        model = get_model(model_name, image, image_size)
+        gt = data['boxes']
         LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
         LOGGER.info('Explaining image count: %s' % str(count + 1))
         LOGGER.info("Explanation input image ID: %s" % str(image_index))
-
         # forward pass - get model outputs for input image
         forward_pass_outs = inference_fn(
-            model, deepcopy(image), preprocessor_fn, postprocessor_fn,
+            model, raw_image_path, preprocessor_fn, postprocessor_fn,
             image_size, explain_top5_backgrounds)
         detection_image = forward_pass_outs[0]
         detections = forward_pass_outs[1]
         box_index = forward_pass_outs[2]
         LOGGER.info("Detections: %s" % detections)
-        if save_detections:
-            detections_result_dir = os.path.join(result_dir, 'detections')
-            if not os.path.exists(detections_result_dir):
-                os.makedirs(detections_result_dir)
-            write_image(os.path.join(
-                detections_result_dir, "paz_postprocess.jpg"), detection_image)
-
         if len(detections):
+            if plot_gt and dataset_name == 'VOC':
+                detection_image = plot_gt_on_detection(detection_image, gt)
+                LOGGER.info('No. of. detections: %s, No. of. GT labels: %s' %
+                            (len(detections), len(gt)))
             if visualize_object_index == 'all':
                 objects_to_analyze = list(range(1, len(detections) + 1))
             else:
                 objects_to_analyze = [int(visualize_object_index)]
-            all_dfs = explain_all_objects(
-                objects_to_analyze, deepcopy(raw_image), image_size, gt_boxes,
-                preprocessor_fn, postprocessor_fn, detections, detection_image,
+            explain_all_objects(
+                objects_to_analyze, raw_image_path, image_size,
+                preprocessor_fn, detections, detection_image,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
-                model_name, merge_method, image_index, save_explanations,
-                analyze_each_maps, ap_curve_linspace, df_class_flip,
-                df_ap_curve, df_max_prob, df_reg_error, merge_saliency_maps,
-                explain_top5_backgrounds)
-            df_class_flip, df_ap_curve, df_max_prob, df_reg_error = all_dfs
+                model_name, image_index, save_saliency_images,
+                save_explanation_images, custom_model, prior_boxes)
         else:
             LOGGER.info("No detections to analyze.")
-    excel_writer = pd.ExcelWriter(
-        os.path.join(result_dir, "report.xlsx"),
-        engine="xlsxwriter")
-    df_class_flip.to_excel(excel_writer, sheet_name="class_flip")
-    df_ap_curve.to_excel(excel_writer, sheet_name="ap_curve")
-    df_max_prob.to_excel(excel_writer, sheet_name="max_prob_curve")
-    df_reg_error.to_excel(excel_writer, sheet_name="reg_error_curve")
-    excel_writer.save()
+    end_time = time.time()
+    memory_profile_in_mb = process.memory_info().rss / 1024 ** 2
+    LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)
+    LOGGER.info('Time taken: %s' % (end_time - start_time))
     LOGGER.info('%%% INTERPRETATION DONE %%%')
