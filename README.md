@@ -6,7 +6,7 @@ As object detectors are prone to non-local effects and utilize context, providin
 
 A poster with preliminary results can be found [here](https://github.com/DeepanChakravarthiPadmanabhan/mtdocuments/blob/master/PadmanabhanDC_MTPoster.pdf).
 
-This is part of the thesis work supervised by [Dr. Matias Valdenegro-Toro](https://mvaldenegro.github.io/) and [Professor. Dr. Paul G Plöger](https://www.h-brs.de/en/inf/prof-dr-paul-g-ploeger).
+The toolkit is a part of the thesis work supervised by [Dr. Matias Valdenegro-Toro](https://mvaldenegro.github.io/) and [Professor. Dr. Paul G Plöger](https://www.h-brs.de/en/inf/prof-dr-paul-g-ploeger).
 The thesis proposal can be found [here](https://github.com/DeepanChakravarthiPadmanabhan/mtdocuments/blob/master/PadmanabhanDC-MTProposal/PadmanabhanDC-MTProposal.pdf).
 
 
