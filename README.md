@@ -45,7 +45,7 @@ dext_evaluator -c config/evaluator.gin -i GuidedBackpropagation -m SSD512
 2. SSD512
 3. FasterRCNN
 
-All above detectors are available with COCO weights. The weights are ported from [1], [2], [3]. 
+All above detectors are available with COCO weights. The weights are ported from [1], [2], and [3], respectively. 
 
 ## Interpretation methods available
 1. IntergratedGradients (IG)
