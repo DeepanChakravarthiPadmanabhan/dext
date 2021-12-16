@@ -45,6 +45,7 @@ LOGGER = logging.getLogger(__name__)
                                  'poor_localization']))
 @click.option("--use_own_class", default=False)
 @click.option("--saliency_threshold", default=None)
+@click.option("--grad_times_input", default=False)
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
                                  "DEBUG"]))
@@ -55,7 +56,7 @@ def explainer(config, model_name, explain_mode, dataset_name, data_split,
               visualize_object_index, visualize_box_offset, visualize_class,
               num_images, save_saliency_images, save_explanation_images,
               continuous_run, plot_gt, analyze_error_type, use_own_class,
-              saliency_threshold, log_level, log_dir):
+              saliency_threshold, grad_times_input, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -66,7 +67,7 @@ def explainer(config, model_name, explain_mode, dataset_name, data_split,
                    visualize_box_offset, visualize_class, num_images,
                    save_saliency_images, save_explanation_images,
                    continuous_run, plot_gt, analyze_error_type, use_own_class,
-                   saliency_threshold)
+                   saliency_threshold, grad_times_input)
 
 
 if __name__ == "__main__":

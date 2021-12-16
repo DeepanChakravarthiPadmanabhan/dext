@@ -117,7 +117,7 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
             plot_all(detection_image, raw_image_path, saliency_list,
                      saliency_stat_list, class_confidence, class_name,
                      explaining_info[1], explaining_info[3], to_explain,
-                     interpretation_method, model_name, "subplot",
+                     interpretation_method, model_name,
                      explanation_images_dir, image_index, object_arg)
         del saliency_list
         del saliency_stat_list

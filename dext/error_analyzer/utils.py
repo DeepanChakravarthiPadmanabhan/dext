@@ -1,7 +1,6 @@
 import logging
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 from dext.utils.class_names import get_classes, coco_to_voc
 from dext.model.utils import find_image_scale
@@ -15,6 +14,8 @@ from dext.model.faster_rcnn.faster_rcnn_preprocess import (
 from dext.utils.get_image import get_image
 from dext.utils.class_names import voc_to_coco
 from paz.backend.boxes import compute_iou
+from dext.postprocessing.saliency_visualization import (
+    visualize_saliency_grayscale)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -161,3 +162,16 @@ def get_interest_neuron(explaining, neuron, visualize_box_offset,
     else:
         box_arg_to_index = {'x_min': 0, 'y_min': 1, 'x_max': 2, 'y_max': 3}
         return box_arg_to_index[visualize_box_offset]
+
+
+def get_poor_localization(tp_list):
+    poor_localization_tp = [i for i in tp_list if i < 0.7]
+    return poor_localization_tp
+
+
+def get_grad_times_input(saliency, image):
+    saliency = cv2.resize(saliency[0], (image.shape[1], image.shape[0]))
+    saliency = np.multiply(image, saliency)
+    saliency = saliency[np.newaxis]
+    saliency = visualize_saliency_grayscale(saliency)
+    return saliency
