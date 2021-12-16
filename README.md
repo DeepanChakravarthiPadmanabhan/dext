@@ -1,6 +1,6 @@
 # DExT: Detector Explanation Toolkit
 
-The objective of the repository is to provide a toolkit to explain the detections of an object detector using the complete bounding box and class predictions.
+The objective of the toolkit is to explain the detections of an object detector using the complete bounding box and class predictions.
 
 As object detectors are prone to non-local effects and utilize context, providing the rationale behind each components of the detection, the complete detection, and all detections in an image is essential.
 
