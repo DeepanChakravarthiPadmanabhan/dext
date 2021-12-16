@@ -1,7 +1,6 @@
 import os
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import cv2
 
@@ -39,8 +38,12 @@ def get_positive_negative_saliency(saliency):
 
 def plot_detection_image(detection_image, ax=None):
     ax.imshow(detection_image)
-    ax.axis('on')
+    ax.axis('off')
     ax.set_title('Detections')
+    # To match the size of detection image and saliency image in the output
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
 
 
 def plot_saliency(saliency, ax, title='Saliency map', saliency_stat=[0, 1]):
@@ -95,44 +98,66 @@ def check_overlay_image_shape(image, saliency, model_name):
     return image
 
 
+def get_auto_plot_params(rows, columns, image):
+    aspect = image.shape[0] / float(image.shape[1])
+    n = rows  # number of rows
+    m = columns  # numberof columns
+    bottom = 0.1
+    left = 0.05
+    top = 1. - bottom
+    right = 1. - left
+    fisasp = (1 - bottom - (1 - top)) / float(1 - left - (1 - right))
+    # widthspace, relative to subplot size
+    wspace = 0.1  # set to zero for no spacing
+    hspace = wspace / float(aspect)
+    # fix the figure height
+    figheight = 3  # inch
+    figwidth = (m + (m - 1) * wspace) / float(
+        (n + (n - 1) * hspace) * aspect) * figheight * fisasp
+    return figwidth, figheight, top, bottom, left, right, wspace, hspace
+
+
 def plot_single_saliency(detection_image, image, saliency, confidence=0.5,
                          class_name="BG", explaining="Classification",
                          interpretation_method="Integrated Gradients",
                          model_name="EfficientDet", saliency_stat=None):
-    image = check_overlay_image_shape(image, saliency, model_name)
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    rows, columns = 1, 2
+    (figwidth, figheight, top, bottom,
+     left, right, wspace, hspace) = get_auto_plot_params(rows, columns, image)
+    fig, axes = plt.subplots(nrows=rows, ncols=columns,
+                             figsize=(figwidth+2, figheight+1))
+    plt.subplots_adjust(top=top, bottom=bottom, left=left, right=right-0.04,
+                        wspace=wspace, hspace=hspace)
     ax1, ax2 = axes
     plot_detection_image(detection_image, ax1)
+    saliency_shape = (image.shape[1], image.shape[0])
+    saliency = cv2.resize(saliency, saliency_shape)
     plot_saliency(saliency, ax2, saliency_stat=saliency_stat)
     ax2.imshow(image, alpha=0.4)
     text = '{:0.2f}, {}'.format(confidence, class_name)
     ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
     fig.suptitle('%s explanation using %s on %s' % (
         explaining, interpretation_method, model_name))
-    fig.subplots_adjust(left=0.125, right=0.9, bottom=0.11,
-                        top=0.88, wspace=0.2, hspace=0.2)
-    plot_and_save_saliency(image, saliency)
-    plot_and_save_detection(detection_image)
+    # plot_and_save_saliency(image, saliency)
+    # plot_and_save_detection(detection_image)
     return fig
 
 
 def plot_all(detection_image, image, saliency_list, saliency_stat_list,
              confidence, class_name, explaining_list, box_offset_list,
              to_explain, interpretation_method="Integrated Gradients",
-             model_name="EfficientDet", mode="subplot",
-             explanation_result_dir=None, image_index=None, object_arg=None):
+             model_name="EfficientDet", explanation_result_dir=None,
+             image_index=None, object_arg=None):
     image = get_image(image)
-    image = check_overlay_image_shape(image, saliency_list[0], model_name)
-    if mode == "subplot":
-        f = plot_all_subplot(detection_image, image, saliency_list,
-                             saliency_stat_list, confidence, class_name,
-                             explaining_list, box_offset_list, to_explain,
-                             interpretation_method, model_name)
-        f.savefig(os.path.join(
-            explanation_result_dir, 'explanation_' + str(image_index) + "_" +
-                                    "obj" + str(object_arg) + '.jpg'))
-        f.clear()
-        plt.close(f)
+    f = plot_all_subplot(detection_image, image, saliency_list,
+                         saliency_stat_list, confidence, class_name,
+                         explaining_list, box_offset_list, to_explain,
+                         interpretation_method, model_name)
+    f.savefig(os.path.join(
+        explanation_result_dir, 'explanation_' + str(image_index) + "_" +
+                                "obj" + str(object_arg) + '.jpg'))
+    f.clear()
+    plt.close(f)
 
 
 def get_plot_params(num_axes):
@@ -172,7 +197,10 @@ def plot_all_subplot(detection_image, image, saliency_list, saliency_stat_list,
     for obj, ax in enumerate(ax[1:num_axes]):
         saliency_title = get_saliency_title(
             explaining_list[obj], box_offset_list[obj], box_index_to_arg)
-        plot_saliency(saliency_list[obj], ax, saliency_title,
+        saliency = saliency_list[obj]
+        saliency_shape = (image.shape[1], image.shape[0])
+        saliency = cv2.resize(saliency, saliency_shape)
+        plot_saliency(saliency, ax, saliency_title,
                       saliency_stat_list[obj])
         ax.imshow(image, alpha=0.4)
         text = 'Object: {:0.2f}, {}'.format(confidence, class_name)
@@ -181,54 +209,7 @@ def plot_all_subplot(detection_image, image, saliency_list, saliency_stat_list,
         to_explain, interpretation_method, model_name))
     fig.tight_layout()
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.05,
-                        top=0.9, wspace=0.2, hspace=0.4)
-    return fig
-
-
-def plot_all_gridspec(detection_image, image, saliency_list,
-                      interpretation_method, confidence, class_name,
-                      explaining_list, box_offset_list, to_explain,
-                      model_name="EfficientDet"):
-    saliency1, saliency2, saliency3, saliency4 = saliency_list
-    fig = plt.figure(figsize=(8, 4))
-    gs0 = gridspec.GridSpec(1, 2)
-    gs0.update(left=0.05, right=0.95)
-    gs00 = gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[0])
-    ax1 = plt.Subplot(fig, gs00[:, :])
-    fig.add_subplot(ax1)
-    plot_detection_image(detection_image, ax1)
-
-    gs01 = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=gs0[1],
-                                            hspace=0.2, wspace=0.2)
-    ax2 = plt.Subplot(fig, gs01[0, 0])
-    fig.add_subplot(ax2)
-    plot_saliency(saliency1, ax2)
-    ax2.imshow(image, alpha=0.4)
-    text = '{:0.2f}, {}'.format(confidence[0], class_name[0])
-    ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
-
-    ax3 = plt.Subplot(fig, gs01[0, 1])
-    fig.add_subplot(ax3)
-    plot_saliency(saliency2, ax3)
-    ax3.imshow(image, alpha=0.4)
-    text = '{:0.2f}, {}'.format(confidence[1], class_name[1])
-    ax3.text(0.5, -0.1, text, size=12, ha="center", transform=ax3.transAxes)
-
-    ax4 = plt.Subplot(fig, gs01[1, 0])
-    fig.add_subplot(ax4)
-    plot_saliency(saliency3, ax4)
-    ax4.imshow(image, alpha=0.4)
-    text = '{:0.2f}, {}'.format(confidence[2], class_name[2])
-    ax4.text(0.5, -0.1, text, size=12, ha="center", transform=ax4.transAxes)
-
-    ax5 = plt.Subplot(fig, gs01[1, 1])
-    fig.add_subplot(ax5)
-    plot_saliency(saliency4, ax5)
-    ax5.imshow(image, alpha=0.4)
-    text = '{:0.2f}, {}'.format(confidence[3], class_name[3])
-    ax5.text(0.5, -0.1, text, size=12, ha="center", transform=ax5.transAxes)
-    fig.suptitle('%s explanation using %s on %s' % (
-        to_explain, interpretation_method, model_name))
+                        top=0.9, wspace=0.3, hspace=0.3)
     return fig
 
 
