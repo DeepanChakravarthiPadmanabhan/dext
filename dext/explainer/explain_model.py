@@ -12,7 +12,7 @@ from dext.factory.preprocess_factory import PreprocessorFactory
 from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.interpretation_method_factory import ExplainerFactory
 from dext.factory.inference_factory import InferenceFactory
-from dext.postprocessing.saliency_visualization import plot_all
+from dext.postprocessing.saliency_visualization import plot_all_matplotlib
 from dext.postprocessing.detection_visualization import plot_gt_on_detection
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
@@ -114,11 +114,12 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
         if save_explanation_images:
             explanation_images_dir = os.path.join(
                 result_dir, 'explanation_images')
-            plot_all(detection_image, raw_image_path, saliency_list,
-                     saliency_stat_list, class_confidence, class_name,
-                     explaining_info[1], explaining_info[3], to_explain,
-                     interpretation_method, model_name,
-                     explanation_images_dir, image_index, object_arg)
+            plot_all_matplotlib(
+                detections, raw_image_path, explaining_info[0][0],
+                saliency_list, saliency_stat_list, class_confidence,
+                class_name, explaining_info[1], explaining_info[3],
+                to_explain, interpretation_method, model_name,
+                explanation_images_dir, image_index, object_arg)
         del saliency_list
         del saliency_stat_list
         gc.collect()

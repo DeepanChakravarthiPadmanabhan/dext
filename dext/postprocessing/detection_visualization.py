@@ -1,7 +1,6 @@
 import cv2
 import colorsys
 import random
-import matplotlib.pyplot as plt
 
 from paz.abstract import Box2D
 from dext.utils.class_names import get_classes
@@ -134,15 +133,15 @@ def to_image_coordinates(boxes, image):
 
 def plot_gt_on_detection(image, gt, dataset_name='VOC', model_name='SSD512'):
     boxes_in_img_coordinate = to_image_coordinates(gt, image)
-    class_name = get_classes(dataset_name, model_name)
+    class_names_list = get_classes(dataset_name, model_name)
     boxes = []
     class_names = []
     colors = []
     for i in boxes_in_img_coordinate:
         coordinates = i[:4]
-        class_names.append(class_name[int(i[-1])])
+        class_names.append(class_names_list[int(i[-1])])
         colors.append([0, 0, 0])
-        boxes.append(Box2D(coordinates, '1', class_name[int(i[-1])]))
+        boxes.append(Box2D(coordinates, '1', class_names_list[int(i[-1])]))
     image = draw_bounding_boxes(image, boxes, class_names=class_names,
                                 with_score=False, colors=colors,
                                 with_text=True)

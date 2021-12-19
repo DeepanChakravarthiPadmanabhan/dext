@@ -1,13 +1,17 @@
 import os
 import numpy as np
+import cv2
+import random
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
-import cv2
+import matplotlib.colors as pltc
+from matplotlib.patches import Rectangle
 
 from paz.backend.image import resize_image
 from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.explainer.utils import get_box_index_to_arg
 from dext.utils.get_image import get_image
+from dext.utils.class_names import get_classes
 
 
 def visualize_saliency_grayscale(image_3d, percentile=99):
@@ -120,7 +124,8 @@ def get_auto_plot_params(rows, columns, image):
 def plot_single_saliency(detection_image, image, saliency, confidence=0.5,
                          class_name="BG", explaining="Classification",
                          interpretation_method="Integrated Gradients",
-                         model_name="EfficientDet", saliency_stat=None):
+                         model_name="EfficientDet", saliency_stat=None,
+                         box_offset=None, detections=None, object_index=None):
     rows, columns = 1, 2
     (figwidth, figheight, top, bottom,
      left, right, wspace, hspace) = get_auto_plot_params(rows, columns, image)
@@ -132,10 +137,12 @@ def plot_single_saliency(detection_image, image, saliency, confidence=0.5,
     plot_detection_image(detection_image, ax1)
     saliency_shape = (image.shape[1], image.shape[0])
     saliency = cv2.resize(saliency, saliency_shape)
-    plot_saliency(saliency, ax2, saliency_stat=saliency_stat)
+    saliency_title = get_saliency_title(explaining, box_offset)
+    plot_saliency(saliency, ax2, saliency_title, saliency_stat)
     ax2.imshow(image, alpha=0.4)
     text = '{:0.2f}, {}'.format(confidence, class_name)
     ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
+
     fig.suptitle('%s explanation using %s on %s' % (
         explaining, interpretation_method, model_name))
     # plot_and_save_saliency(image, saliency)
@@ -175,10 +182,14 @@ def get_plot_params(num_axes):
     return rows, cols, fig_width, fig_height
 
 
-def get_saliency_title(explaining, box_offset, box_index_to_arg):
-    if explaining == 'Boxoffset':
+def get_saliency_title(explaining, box_offset, box_index_to_arg=None):
+    if explaining == 'Boxoffset' and box_index_to_arg:
         box_name = box_index_to_arg[box_offset]
         saliency_title = explaining + ', ' + box_name
+    elif explaining == 'Classification':
+        saliency_title = explaining
+    elif explaining == 'Boxoffset' and not box_index_to_arg:
+        saliency_title = explaining + ', ' + box_offset
     else:
         saliency_title = explaining
     return saliency_title
@@ -247,3 +258,170 @@ def plot_saliency_image_overlay(image, saliency, ax):
                         pad=0.04)
     cbar.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     cbar.set_ticklabels([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+
+
+def get_matplotlib_colors(num_colors):
+    color = [k for k, v in pltc.cnames.items()]
+    random.seed(8)
+    random.shuffle(color)
+    random.shuffle(color)
+    random.shuffle(color)
+    jump_col = np.floor(len(color) / num_colors)
+    final_colors = [i for n, i in enumerate(color) if (n % jump_col == 0)]
+    return final_colors
+
+
+def plot_bbox_matplotlib(box, color, ax):
+    x_min, y_min, x_max, y_max = box
+    rect = Rectangle((x_min, y_min), (x_max - x_min), (y_max - y_min),
+                     linewidth=2, edgecolor=color,
+                     facecolor='none', alpha=0.7)
+    ax.add_patch(rect)
+
+
+def plot_text_matplotlib(box, color, ax, text):
+    props = dict(edgecolor='none', facecolor='none', boxstyle='square')
+    xmin, ymin, xmax, ymax = box
+    if xmin <= 0:
+        text_x = 1
+    else:
+        text_x = xmin
+    if ymin <= 0:
+        text_y = ymax
+    else:
+        text_y = ymin - 12
+    ax.text(text_x, text_y, text, color=color, bbox=props, fontsize=8,
+            clip_on=True, wrap=True, weight='bold')
+
+
+def plot_detections_matplotlib(detections, image, ax, det_id, colors):
+    for i in range(len(detections)):
+        if i == det_id:
+            color = 'black'
+            text = detections[i].class_name.upper()
+        else:
+            color = colors[i]
+            text = detections[i].class_name
+        plot_bbox_matplotlib(detections[i].coordinates, color, ax)
+        plot_text_matplotlib(detections[i].coordinates, color, ax, text)
+    ax.imshow(image)
+    ax.axis('off')
+    ax.set_title('Detections')
+    # To match the size of detection image and saliency image in the output
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
+
+
+def plot_detection_saliency(detections, raw_image_path, object_index,
+                            saliency_list, saliency_stat_list, confidence,
+                            class_name, explaining_list, box_offset_list,
+                            to_explain,
+                            interpretation_method="Integrated Gradients",
+                            model_name="EFFICIENTDETD0"):
+    num_detections = len(detections)
+    colors = get_matplotlib_colors(num_detections)
+    image = get_image(raw_image_path)
+    box_index_to_arg = get_box_index_to_arg(model_name)
+    num_axes = len(saliency_list) + 1
+    rows, cols, fig_width, fig_height = get_plot_params(num_axes)
+    fig, ax = plt.subplots(rows, cols, figsize=(fig_width, fig_height))
+    ax = ax.flat
+    plot_detections_matplotlib(detections, image, ax[0], object_index, colors)
+    for obj, ax in enumerate(ax[1:num_axes]):
+        saliency_title = get_saliency_title(
+            explaining_list[obj], box_offset_list[obj], box_index_to_arg)
+        saliency = saliency_list[obj]
+        saliency_shape = (image.shape[1], image.shape[0])
+        saliency = cv2.resize(saliency, saliency_shape)
+        plot_saliency(saliency, ax, saliency_title,
+                      saliency_stat_list[obj])
+        ax.imshow(image, alpha=0.4)
+        text = 'Object: {:0.2f}, {}'.format(confidence, class_name)
+        ax.text(0.5, -0.1, text, size=12, ha="center", transform=ax.transAxes)
+    fig.suptitle('%s explanation using %s on %s' % (
+        to_explain, interpretation_method, model_name))
+    fig.tight_layout()
+    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.05,
+                        top=0.9, wspace=0.3, hspace=0.3)
+    return fig
+
+
+def plot_all_matplotlib(
+        detections, raw_image_path, object_index, saliency_list,
+        saliency_stat_list, confidence, class_name, explaining_list,
+        box_offset_list, to_explain, interpretation_method='IG',
+        model_name="EFFICIENTDETD0", explanation_result_dir=None,
+        image_index=None, object_arg=None):
+    f = plot_detection_saliency(
+        detections, raw_image_path, object_index, saliency_list,
+        saliency_stat_list, confidence, class_name, explaining_list,
+        box_offset_list, to_explain, interpretation_method, model_name)
+    f.savefig(os.path.join(
+        explanation_result_dir, 'explanation_' + str(image_index) + "_" +
+                                "obj" + str(object_arg) + '.jpg'))
+    f.clear()
+    plt.close(f)
+
+
+def plot_gts_matplotlib(gts, image, ax, gt_id, colors, dataset_name='VOC',
+                        model_name='SSD512'):
+    class_names_list = get_classes(dataset_name, model_name)
+    for i in range(len(gts)):
+        if i == gt_id:
+            color = 'black'
+            text = class_names_list[int(gts[i][-1])].upper()
+        else:
+            color = colors[i]
+            text = class_names_list[int(gts[i][-1])]
+        plot_bbox_matplotlib(gts[i][:4], color, ax)
+        plot_text_matplotlib(gts[i][:4], color, ax, text)
+    ax.imshow(image)
+    ax.axis('off')
+    ax.set_title('Detections')
+    # To match the size of detection image and saliency image in the output
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
+
+
+def plot_error_analyzer(
+        raw_image_path, saliency, confidence=0.5, class_name="BG",
+        explaining="Classification", interpretation_method="IG",
+        model_name="EfficientDet", saliency_stat=None, box_offset=None,
+        detections=None, object_index=None, gts=None, error_type='missed',
+        dataset_name='VOC'):
+    num_detections = max(len(detections), len(gts))
+    colors = get_matplotlib_colors(num_detections)
+    image = get_image(raw_image_path)
+
+    rows, columns = 1, 2
+    (figwidth, figheight, top, bottom,
+     left, right, wspace, hspace) = get_auto_plot_params(rows, columns, image)
+    fig, axes = plt.subplots(nrows=rows, ncols=columns,
+                             figsize=(figwidth + 2, figheight + 1))
+    plt.subplots_adjust(top=top, bottom=bottom, left=left, right=right - 0.04,
+                        wspace=wspace, hspace=hspace)
+    ax1, ax2 = axes
+
+    if error_type == 'missed':
+        gt_id = object_index
+        plot_gts_matplotlib(gts, image, ax1, gt_id, colors, dataset_name,
+                            model_name)
+    else:
+        det_id = object_index
+        plot_detections_matplotlib(detections, image, ax1, det_id, colors)
+
+    saliency_shape = (image.shape[1], image.shape[0])
+    saliency = cv2.resize(saliency, saliency_shape)
+    saliency_title = get_saliency_title(explaining, box_offset)
+    plot_saliency(saliency, ax2, saliency_title, saliency_stat)
+    ax2.imshow(image, alpha=0.4)
+    text = '{:0.2f}, {}'.format(confidence, class_name)
+    ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
+
+    fig.suptitle('%s explanation using %s on %s' % (
+        explaining, interpretation_method, model_name))
+    # plot_and_save_saliency(image, saliency)
+    # plot_and_save_detection(detection_image)
+    return fig

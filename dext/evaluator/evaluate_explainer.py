@@ -1,7 +1,9 @@
 import os
+import time
 import logging
 import numpy as np
 import json
+import psutil
 
 from paz.abstract.messages import Box2D
 from dext.evaluator.explainer_metrics import get_metrics
@@ -109,6 +111,8 @@ def evaluate_explainer(model_name, interpretation_method, image_size,
                        merge_method, save_modified_images, coco_result_file,
                        image_adulteration_method, explain_top5_backgrounds,
                        continuous_run, save_all_map_metrics):
+    start_time = time.time()
+    process = psutil.Process(os.getpid())
     results_dir = os.path.join(results_dir,
                                model_name + '_' + interpretation_method)
     data = load_data(results_dir, num_images, continuous_run)
@@ -122,3 +126,8 @@ def evaluate_explainer(model_name, interpretation_method, image_size,
                              eval_ap_explain, merge_saliency_maps,
                              merge_method, save_all_map_metrics,
                              coco_result_file, model)
+    end_time = time.time()
+    memory_profile_in_mb = process.memory_info().rss / 1024 ** 2
+    LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)
+    LOGGER.info('Time taken: %s' % (end_time - start_time))
+    LOGGER.info('%%% ANALYSIS DONE %%%')

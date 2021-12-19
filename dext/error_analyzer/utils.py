@@ -35,9 +35,14 @@ def get_detection_list(detections, model_name):
     det_list = []
     for det in detections:
         coordinates = list(det.coordinates)
-        class_id = [class_names.index(coco_to_voc[det.class_name])
-                    if det.class_name in coco_to_voc else
-                    class_names.index(det.class_name), ]
+        if det.class_name in coco_to_voc:
+            class_id = [class_names.index(coco_to_voc[det.class_name])]
+        else:
+            if det.class_name in class_names:
+                class_id = [class_names.index(det.class_name)]
+            else:
+                raise ValueError('Cannot perform analysis as detection '
+                                 'has classes not in VOC.')
         det_list.append(coordinates + class_id)
     return det_list
 
@@ -165,7 +170,7 @@ def get_interest_neuron(explaining, neuron, visualize_box_offset,
 
 
 def get_poor_localization(tp_list):
-    poor_localization_tp = [i for i in tp_list if i < 0.7]
+    poor_localization_tp = [n for n, i in enumerate(tp_list) if i < 0.8]
     return poor_localization_tp
 
 

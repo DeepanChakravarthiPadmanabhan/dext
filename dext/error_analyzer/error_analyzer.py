@@ -24,8 +24,8 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Classification",
-              type=click.Choice(["Classification", "Box offset"]))
+@click.option("--to_explain", default="Boxoffset",
+              type=click.Choice(["Classification", "Boxoffset"]))
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "LRP", "GradCAM",
                                  "GuidedBackpropagation",
