@@ -262,9 +262,7 @@ def plot_saliency_image_overlay(image, saliency, ax):
 
 def get_matplotlib_colors(num_colors):
     color = [k for k, v in pltc.cnames.items()]
-    random.seed(8)
-    random.shuffle(color)
-    random.shuffle(color)
+    random.seed(45)
     random.shuffle(color)
     jump_col = np.floor(len(color) / num_colors)
     final_colors = [i for n, i in enumerate(color) if (n % jump_col == 0)]
@@ -279,22 +277,23 @@ def plot_bbox_matplotlib(box, color, ax):
     ax.add_patch(rect)
 
 
-def plot_text_matplotlib(box, color, ax, text):
+def plot_text_matplotlib(box, color, ax, text, fontsize=8):
     props = dict(edgecolor='none', facecolor='none', boxstyle='square')
     xmin, ymin, xmax, ymax = box
     if xmin <= 0:
         text_x = 1
     else:
         text_x = xmin
-    if ymin <= 0:
-        text_y = ymax
+    if ymin <= 15:
+        text_y = ymax + 19
     else:
-        text_y = ymin - 12
-    ax.text(text_x, text_y, text, color=color, bbox=props, fontsize=8,
+        text_y = ymin - 8
+    ax.text(text_x, text_y, text, color=color, bbox=props, fontsize=fontsize,
             clip_on=True, wrap=True, weight='bold')
 
 
-def plot_detections_matplotlib(detections, image, ax, det_id, colors):
+def plot_detections_matplotlib(detections, image, ax, det_id, colors,
+                               fontsize=8):
     for i in range(len(detections)):
         if i == det_id:
             color = 'black'
@@ -303,7 +302,8 @@ def plot_detections_matplotlib(detections, image, ax, det_id, colors):
             color = colors[i]
             text = detections[i].class_name
         plot_bbox_matplotlib(detections[i].coordinates, color, ax)
-        plot_text_matplotlib(detections[i].coordinates, color, ax, text)
+        plot_text_matplotlib(detections[i].coordinates, color, ax, text,
+                             fontsize)
     ax.imshow(image)
     ax.axis('off')
     ax.set_title('Detections')
@@ -327,7 +327,8 @@ def plot_detection_saliency(detections, raw_image_path, object_index,
     rows, cols, fig_width, fig_height = get_plot_params(num_axes)
     fig, ax = plt.subplots(rows, cols, figsize=(fig_width, fig_height))
     ax = ax.flat
-    plot_detections_matplotlib(detections, image, ax[0], object_index, colors)
+    plot_detections_matplotlib(detections, image, ax[0], object_index, colors,
+                               fontsize=8)
     for obj, ax in enumerate(ax[1:num_axes]):
         saliency_title = get_saliency_title(
             explaining_list[obj], box_offset_list[obj], box_index_to_arg)
@@ -365,7 +366,7 @@ def plot_all_matplotlib(
 
 
 def plot_gts_matplotlib(gts, image, ax, gt_id, colors, dataset_name='VOC',
-                        model_name='SSD512'):
+                        model_name='SSD512', fontsize=8):
     class_names_list = get_classes(dataset_name, model_name)
     for i in range(len(gts)):
         if i == gt_id:
@@ -375,7 +376,7 @@ def plot_gts_matplotlib(gts, image, ax, gt_id, colors, dataset_name='VOC',
             color = colors[i]
             text = class_names_list[int(gts[i][-1])]
         plot_bbox_matplotlib(gts[i][:4], color, ax)
-        plot_text_matplotlib(gts[i][:4], color, ax, text)
+        plot_text_matplotlib(gts[i][:4], color, ax, text, fontsize)
     ax.imshow(image)
     ax.axis('off')
     ax.set_title('Detections')
@@ -407,10 +408,11 @@ def plot_error_analyzer(
     if error_type == 'missed':
         gt_id = object_index
         plot_gts_matplotlib(gts, image, ax1, gt_id, colors, dataset_name,
-                            model_name)
+                            model_name, fontsize=12)
     else:
         det_id = object_index
-        plot_detections_matplotlib(detections, image, ax1, det_id, colors)
+        plot_detections_matplotlib(detections, image, ax1, det_id, colors,
+                                   fontsize=12)
 
     saliency_shape = (image.shape[1], image.shape[0])
     saliency = cv2.resize(saliency, saliency_shape)

@@ -39,7 +39,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--save_saliency_images", default=True)
 @click.option("--save_explanation_images", default=True)
 @click.option("--continuous_run", default=False)
-@click.option("--plot_gt", default=True)
+@click.option("--plot_gt", default=False)
 @click.option("--analyze_error_type", default='missed',
               type=click.Choice(['missed', 'wrong_class',
                                  'poor_localization']))

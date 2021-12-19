@@ -60,12 +60,12 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                    to_explain="Classification",
                    interpretation_method="IntegratedGradients",
                    visualize_object_index=None, visualize_box_offset=None,
-                   visualize_class='dog', num_images=1, save_saliency_images=True,
-                   save_explanation_images=True, continuous_run=False,
-                   plot_gt=False, analyze_error_type='missed',
-                   use_own_class=False, saliency_threshold=None,
-                   grad_times_input=False, missed_with_gt=False,
-                   result_dir='images/error_analysis/',
+                   visualize_class='dog', num_images=1,
+                   save_saliency_images=True, save_explanation_images=True,
+                   continuous_run=False, plot_gt=False,
+                   analyze_error_type='missed', use_own_class=False,
+                   saliency_threshold=None, grad_times_input=False,
+                   missed_with_gt=False, result_dir='images/error_analysis/',
                    save_modified_images=False):
     start_time = time.time()
     process = psutil.Process(os.getpid())
