@@ -14,8 +14,10 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--model_name", "-m", help="Model name to explain.",
               default="EFFICIENTDETD0")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
-              type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
-                                 "GuidedBackpropagation", "GradCAM"]))
+              type=click.Choice(["IntegratedGradients", "GradCAM", "LRP",
+                                 "GuidedBackpropagation",
+                                 "SmoothGrad_IntegratedGradients",
+                                 "SmoothGrad_GuidedBackpropagation", ]))
 @click.option("--image_size", default=512)
 @click.option("--results_dir", default="images/results/")
 @click.option("--num_images", default=100)  # 1 <

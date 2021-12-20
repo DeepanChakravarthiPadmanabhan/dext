@@ -26,12 +26,12 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--reg_layer_name", default='boxes')
 @click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
-                                 "Classification", "Box offset"]))
+                                 "Classification", "Boxoffset"]))
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
               type=click.Choice(["IntegratedGradients", "LRP", "GradCAM",
                                  "GuidedBackpropagation",
-                                 "SmoothGrad_GuidedBackpropagation",
-                                 "SmoothGrad_IntegratedGradients", ]))
+                                 "SmoothGrad_IntegratedGradients",
+                                 "SmoothGrad_GuidedBackpropagation", ]))
 @click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))

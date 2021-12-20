@@ -12,6 +12,7 @@ from dext.model.faster_rcnn.faster_rcnn_preprocess import ResizeImages
 from dext.explainer.utils import get_box_index_to_arg
 from dext.utils.get_image import get_image
 from dext.utils.class_names import get_classes
+from dext.model.faster_rcnn.faster_rcnn_preprocess import resize_image
 
 
 def visualize_saliency_grayscale(image_3d, percentile=99):
@@ -334,6 +335,10 @@ def plot_detection_saliency(detections, raw_image_path, object_index,
             explaining_list[obj], box_offset_list[obj], box_index_to_arg)
         saliency = saliency_list[obj]
         saliency_shape = (image.shape[1], image.shape[0])
+        if model_name == 'FasterRCNN':
+            temp_image, window, scale, pad, crop = resize_image(
+                image, saliency.shape[1], saliency.shape[0])
+            saliency = saliency[window[0]:window[2], window[1]:window[3]]
         saliency = cv2.resize(saliency, saliency_shape)
         plot_saliency(saliency, ax, saliency_title,
                       saliency_stat_list[obj])
@@ -415,6 +420,10 @@ def plot_error_analyzer(
                                    fontsize=12)
 
     saliency_shape = (image.shape[1], image.shape[0])
+    if model_name == 'FasterRCNN':
+        temp_image, window, scale, pad, crop = resize_image(
+            image, saliency.shape[1], saliency.shape[0])
+        saliency = saliency[window[0]:window[2], window[1]:window[3]]
     saliency = cv2.resize(saliency, saliency_shape)
     saliency_title = get_saliency_title(explaining, box_offset)
     plot_saliency(saliency, ax2, saliency_title, saliency_stat)
