@@ -135,7 +135,7 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
                   visualize_object_index=None, visualize_box_offset=None,
                   num_images=2, save_saliency_images=False,
                   save_explanation_images=False, continuous_run=False,
-                  explain_top5_backgrounds=True, plot_gt=False,
+                  explain_top5_backgrounds=False, plot_gt=False,
                   result_dir='images/results/', save_modified_images=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())

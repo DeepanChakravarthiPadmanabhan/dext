@@ -40,6 +40,9 @@ setup(
         console_scripts=[
             "dext_explainer=dext.explainer.explainer:explainer",
             "dext_evaluator=dext.evaluator.evaluator:evaluator",
+            "dext_error_analyzer="
+            "dext.error_analyzer.error_analyzer:error_analyzer",
+            "dext_visualizer=dext.visualizer.visualizer:visualizer",
         ]
     ),
     data_files=[
@@ -48,6 +51,7 @@ setup(
             [
                 "config/explainer.gin",
                 "config/evaluator.gin",
+                "config/error_analyzer.gin",
             ],
         )
     ],
