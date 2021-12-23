@@ -55,11 +55,11 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
 
         gray = np.uint8(saliency_list[0] * 255)
         # 204 because taking 0.8 <
-        (thresh, blackAndWhiteImage) = cv2.threshold(gray, 204, 255,
-                                                     cv2.THRESH_BINARY)
-        blackAndWhiteImage = cv2.bitwise_not(blackAndWhiteImage)
+        (thresh, black_and_white_image) = cv2.threshold(
+            gray, 204, 255, cv2.THRESH_BINARY)
+        black_and_white_image = cv2.bitwise_not(black_and_white_image)
         # convert black pixels to coordinates
-        X = np.column_stack(np.where(blackAndWhiteImage == 0))
+        X = np.column_stack(np.where(black_and_white_image == 0))
         eps = []
         min_points = []
         # save parameters of k knee
@@ -74,8 +74,8 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
                                   S=1.0,  # parameter suggested from paper
                                   curve="convex",  # parameter from figure
                                   direction="decreasing")
-            eps.append(str(kneedle.elbow))
-            min_points.append(str(kneedle.knee_y))
+            eps.append(str(kneedle.knee_y))
+            min_points.append(str(kneedle.elbow))
         # write to a separate text file
         object_index = explaining_info[0][0]
         result_list = [str(image_index), str(object_index), class_name,
@@ -113,7 +113,6 @@ def multi_detection_visualizer(
         prior_boxes = model.prior_boxes
     else:
         prior_boxes = None
-    print(to_be_explained)
     for count, data in enumerate(to_be_explained):
         raw_image_path = data["image"]
         image_index = data["image_index"]

@@ -68,9 +68,9 @@ def load_data(results_dir, num_images, continuous_run=True):
 def evaluate_image_index(sequence, model_name, image_size, ap_curve_linspace,
                          result_dir, explain_top5_backgrounds,
                          save_modified_images, image_adulteration_method,
-                         eval_flip, eval_ap_explain, merge_saliency_maps,
-                         merge_method, save_all_map_metrics, coco_result_file,
-                         model):
+                         eval_deletion, eval_insertion,  eval_ap_explain,
+                         merge_saliency_maps, merge_method,
+                         save_all_map_metrics, coco_result_file, model):
     column_names = ['image_index', 'object_index', 'box', 'confidence',
                     'class', 'explaining', 'boxoffset', 'saliency_path',
                     'image_path']
@@ -93,24 +93,50 @@ def evaluate_image_index(sequence, model_name, image_size, ap_curve_linspace,
                         object_index, boxoffset, model_name, image_size,
                         explaining, ap_curve_linspace, result_dir,
                         explain_top5_backgrounds, save_modified_images,
-                        image_adulteration_method, eval_flip, eval_ap_explain,
-                        coco_result_file, model)
+                        image_adulteration_method, eval_deletion,
+                        eval_insertion, eval_ap_explain, coco_result_file,
+                        model)
     if merge_saliency_maps and save_all_map_metrics:
-        merge_all_maps(detection, image_path, saliency_list, image_index,
-                       object_index, 'combined', model_name, image_size,
-                       'combined', ap_curve_linspace, result_dir,
-                       explain_top5_backgrounds, save_modified_images,
-                       image_adulteration_method, eval_flip, eval_ap_explain,
-                       merge_method, coco_result_file, model)
+        if merge_method == 'all':
+            merge_all_maps(
+                detection, image_path, saliency_list, image_index,
+                object_index, 'combined_pca', model_name, image_size,
+                'combined_pca', ap_curve_linspace, result_dir,
+                explain_top5_backgrounds, save_modified_images,
+                image_adulteration_method, eval_deletion, eval_insertion,
+                eval_ap_explain, 'pca', coco_result_file, model)
+            merge_all_maps(
+                detection, image_path, saliency_list, image_index,
+                object_index, 'combined_andavg', model_name, image_size,
+                'combined_andavg', ap_curve_linspace, result_dir,
+                explain_top5_backgrounds, save_modified_images,
+                image_adulteration_method, eval_deletion, eval_insertion,
+                eval_ap_explain, 'and_average', coco_result_file, model)
+            merge_all_maps(
+                detection, image_path, saliency_list, image_index,
+                object_index, 'combined_oravg', model_name, image_size,
+                'combined_oravg', ap_curve_linspace, result_dir,
+                explain_top5_backgrounds, save_modified_images,
+                image_adulteration_method, eval_deletion, eval_insertion,
+                eval_ap_explain, 'or_average', coco_result_file, model)
+        else:
+            merge_all_maps(
+                detection, image_path, saliency_list, image_index,
+                object_index, 'combined', model_name, image_size,
+                'combined', ap_curve_linspace, result_dir,
+                explain_top5_backgrounds, save_modified_images,
+                image_adulteration_method, eval_deletion, eval_insertion,
+                eval_ap_explain, merge_method, coco_result_file, model)
 
 
 @profile
 def evaluate_explainer(model_name, interpretation_method, image_size,
                        results_dir, num_images, ap_curve_linspace,
-                       eval_flip, eval_ap_explain, merge_saliency_maps,
-                       merge_method, save_modified_images, coco_result_file,
-                       image_adulteration_method, explain_top5_backgrounds,
-                       continuous_run, save_all_map_metrics):
+                       eval_deletion, eval_insertion, eval_ap_explain,
+                       merge_saliency_maps, merge_method, save_modified_images,
+                       coco_result_file, image_adulteration_method,
+                       explain_top5_backgrounds, continuous_run,
+                       save_all_map_metrics):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     results_dir = os.path.join(results_dir,
@@ -122,10 +148,10 @@ def evaluate_explainer(model_name, interpretation_method, image_size,
         evaluate_image_index(sequence[0], model_name, image_size,
                              ap_curve_linspace, results_dir,
                              explain_top5_backgrounds, save_modified_images,
-                             image_adulteration_method, eval_flip,
-                             eval_ap_explain, merge_saliency_maps,
-                             merge_method, save_all_map_metrics,
-                             coco_result_file, model)
+                             image_adulteration_method, eval_deletion,
+                             eval_insertion, eval_ap_explain,
+                             merge_saliency_maps, merge_method,
+                             save_all_map_metrics, coco_result_file, model)
     end_time = time.time()
     memory_profile_in_mb = process.memory_info().rss / 1024 ** 2
     LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)

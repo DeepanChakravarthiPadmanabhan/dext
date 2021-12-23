@@ -157,12 +157,12 @@ def get_interest_det(detection):
     return det_interest
 
 
-def eval_bounded_errors(saliency, raw_image_path, detection, image_size=512,
-                        model_name='EFFICIENTDETD0', ap_curve_linspace=10,
-                        explain_top5_backgrounds=False,
-                        save_modified_images=True,
-                        image_adulteration_method='subzero', result_dir=None,
-                        model=None, object_index=None):
+def deletion_bounded_errors(
+        saliency, raw_image_path, detection, image_size=512,
+        model_name='EFFICIENTDETD0', ap_curve_linspace=10,
+        explain_top5_backgrounds=False, save_modified_images=True,
+        image_adulteration_method='subzero', result_dir=None, model=None,
+        object_index=None):
     if model_name != 'FasterRCNN':
         prior_boxes = model.prior_boxes
     else:
@@ -191,7 +191,7 @@ def eval_bounded_errors(saliency, raw_image_path, detection, image_size=512,
 
     raw_image_modifier = get_image(raw_image_path)
     original_shape = raw_image_modifier.shape
-    for n, percent in enumerate(percentage_space[:-1]):
+    for n, percent in enumerate(percentage_space):
         resized_image, image_scales = preprocessor_fn(
             raw_image_modifier, image_size, True)
         num_pixels_selected = int(num_pixels * percent)
@@ -203,10 +203,14 @@ def eval_bounded_errors(saliency, raw_image_path, detection, image_size=512,
             mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
             modified_image = cv2.inpaint(resized_image, mask, 3,
                                          cv2.INPAINT_TELEA)
-        else:
+        elif image_adulteration_method == 'zeroing':
             resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
             modified_image = resized_image
-
+        elif image_adulteration_method == 'constant_graying':
+            resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 128
+            modified_image = resized_image
+        else:
+            modified_image = resized_image
         input_image, _ = preprocessor_fn(modified_image, image_size)
         outputs = model(input_image)
         detection_image, detections, box_index = postprocessor_fn(
@@ -241,12 +245,11 @@ def eval_bounded_errors(saliency, raw_image_path, detection, image_size=512,
     return all_errors
 
 
-def eval_realistic_errors(saliency, raw_image_path, detection, image_size=512,
-                          model_name='EFFICIENTDETD0', ap_curve_linspace=10,
-                          explain_top5_backgrounds=False,
-                          save_modified_images=True,
-                          image_adulteration_method='subzero', result_dir=None,
-                          model=None):
+def deletion_realistic_errors(
+        saliency, raw_image_path, detection, image_size=512,
+        model_name='EFFICIENTDETD0', ap_curve_linspace=10,
+        explain_top5_backgrounds=False, save_modified_images=True,
+        image_adulteration_method='subzero', result_dir=None, model=None):
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     det_matching_interest_det = get_interest_det(detection)
@@ -268,7 +271,7 @@ def eval_realistic_errors(saliency, raw_image_path, detection, image_size=512,
     h_error_pixels_list = [np.inf, ] * len(percentage_space)
 
     raw_image_modifier = get_image(raw_image_path)
-    for n, percent in enumerate(percentage_space[:-1]):
+    for n, percent in enumerate(percentage_space):
         resized_image, image_scales = preprocessor_fn(
             raw_image_modifier, image_size, True)
         num_pixels_selected = int(num_pixels * percent)
@@ -280,9 +283,198 @@ def eval_realistic_errors(saliency, raw_image_path, detection, image_size=512,
             mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
             modified_image = cv2.inpaint(resized_image, mask, 3,
                                          cv2.INPAINT_TELEA)
-        else:
+        elif image_adulteration_method == 'zeroing':
             resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
             modified_image = resized_image
+        elif image_adulteration_method == 'constant_graying':
+            resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 128
+            modified_image = resized_image
+        else:
+            modified_image = resized_image
+
+        input_image, _ = preprocessor_fn(modified_image, image_size)
+        outputs = model(input_image)
+        detection_image, detections, _ = postprocessor_fn(
+            model, outputs, image_scales, get_image(raw_image_path),
+            image_size, explain_top5_backgrounds)
+        if save_modified_images:
+            modified_images_dir = os.path.join(result_dir, "modified_images")
+            plt.imsave(modified_images_dir +
+                       "/modified_image" + str(n) + ".jpg", modified_image)
+            plt.imsave(modified_images_dir +
+                       "/detection_flip" + str(n) + '.jpg', detection_image)
+        del detection_image
+        del modified_image
+
+        if len(detections) == 0 and n == 0:
+            raise ValueError('Detections cannot be zero here for first run')
+
+        if len(detections) and len(det_matching_interest_det):
+            all_boxes = get_evaluation_details(detections, 'corners')
+            metrics = get_flipstatus_maxprob_regerror(
+                all_boxes, det_matching_interest_det)
+            (label_flip, max_prob, reg_error_pixels, reg_error_iou,
+             x_error, y_error, w_error, h_error) = metrics
+            if label_flip:
+                max_prob_list[n] = 0
+                reg_error_pixels_list[n] = np.inf
+                reg_error_iou_list[n] = 0
+                x_error_pixels_list[n] = np.inf
+                y_error_pixels_list[n] = np.inf
+                w_error_pixels_list[n] = np.inf
+                h_error_pixels_list[n] = np.inf
+                return (percent, max_prob_list, reg_error_pixels_list,
+                        reg_error_iou_list, x_error_pixels_list,
+                        y_error_pixels_list, w_error_pixels_list,
+                        h_error_pixels_list)
+            else:
+                max_prob_list[n] = max_prob
+                reg_error_pixels_list[n] = reg_error_pixels
+                reg_error_iou_list[n] = reg_error_iou
+                x_error_pixels_list[n] = x_error
+                y_error_pixels_list[n] = y_error
+                w_error_pixels_list[n] = w_error
+                h_error_pixels_list[n] = h_error
+                continue
+        else:
+            max_prob_list[n] = 0
+            reg_error_pixels_list[n] = np.inf
+            reg_error_iou_list[n] = 0
+            x_error_pixels_list[n] = np.inf
+            y_error_pixels_list[n] = np.inf
+            w_error_pixels_list[n] = np.inf
+            h_error_pixels_list[n] = np.inf
+            return (percent, max_prob_list, reg_error_pixels_list,
+                    reg_error_iou_list, x_error_pixels_list,
+                    y_error_pixels_list, w_error_pixels_list,
+                    h_error_pixels_list)
+
+    return (1, max_prob_list, reg_error_pixels_list, reg_error_iou_list,
+            x_error_pixels_list, y_error_pixels_list, w_error_pixels_list,
+            h_error_pixels_list)
+
+
+def insertion_bounded_errors(
+        saliency, raw_image_path, detection, image_size=512,
+        model_name='EFFICIENTDETD0', ap_curve_linspace=10,
+        explain_top5_backgrounds=False, save_modified_images=True,
+        image_adulteration_method='subzero', result_dir=None, model=None,
+        object_index=None):
+    if model_name != 'FasterRCNN':
+        prior_boxes = model.prior_boxes
+    else:
+        prior_boxes = None
+
+    preprocessor_fn = PreprocessorFactory(model_name).factory()
+    postprocessor_fn = PostprocessorFactory(model_name).factory()
+    det_matching_interest_det = get_interest_det(detection)
+    LOGGER.info('Evaluating BOUNDED ERRORS on detection: %s'
+                % det_matching_interest_det)
+
+    num_pixels = saliency.size
+    percentage_space = np.linspace(0, 1, ap_curve_linspace)
+    percentage_space = percentage_space[::-1]
+    sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
+    sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
+    sorted_indices = np.vstack(sorted_flat_indices).T
+
+    class_conf = []
+    complete_reg_error_pixels = []
+    complete_reg_error_iou = []
+    x_error_pixels = []
+    y_error_pixels = []
+    w_error_pixels = []
+    h_error_pixels = []
+    visualizer_index = None
+
+    raw_image = get_image(raw_image_path)
+    original_shape = raw_image.shape
+
+    for n, percent in enumerate(percentage_space):
+        resized_image, image_scales = preprocessor_fn(raw_image, image_size,
+                                                      True)
+        resized_image = resized_image[0].astype('uint8')
+        raw_image_blurred = cv2.blur(src=resized_image, ksize=(75, 75))
+        num_pixels_selected = int(num_pixels * percent)
+        change_pixels = sorted_indices[:num_pixels_selected]
+
+        raw_image_blurred[change_pixels[:, 0], change_pixels[:, 1],
+        :] = resized_image[change_pixels[:, 0], change_pixels[:, 1], :]
+        modified_image = raw_image_blurred
+
+        input_image, _ = preprocessor_fn(modified_image, image_size)
+        outputs = model(input_image)
+        detection_image, detections, box_index = postprocessor_fn(
+            model, outputs, image_scales, get_image(raw_image_path),
+            image_size, explain_top5_backgrounds)
+        if n == 0:
+            visualizer_index = box_index
+        if save_modified_images:
+            modified_images_dir = os.path.join(result_dir, "modified_images")
+            plt.imsave(modified_images_dir +
+                       "/modified_image" + str(n) + ".jpg", modified_image)
+            plt.imsave(modified_images_dir +
+                       "/detection_flip" + str(n) + '.jpg', detection_image)
+        del detection_image
+        del modified_image
+
+        errors = get_all_bounded_errors(
+            outputs, det_matching_interest_det, model_name, image_size,
+            image_scales, visualizer_index, prior_boxes, object_index,
+            original_shape)
+        class_conf.append(errors[0])
+        complete_reg_error_pixels.append(errors[1])
+        complete_reg_error_iou.append(errors[2])
+        x_error_pixels.append(errors[3])
+        y_error_pixels.append(errors[4])
+        w_error_pixels.append(errors[5])
+        h_error_pixels.append(errors[6])
+
+    all_errors = (class_conf, complete_reg_error_pixels,
+                  complete_reg_error_iou, x_error_pixels, y_error_pixels,
+                  w_error_pixels, h_error_pixels)
+    return all_errors
+
+
+def insertion_realistic_errors(
+        saliency, raw_image_path, detection, image_size=512,
+        model_name='EFFICIENTDETD0', ap_curve_linspace=10,
+        explain_top5_backgrounds=False, save_modified_images=True,
+        image_adulteration_method='subzero', result_dir=None, model=None):
+    preprocessor_fn = PreprocessorFactory(model_name).factory()
+    postprocessor_fn = PostprocessorFactory(model_name).factory()
+    det_matching_interest_det = get_interest_det(detection)
+    LOGGER.info('Evaluating REALISTIC ERRORS on detection: %s'
+                % det_matching_interest_det)
+
+    num_pixels = saliency.size
+    percentage_space = np.linspace(0, 1, ap_curve_linspace)
+    percentage_space = percentage_space[::-1]
+    sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
+    sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
+    sorted_indices = np.vstack(sorted_flat_indices).T
+
+    max_prob_list = [0, ] * len(percentage_space)
+    reg_error_pixels_list = [np.inf, ] * len(percentage_space)
+    reg_error_iou_list = [0, ] * len(percentage_space)
+    x_error_pixels_list = [np.inf, ] * len(percentage_space)
+    y_error_pixels_list = [np.inf, ] * len(percentage_space)
+    w_error_pixels_list = [np.inf, ] * len(percentage_space)
+    h_error_pixels_list = [np.inf, ] * len(percentage_space)
+
+    raw_image = get_image(raw_image_path)
+
+    for n, percent in enumerate(percentage_space):
+        resized_image, image_scales = preprocessor_fn(raw_image, image_size,
+                                                      True)
+        resized_image = resized_image[0].astype('uint8')
+        raw_image_blurred = cv2.blur(src=resized_image, ksize=(75, 75))
+        num_pixels_selected = int(num_pixels * percent)
+        change_pixels = sorted_indices[:num_pixels_selected]
+
+        raw_image_blurred[change_pixels[:, 0], change_pixels[:, 1],
+        :] = resized_image[change_pixels[:, 0], change_pixels[:, 1], :]
+        modified_image = raw_image_blurred
 
         input_image, _ = preprocessor_fn(modified_image, image_size)
         outputs = model(input_image)
@@ -383,20 +575,27 @@ def eval_object_ap_curve(saliency, raw_image_path, image_size=512,
     sorted_indices = np.vstack(sorted_flat_indices).T
     ap_curve = [0, ] * len(percentage_space)
     raw_image_modifier = get_image(raw_image_path)
-    for n, percent in enumerate(percentage_space[:-1]):
+    for n, percent in enumerate(percentage_space):
         resized_image, image_scales = preprocessor_fn(
             raw_image_modifier, image_size, True)
         num_pixels_selected = int(num_pixels * percent)
         change_pixels = sorted_indices[:num_pixels_selected]
         resized_image = resized_image[0].astype('uint8')
+
         if image_adulteration_method == 'inpainting':
             mask = np.zeros(saliency.shape).astype('uint8')
             mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
             modified_image = cv2.inpaint(resized_image, mask, 3,
                                          cv2.INPAINT_TELEA)
-        else:
+        elif image_adulteration_method == 'zeroing':
             resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
             modified_image = resized_image
+        elif image_adulteration_method == 'constant_graying':
+            resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 128
+            modified_image = resized_image
+        else:
+            modified_image = resized_image
+
         input_image, _ = preprocessor_fn(modified_image, image_size)
         outputs = model(input_image)
         detection_image, detections, _ = postprocessor_fn(
