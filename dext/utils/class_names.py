@@ -60,6 +60,11 @@ coco_fasterrcnn = ['BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
                    'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
                    'teddy bear', 'hair drier', 'toothbrush']
 
+marine_debris_classes = ['Background', 'Bottle', 'Can', 'Chain',
+                         'Drink-carton', 'Hook', 'Propeller',
+                         'Shampoo-bottle', 'Standing-bottle', 'Tire', 'Valve',
+                         'Wall']
+
 
 def get_classes(dataset_name, model_name):
     if dataset_name == 'COCO' and 'EFFICIENTDET' in model_name:
@@ -70,5 +75,7 @@ def get_classes(dataset_name, model_name):
         return get_class_names(dataset_name)
     elif dataset_name == 'VOC':
         return voc_class_names
+    elif dataset_name == 'MarineDebris':
+        return marine_debris_classes
     else:
         raise ValueError('Dataset and model combination unavailable.')

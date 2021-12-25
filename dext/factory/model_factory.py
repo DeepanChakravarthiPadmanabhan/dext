@@ -8,6 +8,7 @@ from paz.models.detection.ssd512 import SSD512
 from paz.models.detection.ssd300 import SSD300
 from dext.model.faster_rcnn.faster_rcnn_detection_model import (
     faster_rcnn_detection)
+from dext.model.marine_debris_ssd.utils import marine_debris_ssd
 
 
 class ModelFactory:
@@ -41,6 +42,9 @@ class ModelFactory:
             return SSD300NoPool()
         elif self.model_name == 'FasterRCNN':
             model = faster_rcnn_detection()
+            return model
+        elif self.model_name == 'MarineDebris':
+            model = marine_debris_ssd()
             return model
         else:
             raise ValueError("Model not implemented %s" % self.model_name)

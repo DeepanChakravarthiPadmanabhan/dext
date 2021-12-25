@@ -94,13 +94,13 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
                         result_dir, class_layer_name, reg_layer_name,
                         visualize_box_offset, model_name, image_index,
                         save_saliency_images, save_explanation_images,
-                        custom_model, prior_boxes):
+                        custom_model, prior_boxes, dataset_name):
     for object_arg in objects_to_analyze:
         explaining_info = get_explaining_info(
             object_arg, box_index, to_explain, class_layer_name,
             reg_layer_name,
             visualize_box_offset, model_name)
-        class_name = get_classes('COCO', model_name)[
+        class_name = get_classes(dataset_name, model_name)[
             box_index[explaining_info[0][0]][1]]
         class_confidence = box_index[explaining_info[0][0]][2]
         LOGGER.info('Explaining - image index: %s, confidence: %s, class: %s'
@@ -187,7 +187,8 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
                 model_name, image_index, save_saliency_images,
-                save_explanation_images, custom_model, prior_boxes)
+                save_explanation_images, custom_model, prior_boxes,
+                dataset_name)
         else:
             LOGGER.info("No detections to analyze.")
     end_time = time.time()

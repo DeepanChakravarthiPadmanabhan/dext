@@ -30,6 +30,18 @@ dext_explainer -c config/explainer.gin -i <interpretation_method> -m <model_name
 dext_evaluator -c config/evaluator.gin -i GuidedBackpropagation -m SSD512
 ```
 
+## Explain images on a custom model
+```
+dext_explainer -c config/explainer.gin -m <model_name> --explain_mode single_image --input_image_path <image_path> --image_size <custom_model_image_size> --dataset_name <dataset_name>
+```
+
+Refactor the preprocessing, postprocessing, model building, class names of the data used to train the model, and conversion to backpropagate bounding box in image coordinates.
+Include all the necessary function in the factory module. 
+An example custom model, 'MarineDebris',  is included in the repository.
+The preprocessing, postprocessing, and model building steps are included in /model/marine_debris_ssd/utils.py. Class names are added to class_names.py. 
+All factories are updated with this information.
+
+
 ## Important explainer arguments
 | Argument                 | Description                                                    |
 |--------------------------|----------------------------------------------------------------|

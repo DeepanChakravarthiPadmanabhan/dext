@@ -42,7 +42,7 @@ def resize_image(image, size):
     # Returns
         Numpy array.
     """
-    if(type(image) != np.ndarray):
+    if (type(image) != np.ndarray):
         raise ValueError(
             'Recieved Image is not of type numpy array', type(image))
     else:

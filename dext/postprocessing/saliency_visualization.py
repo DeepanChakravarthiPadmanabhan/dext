@@ -66,7 +66,7 @@ def plot_saliency(saliency, ax, title='Saliency map', saliency_stat=[0, 1]):
     ax.set_title(title)
 
 
-def plot_and_save_saliency(image, saliency):
+def plot_and_save_saliency(image, saliency, saliency_stat=[0, 1]):
     fig, ax = plt.subplots(1, 1)
     im = ax.imshow(saliency, cmap='inferno')
     divider = make_axes_locatable(ax)
@@ -74,7 +74,10 @@ def plot_and_save_saliency(image, saliency):
     plt.colorbar(im, caz)
     caz.yaxis.tick_right()
     caz.yaxis.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-    caz.yaxis.set_ticklabels([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    caz.yaxis.set_ticklabels([
+        '0.0, min:\n' + "{:.1e}".format(saliency_stat[0]),
+        '0.2', '0.4', '0.6', '0.8',
+        '1.0, max:\n' + "{:.1e}".format(saliency_stat[1])])
     ax.axis('off')
     ax.imshow(image, alpha=0.4)
     fig.tight_layout()
@@ -85,6 +88,10 @@ def plot_and_save_detection(image):
     fig, ax = plt.subplots(1, 1)
     ax.imshow(image)
     ax.axis('off')
+    # To match the size of detection image and saliency image in the output
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
     fig.tight_layout()
     fig.savefig("detections_only.jpg", bbox_inches='tight')
 
@@ -146,7 +153,7 @@ def plot_single_saliency(detection_image, image, saliency, confidence=0.5,
 
     fig.suptitle('%s explanation using %s on %s' % (
         explaining, interpretation_method, model_name))
-    # plot_and_save_saliency(image, saliency)
+    # plot_and_save_saliency(image, saliency, saliency_stat)
     # plot_and_save_detection(detection_image)
     return fig
 

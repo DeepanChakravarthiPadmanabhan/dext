@@ -76,6 +76,10 @@ def randomization_test(
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     inference_fn = InferenceFactory(model_name).factory()
     pure_model = get_model(model_name)
+    if model_name != 'FasterRCNN':
+        prior_boxes = pure_model.prior_boxes
+    else:
+        prior_boxes = None
     to_be_explained = None
     if cascade_study:
         randomize_weights_percent = np.linspace(0, 1, random_linspace)
@@ -121,7 +125,7 @@ def randomization_test(
                     out_result_dir, class_layer_name, reg_layer_name,
                     visualize_box_offset, model_name, image_index,
                     save_saliency_images, save_explanation_images,
-                    custom_model)
+                    custom_model, prior_boxes, dataset_name)
             else:
                 LOGGER.info("No detections to analyze.")
         end_time = time.time()
