@@ -37,7 +37,7 @@ dext_explainer -c config/explainer.gin -m <model_name> --explain_mode single_ima
 
 Refactor the preprocessing, postprocessing, model building, class names of the data used to train the model, and conversion to backpropagate bounding box in image coordinates.
 Include all the necessary function in the factory module. 
-An example custom model, 'MarineDebris',  is included in the repository.
+An example custom model, 'MarineDebris',  is included in the repository. MarineDebris model does not exist and the code lines are just an example.
 The preprocessing, postprocessing, and model building steps are included in /model/marine_debris_ssd/utils.py. Class names are added to class_names.py. 
 All factories are updated with this information.
 
