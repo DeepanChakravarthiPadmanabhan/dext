@@ -44,7 +44,7 @@ def get_eval_image_index(results_dir, data, num_images, continuous_run):
     all_image_index = list(np.unique(data[:, 0]))
     LOGGER.info('No. of image ids: %s' % len(all_image_index))
     if continuous_run:
-        load_ran_ids = filter_image_ids(results_dir, 'real_class_flip')
+        load_ran_ids = filter_image_ids(results_dir, 'del_real_class_flip')
         LOGGER.info('Image ids already evaluated: %s' % load_ran_ids)
         all_image_index = [i for i in all_image_index if int(i) not in
                            load_ran_ids]

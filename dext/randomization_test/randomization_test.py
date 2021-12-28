@@ -133,4 +133,4 @@ def randomization_test(
         LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)
         LOGGER.info('Time taken: %s' % (end_time - start_time))
         LOGGER.info('%%% INTERPRETATION DONE %%%')
-
+    LOGGER.info('%%%%% RANDOMIZATION TEST DONE %%%%%')
