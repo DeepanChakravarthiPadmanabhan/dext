@@ -32,7 +32,7 @@ def generate_saliency(interpretation_method, custom_model, model_name,
                       normalize_saliency, grad_times_input, image,
                       saliency_threshold, confidence, class_name,
                       image_index, box_offset, detections, object_index,
-                      gts, dataset_name, error_type):
+                      gts, dataset_name, error_type, result_dir):
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
     saliency, saliency_stats = interpretation_method_fn(
@@ -51,7 +51,9 @@ def generate_saliency(interpretation_method, custom_model, model_name,
         raw_image_path, saliency, confidence, class_name, to_explain,
         interpretation_method, model_name, saliency_stats, box_offset,
         detections, object_index, gts, error_type, dataset_name)
-    fig.savefig('sal_' + str(image_index) + '.jpg')
+    save_file_name = (to_explain + '_' + box_offset + '_'
+                      + str(image_index) + '.pdf')
+    fig.savefig(os.path.join(result_dir, save_file_name))
 
 
 def analyze_errors(model_name, explain_mode, dataset_name, data_split,
@@ -193,7 +195,7 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                               image, saliency_threshold, confidence,
                               class_name, image_index, visualize_box_offset,
                               detections, visualize_object_index, gt_list,
-                              dataset_name, analyze_error_type)
+                              dataset_name, analyze_error_type, result_dir)
 
         elif analyze_error_type == 'wrong_class' and len(fp_list) > 0 and (
                 len(fp_list) - 1 >= visualize_object_index):
@@ -224,7 +226,8 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                               image, saliency_threshold, confidence,
                               class_name, image_index, visualize_box_offset,
                               detections, fp_list[visualize_object_index],
-                              gt_list, dataset_name, analyze_error_type)
+                              gt_list, dataset_name, analyze_error_type,
+                              result_dir)
 
         elif analyze_error_type == 'poor_localization' and (
                 len(poor_localization_tp) > 0) and (
@@ -257,7 +260,8 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                               class_name, image_index, visualize_box_offset,
                               detections,
                               poor_localization_tp[visualize_object_index],
-                              gt_list, dataset_name, analyze_error_type)
+                              gt_list, dataset_name, analyze_error_type,
+                              result_dir)
 
         else:
             print('Analysis type is not possible')

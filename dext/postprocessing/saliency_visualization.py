@@ -13,6 +13,7 @@ from dext.explainer.utils import get_box_index_to_arg
 from dext.utils.get_image import get_image
 from dext.utils.class_names import get_classes
 from dext.model.faster_rcnn.faster_rcnn_preprocess import resize_image
+from dext.utils.class_names import voc_to_coco
 
 
 def visualize_saliency_grayscale(image_3d, percentile=99):
@@ -195,9 +196,9 @@ def get_saliency_title(explaining, box_offset, box_index_to_arg=None):
         box_name = box_index_to_arg[box_offset]
         saliency_title = explaining + ', ' + box_name
     elif explaining == 'Classification':
-        saliency_title = explaining
+        saliency_title = 'Classification'
     elif explaining == 'Boxoffset' and not box_index_to_arg:
-        saliency_title = explaining + ', ' + box_offset
+        saliency_title = 'Bounding box' + ', ' + box_offset
     else:
         saliency_title = explaining
     return saliency_title
@@ -270,7 +271,7 @@ def plot_saliency_image_overlay(image, saliency, ax):
 
 def get_matplotlib_colors(num_colors):
     color = [k for k, v in pltc.cnames.items()]
-    random.seed(45)
+    random.seed(68)
     random.shuffle(color)
     jump_col = np.floor(len(color) / num_colors)
     final_colors = [i for n, i in enumerate(color) if (n % jump_col == 0)]
@@ -301,20 +302,27 @@ def plot_text_matplotlib(box, color, ax, text, fontsize=8):
 
 
 def plot_detections_matplotlib(detections, image, ax, det_id, colors,
-                               fontsize=8):
+                               fontsize=8, text_color=None):
+    if text_color:
+        text_colors = [text_color, ] * len(colors)
+    else:
+        text_colors = colors
+
     for i in range(len(detections)):
         if i == det_id:
             color = 'black'
+            text_color = 'black'
             text = detections[i].class_name.upper()
         else:
             color = colors[i]
+            text_color = text_colors[i]
             text = detections[i].class_name
         plot_bbox_matplotlib(detections[i].coordinates, color, ax)
-        plot_text_matplotlib(detections[i].coordinates, color, ax, text,
+        plot_text_matplotlib(detections[i].coordinates, text_color, ax, text,
                              fontsize)
     ax.imshow(image)
     ax.axis('off')
-    ax.set_title('Detections')
+    ax.set_title('Detection')
     # To match the size of detection image and saliency image in the output
     divider = make_axes_locatable(ax)
     caz = divider.append_axes("right", size="5%", pad=0.1)
@@ -378,20 +386,30 @@ def plot_all_matplotlib(
 
 
 def plot_gts_matplotlib(gts, image, ax, gt_id, colors, dataset_name='VOC',
-                        model_name='SSD512', fontsize=8):
+                        model_name='SSD512', fontsize=8, text_color=None):
     class_names_list = get_classes(dataset_name, model_name)
+    for n, i in enumerate(class_names_list):
+        if i in voc_to_coco:
+            class_names_list[n] = voc_to_coco[i]
+
+    if text_color:
+        text_colors = [text_color, ] * len(colors)
+    else:
+        text_colors = colors
     for i in range(len(gts)):
         if i == gt_id:
             color = 'black'
+            text_color = 'black'
             text = class_names_list[int(gts[i][-1])].upper()
         else:
             color = colors[i]
+            text_color = text_colors[i]
             text = class_names_list[int(gts[i][-1])]
         plot_bbox_matplotlib(gts[i][:4], color, ax)
-        plot_text_matplotlib(gts[i][:4], color, ax, text, fontsize)
+        plot_text_matplotlib(gts[i][:4], text_color, ax, text, fontsize)
     ax.imshow(image)
     ax.axis('off')
-    ax.set_title('Detections')
+    ax.set_title('Ground truth')
     # To match the size of detection image and saliency image in the output
     divider = make_axes_locatable(ax)
     caz = divider.append_axes("right", size="5%", pad=0.1)
@@ -404,27 +422,35 @@ def plot_error_analyzer(
         model_name="EfficientDet", saliency_stat=None, box_offset=None,
         detections=None, object_index=None, gts=None, error_type='missed',
         dataset_name='VOC'):
-    num_detections = max(len(detections), len(gts))
-    colors = get_matplotlib_colors(num_detections)
+    num_detections = max(len(gts), len(detections))
+    gt_colors = get_matplotlib_colors(num_detections)
+    det_colors = get_matplotlib_colors(num_detections)
+    # gt_colors = ['red', ] * len(gts)
+    # det_colors = ['green', ] * len(detections)
     image = get_image(raw_image_path)
 
-    rows, columns = 1, 2
+    rows, columns = 1, 3
     (figwidth, figheight, top, bottom,
      left, right, wspace, hspace) = get_auto_plot_params(rows, columns, image)
     fig, axes = plt.subplots(nrows=rows, ncols=columns,
                              figsize=(figwidth + 2, figheight + 1))
     plt.subplots_adjust(top=top, bottom=bottom, left=left, right=right - 0.04,
                         wspace=wspace, hspace=hspace)
-    ax1, ax2 = axes
+    ax1, ax2, ax3 = axes
 
     if error_type == 'missed':
         gt_id = object_index
-        plot_gts_matplotlib(gts, image, ax1, gt_id, colors, dataset_name,
-                            model_name, fontsize=12)
-    else:
+        det_id = None
+
+    if error_type == 'poor_localization' or error_type == 'wrong_class':
         det_id = object_index
-        plot_detections_matplotlib(detections, image, ax1, det_id, colors,
-                                   fontsize=12)
+        gt_id = None
+
+    plot_gts_matplotlib(gts, image, ax1, gt_id, gt_colors, dataset_name,
+                        model_name, fontsize=12)
+
+    plot_detections_matplotlib(detections, image, ax2, det_id, det_colors,
+                               fontsize=12)
 
     saliency_shape = (image.shape[1], image.shape[0])
     if model_name == 'FasterRCNN':
@@ -433,10 +459,13 @@ def plot_error_analyzer(
         saliency = saliency[window[0]:window[2], window[1]:window[3]]
     saliency = cv2.resize(saliency, saliency_shape)
     saliency_title = get_saliency_title(explaining, box_offset)
-    plot_saliency(saliency, ax2, saliency_title, saliency_stat)
-    ax2.imshow(image, alpha=0.4)
-    text = '{:0.2f}, {}'.format(confidence, class_name)
+    plot_saliency(saliency, ax3, saliency_title, saliency_stat)
+    ax3.imshow(image, alpha=0.5)
+    text = 'Explaining: {:0.2f}, {}'.format(confidence, class_name)
     ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
+
+    if explaining == 'Boxoffset':
+        explaining = 'Bounding box coordinate'
 
     fig.suptitle('%s explanation using %s on %s' % (
         explaining, interpretation_method, model_name))
