@@ -16,6 +16,7 @@ from dext.utils.class_names import voc_to_coco
 from paz.backend.boxes import compute_iou
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
+from paz.abstract import Box2D
 
 LOGGER = logging.getLogger(__name__)
 
@@ -121,6 +122,7 @@ def get_closest_outbox_to_fn(prior_boxes, fn_list, gt_list, model_name,
 
     fn_box_index_pred = []
     fn_box_index_gt = []
+    pred_boxes = []
     for i in range(len(fn_list)):
         # find output box closest with gt box
         iou = compute_iou(gt_list[fn_list[i]][:4], out_boxes)
@@ -135,6 +137,11 @@ def get_closest_outbox_to_fn(prior_boxes, fn_list, gt_list, model_name,
         class_id_pred = np.argmax(outputs[0][idx][4:])
         fn_box_index_pred.append([0, idx, class_id_pred])
 
+        box_pred_formed = Box2D(
+            closest_output_box.numpy(), outputs[0][idx][class_id_pred + 4],
+            class_names_coco[class_id_pred])
+        pred_boxes.append(box_pred_formed)
+
         class_name_gt = class_names_voc[gt_list[fn_list[i]][-1]]
         if class_name_gt in voc_to_coco:
             class_name_gt = voc_to_coco[class_name_gt]
@@ -145,16 +152,17 @@ def get_closest_outbox_to_fn(prior_boxes, fn_list, gt_list, model_name,
               class_id_pred, class_id_gt)
 
         # draw gt (red) and closest box (blue) on image
-        image = cv2.rectangle(
-            image, (int(gt_box[0]), int(gt_box[1])),
-            (int(gt_box[2]), int(gt_box[3])), (255, 0, 0), 1, cv2.LINE_AA)
-        image = cv2.rectangle(
-            image, (int(closest_output_box[0]), int(closest_output_box[1])),
-            (int(closest_output_box[2]), int(closest_output_box[3])),
-            (0, 0, 255), 1, cv2.LINE_AA)
+    #     image = cv2.rectangle(
+    #         image, (int(gt_box[0]), int(gt_box[1])),
+    #         (int(gt_box[2]), int(gt_box[3])), (255, 0, 0), 1, cv2.LINE_AA)
+    #     image = cv2.rectangle(
+    #         image, (int(closest_output_box[0]), int(closest_output_box[1])),
+    #         (int(closest_output_box[2]), int(closest_output_box[3])),
+    #         (0, 0, 255), 1, cv2.LINE_AA)
+    # import matplotlib.pyplot as plt
     # plt.imsave('gt_drawn.jpg', image)
 
-    return fn_box_index_pred, fn_box_index_gt
+    return fn_box_index_pred, fn_box_index_gt, pred_boxes
 
 
 def get_interest_neuron(explaining, neuron, visualize_box_offset,

@@ -271,7 +271,7 @@ def plot_saliency_image_overlay(image, saliency, ax):
 
 def get_matplotlib_colors(num_colors):
     color = [k for k, v in pltc.cnames.items()]
-    random.seed(68)
+    random.seed(27)  # 45, 68 for spread among colors
     random.shuffle(color)
     jump_col = np.floor(len(color) / num_colors)
     final_colors = [i for n, i in enumerate(color) if (n % jump_col == 0)]
@@ -295,6 +295,7 @@ def plot_text_matplotlib(box, color, ax, text, fontsize=8):
         text_x = xmin
     if ymin <= 15:
         text_y = ymax + 19
+        # text_y = ymin + 17
     else:
         text_y = ymin - 8
     ax.text(text_x, text_y, text, color=color, bbox=props, fontsize=fontsize,
@@ -422,6 +423,8 @@ def plot_error_analyzer(
         model_name="EfficientDet", saliency_stat=None, box_offset=None,
         detections=None, object_index=None, gts=None, error_type='missed',
         dataset_name='VOC'):
+    model_name = refactor_model_names(model_name)
+    interpretation_method = refactor_method_names(interpretation_method)
     num_detections = max(len(gts), len(detections))
     gt_colors = get_matplotlib_colors(num_detections)
     det_colors = get_matplotlib_colors(num_detections)
@@ -440,7 +443,7 @@ def plot_error_analyzer(
 
     if error_type == 'missed':
         gt_id = object_index
-        det_id = None
+        det_id = object_index
 
     if error_type == 'poor_localization' or error_type == 'wrong_class':
         det_id = object_index
@@ -462,7 +465,7 @@ def plot_error_analyzer(
     plot_saliency(saliency, ax3, saliency_title, saliency_stat)
     ax3.imshow(image, alpha=0.5)
     text = 'Explaining: {:0.2f}, {}'.format(confidence, class_name)
-    ax2.text(0.5, -0.1, text, size=12, ha="center", transform=ax2.transAxes)
+    ax3.text(0.5, -0.1, text, size=12, ha="center", transform=ax3.transAxes)
 
     if explaining == 'Boxoffset':
         explaining = 'Bounding box coordinate'
@@ -472,3 +475,55 @@ def plot_error_analyzer(
     # plot_and_save_saliency(image, saliency)
     # plot_and_save_detection(detection_image)
     return fig
+
+def refactor_model_names(model_name):
+    if model_name == "EFFICIENTDETD0":
+        return 'EfficientDet-D0'
+    elif model_name == "EFFICIENTDETD1":
+        return 'EfficientDet-D1'
+    elif model_name == "EFFICIENTDETD2":
+        return 'EfficientDet-D2'
+    elif model_name == "EFFICIENTDETD3":
+        return 'EfficientDet-D3'
+    elif model_name == "EFFICIENTDETD4":
+        return 'EfficientDet-D4'
+    elif model_name == "EFFICIENTDETD5":
+        return "EfficientDet-D5"
+    elif model_name == "EFFICIENTDETD6":
+        return "EfficientDet-D6"
+    elif model_name == "EFFICIENTDETD7":
+        return "EfficientDet-D7"
+    elif model_name == "EFFICIENTDETD7x":
+        return "EfficientDet-D7x"
+    elif model_name == "SSD512":
+        return 'SSD512'
+    elif model_name == 'SSD300':
+        return 'SSD300'
+    elif model_name == 'FasterRCNN':
+        return 'Faster R-CNN'
+    elif model_name == 'MarineDebris':
+        return 'Marine Debris SSD512'
+    else:
+        raise ValueError("Model not implemented %s" % model_name)
+
+
+def refactor_method_names(explainer):
+    if explainer == "IntegratedGradients":
+        return "Integrated Gradients"
+    elif explainer == "GuidedBackpropagation":
+        return "Guided Backpropagation"
+    elif explainer == "GradCAM":
+        return "Grad-CAM"
+    elif explainer == "SmoothGrad_IntegratedGradients":
+        return "SmoothGrad + Integrated Gradients"
+    elif explainer == "SmoothGrad_GuidedBackpropagation":
+        return "SmoothGrad + Guided Backpropagation"
+    elif explainer == "LIME":
+        return "LIME"
+    elif explainer == "SHAP_DeepExplainer":
+        return "DeepSHAP"
+    elif explainer == "SHAP_GradientExplainer":
+        return "GradientSHAP"
+    else:
+        raise ValueError("Explanation method not implemented %s"
+                         % explainer)

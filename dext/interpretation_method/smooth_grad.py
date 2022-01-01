@@ -77,8 +77,8 @@ class SmoothGrad(Explainer):
 
 def SmoothGradExplainer(model, model_name, image_path, interpretation_method,
                         layer_name, visualize_index, preprocessor_fn,
-                        image_size, standard_deviation=0.15, nsamples=5,
-                        magnitude=True, steps=10, batch_size=1,
+                        image_size, standard_deviation=0.15, nsamples=75,
+                        magnitude=True, steps=10, batch_size=1, normalize=True,
                         prior_boxes=None, explaining=None):
     sg = SmoothGrad(model, model_name, image_path,
                     interpretation_method,
@@ -87,5 +87,6 @@ def SmoothGradExplainer(model, model_name, image_path, interpretation_method,
                     magnitude, steps, batch_size, prior_boxes, explaining)
     saliency = sg.get_saliency_map()
     saliency_stat = (np.min(saliency), np.max(saliency))
-    saliency = visualize_saliency_grayscale(saliency)
+    if normalize:
+        saliency = visualize_saliency_grayscale(saliency)
     return saliency, saliency_stat

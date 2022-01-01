@@ -159,7 +159,8 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
             # If missed detections -- FN
             # method 1: get prior box matching the missed gt position and
             # propagate class and offset. Answers why did the best box miss?
-            fn_box_index_pred, fn_box_index_gt = get_closest_outbox_to_fn(
+            (fn_box_index_pred, fn_box_index_gt,
+             pred_boxes) = get_closest_outbox_to_fn(
                 prior_boxes, fn_list, gt_list, model_name, detection_image,
                 outputs, image_size, raw_image_path)
 
@@ -188,14 +189,18 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                     outputs[0, box_features[1], idx].numpy(), 3)
                 class_name = class_names[idx - 4]
 
+            detections.insert(fn_list[visualize_object_index],
+                              pred_boxes[visualize_object_index])
+
             generate_saliency(interpretation_method, custom_model, model_name,
                               raw_image_path, layer_name, box_features,
                               preprocessor_fn, image_size, prior_boxes,
                               to_explain, normalize_saliency, grad_times_input,
                               image, saliency_threshold, confidence,
                               class_name, image_index, visualize_box_offset,
-                              detections, visualize_object_index, gt_list,
-                              dataset_name, analyze_error_type, result_dir)
+                              detections, fn_list[visualize_object_index],
+                              gt_list, dataset_name, analyze_error_type,
+                              result_dir)
 
         elif analyze_error_type == 'wrong_class' and len(fp_list) > 0 and (
                 len(fp_list) - 1 >= visualize_object_index):
