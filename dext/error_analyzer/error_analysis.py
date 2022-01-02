@@ -189,8 +189,15 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                     outputs[0, box_features[1], idx].numpy(), 3)
                 class_name = class_names[idx - 4]
 
-            detections.insert(fn_list[visualize_object_index],
-                              pred_boxes[visualize_object_index])
+            if len(detections) >= fn_list[visualize_object_index]:
+                detections.insert(fn_list[visualize_object_index],
+                                  pred_boxes[visualize_object_index])
+            else:
+                diff_len = fn_list[visualize_object_index] - len(detections)
+                for i in range(diff_len+1):
+                    detections.append(0)
+                detections.insert(fn_list[visualize_object_index],
+                                  pred_boxes[visualize_object_index])
 
             generate_saliency(interpretation_method, custom_model, model_name,
                               raw_image_path, layer_name, box_features,

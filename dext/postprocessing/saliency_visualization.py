@@ -310,17 +310,18 @@ def plot_detections_matplotlib(detections, image, ax, det_id, colors,
         text_colors = colors
 
     for i in range(len(detections)):
-        if i == det_id:
-            color = 'black'
-            text_color = 'black'
-            text = detections[i].class_name.upper()
-        else:
-            color = colors[i]
-            text_color = text_colors[i]
-            text = detections[i].class_name
-        plot_bbox_matplotlib(detections[i].coordinates, color, ax)
-        plot_text_matplotlib(detections[i].coordinates, text_color, ax, text,
-                             fontsize)
+        if detections[i]:
+            if i == det_id:
+                color = 'black'
+                text_color = 'black'
+                text = detections[i].class_name.upper()
+            else:
+                color = colors[i]
+                text_color = text_colors[i]
+                text = detections[i].class_name
+            plot_bbox_matplotlib(detections[i].coordinates, color, ax)
+            plot_text_matplotlib(detections[i].coordinates, text_color, ax,
+                                 text, fontsize)
     ax.imshow(image)
     ax.axis('off')
     ax.set_title('Detection')
