@@ -1,0 +1,30 @@
+import dext.interpretation_method.shap_deep_explainer
+import dext.interpretation_method.shap_gradient_explainer
+
+COCO_DATASET_PATH = "/scratch/dpadma2s/coco/"
+COCO_DATASET_PATH_WS = "/storage/datasets/COCO/"
+VOC_DATASET_PATH = "/scratch/dpadma2s/voc/VOCdevkit/"
+COCO_DATASET_PATH_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/coco/"
+VOC_DATASET_PATH_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/voc/VOCdevkit/"
+get_images_to_explain.dataset_path = %COCO_DATASET_PATH
+SHAP_DeepExplainer.dataset_path = %COCO_DATASET_PATH
+SHAP_GradientExplainer.dataset_path = %COCO_DATASET_PATH
+
+COCO_VAL_ANNOTATION_FILE = "/scratch/dpadma2s/coco/annotations/instances_val2017.json"
+COCO_VAL_ANNOTATION_FILE_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/coco/annotations/instances_val2017.json"
+COCO_VAL_ANNOTATION_FILE_WS = "/storage/datasets/COCO/annotations/instances_val2017.json"
+
+EFFICIENTDET_WEIGHT_PATH = "/scratch/dpadma2s/paz_efficientdet_weights/"
+FASTER_RCNN_WEIGHT_PATH = "/scratch/dpadma2s/paz_faster_rcnn_weights/"
+EFFICIENTDET_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz_efficientdet_weights/'
+FASTER_RCNN_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz_faster_rcnn_weights/'
+EFFICIENTDET_WEIGHT_PATH_WS = "/storage/deepan/paz_efficientdet_weights/"
+FASTER_RCNN_WEIGHT_PATH_WS = "/storage/deepan/paz_faster_rcnn_weights/"
+EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH_WS
+faster_rcnn_detection.weight_path = %FASTER_RCNN_WEIGHT_PATH_WS
+
+RESULT_DIR = '/scratch/dpadma2s/thesis/trust_analysis/'
+RESULT_DIR_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/thesis/trust_analysis/'
+RESULT_DIR_WS = '/storage/deepan/trust_analysis/'
+filter_image_ids.results_dir = %RESULT_DIR_WS
+sample_generator.result_dir = %RESULT_DIR_WS

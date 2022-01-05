@@ -43,6 +43,8 @@ setup(
             "dext_error_analyzer="
             "dext.error_analyzer.error_analyzer:error_analyzer",
             "dext_visualizer=dext.visualizer.visualizer:visualizer",
+            "dext_trust_analyzer="
+            "dext.trust_analyzer.trust_analyzer:trust_analyzer",
         ]
     ),
     data_files=[
@@ -52,6 +54,7 @@ setup(
                 "config/explainer.gin",
                 "config/evaluator.gin",
                 "config/error_analyzer.gin",
+                "config/trust_analyzer.gin",
             ],
         )
     ],

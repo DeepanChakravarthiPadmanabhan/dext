@@ -67,6 +67,44 @@ def plot_saliency(saliency, ax, title='Saliency map', saliency_stat=[0, 1]):
     ax.set_title(title)
 
 
+def plot_detection_human(raw_image_path, detection):
+    color = ['red']
+    textcolor = 'white'
+    image = get_image(raw_image_path)
+    fig, ax = plt.subplots()
+    plot_detections_matplotlib(detection, image, ax, None, color,
+                               fontsize=12, text_color=textcolor)
+    ax.axis('off')
+    # To match the size of detection image and saliency image in the output
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
+    fig.tight_layout()
+    return fig
+
+
+def plot_saliency_human(raw_image_path, saliency, model_name):
+    image = get_image(raw_image_path)
+    saliency_shape = (image.shape[1], image.shape[0])
+    if model_name == 'FasterRCNN':
+        temp_image, window, scale, pad, crop = resize_image(
+            image, saliency.shape[1], saliency.shape[0])
+        saliency = saliency[window[0]:window[2], window[1]:window[3]]
+    saliency = cv2.resize(saliency, saliency_shape)
+    fig, ax = plt.subplots()
+    im = ax.imshow(saliency, cmap='inferno')
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    plt.colorbar(im, caz)
+    caz.yaxis.tick_right()
+    caz.yaxis.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    caz.yaxis.set_ticklabels(['0', '20', '40', '60', '80', '100'])
+    ax.axis('off')
+    ax.imshow(image, alpha=0.5)
+    fig.tight_layout()
+    return fig
+
+
 def plot_and_save_saliency(image, saliency, saliency_stat=[0, 1]):
     fig, ax = plt.subplots(1, 1)
     im = ax.imshow(saliency, cmap='inferno')
@@ -476,6 +514,7 @@ def plot_error_analyzer(
     # plot_and_save_saliency(image, saliency)
     # plot_and_save_detection(detection_image)
     return fig
+
 
 def refactor_model_names(model_name):
     if model_name == "EFFICIENTDETD0":
