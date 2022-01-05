@@ -1,6 +1,5 @@
 import logging
 import os
-import numpy as np
 import time
 import gin
 
@@ -11,7 +10,6 @@ from dext.factory.inference_factory import InferenceFactory
 from dext.explainer.utils import build_general_custom_model
 from dext.explainer.utils import get_images_to_explain
 from dext.trust_analyzer.saliency_generation import explain_all_objects
-from dext.trust_analyzer.utils import get_orderly_matches
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,12 +19,9 @@ def sample_generator(model_name, explain_mode, dataset_name, data_split,
                      data_split_name, raw_image_path, image_size,
                      class_layer_name, reg_layer_name, to_explain,
                      visualize_object_index, visualize_box_offset,
-                     num_images, save_saliency_images,
-                     save_explanation_images, continuous_run,
-                     study_model=False, study_method=True,
+                     num_images, continuous_run,
                      explain_top5_backgrounds=False,
-                     result_dir='images/trust_analysis/',
-                     save_modified_images=False):
+                     result_dir='images/trust_analysis/'):
     start_time = time.time()
     test_gpus()
     interpretation_methods = ['IntegratedGradients',

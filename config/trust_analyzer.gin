@@ -6,9 +6,9 @@ COCO_DATASET_PATH_WS = "/storage/datasets/COCO/"
 VOC_DATASET_PATH = "/scratch/dpadma2s/voc/VOCdevkit/"
 COCO_DATASET_PATH_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/coco/"
 VOC_DATASET_PATH_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/voc/VOCdevkit/"
-get_images_to_explain.dataset_path = %COCO_DATASET_PATH
-SHAP_DeepExplainer.dataset_path = %COCO_DATASET_PATH
-SHAP_GradientExplainer.dataset_path = %COCO_DATASET_PATH
+get_images_to_explain.dataset_path = %COCO_DATASET_PATH_WS
+SHAP_DeepExplainer.dataset_path = %COCO_DATASET_PATH_WS
+SHAP_GradientExplainer.dataset_path = %COCO_DATASET_PATH_WS
 
 COCO_VAL_ANNOTATION_FILE = "/scratch/dpadma2s/coco/annotations/instances_val2017.json"
 COCO_VAL_ANNOTATION_FILE_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/coco/annotations/instances_val2017.json"

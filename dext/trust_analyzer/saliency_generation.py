@@ -67,7 +67,8 @@ def explain_single_object(raw_image_path, image_size, preprocessor_fn,
 
         image_id = str(image_index)
         det_id = str(object_index)
-        sal_type = explaining + '_' + ((box_offset) if box_offset else 'None')
+        sal_type = explaining + '_' + (
+            str(box_offset) if box_offset else 'None')
         det_save_name = ('detid_' + det_id + '_imageid_' + image_id + '.jpg')
         det_save_name = os.path.join(save_dir, det_save_name)
         sal_save_name = ('detid_' + det_id + '_saltype_' + sal_type +

@@ -25,13 +25,13 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--image_size", default=512)
 @click.option("--class_layer_name", default='boxes')
 @click.option("--reg_layer_name", default='boxes')
-@click.option("--to_explain", default="Classification",
+@click.option("--to_explain", default="Classification and Box offset",
               type=click.Choice(["Classification and Box offset",
                                  "Classification", "Boxoffset"]))
 @click.option("--visualize_object_index", default='all')  # 1 <
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
-@click.option("--num_images", default=2)  # 1 <
+@click.option("--num_images", default=10)  # 1 <
 @click.option("--save_saliency_images", default=True)
 @click.option("--save_explanation_images", default=True)
 @click.option("--continuous_run", default=False)
@@ -43,7 +43,6 @@ def trust_analyzer(config, generate_samples, model_name, explain_mode,
                    dataset_name, data_split, data_split_name, input_image_path,
                    image_size, class_layer_name, reg_layer_name, to_explain,
                    visualize_object_index, visualize_box_offset, num_images,
-                   save_saliency_images, save_explanation_images,
                    continuous_run, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
@@ -53,8 +52,7 @@ def trust_analyzer(config, generate_samples, model_name, explain_mode,
                          data_split_name, input_image_path, image_size,
                          class_layer_name, reg_layer_name, to_explain,
                          visualize_object_index, visualize_box_offset,
-                         num_images, save_saliency_images,
-                         save_explanation_images, continuous_run)
+                         num_images, continuous_run)
 
 
 if __name__ == "__main__":
