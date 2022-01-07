@@ -81,7 +81,7 @@ def interpretation_method_mapper(model_name):
         raise ValueError("Model not implemented %s" % model_name)
 
 
-def refactor_method_names(explainer):
+def refactor_method_mapper(explainer):
     if explainer == "IntegratedGradients":
         return "E1"
     elif explainer == "GuidedBackpropagation":

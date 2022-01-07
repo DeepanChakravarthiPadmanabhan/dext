@@ -26,15 +26,15 @@ def sample_generator(model_name, explain_mode, dataset_name, data_split,
     test_gpus()
     interpretation_methods = ['IntegratedGradients',
                               'GuidedBackpropagation',
-                              'SmoothGrad_IntegratedGradients',
-                              'SmoothGrad_GuidedBackpropagation'
+                              #'SmoothGrad_IntegratedGradients',
+                              #'SmoothGrad_GuidedBackpropagation'
                               ]
     if model_name != 'all':
         model_names = [model_name]
     else:
         model_names = ['EFFICIENTDETD0',
                        'SSD512',
-                       'FasterRCNN'
+                       #'FasterRCNN'
                        ]
 
     for model_name in model_names:

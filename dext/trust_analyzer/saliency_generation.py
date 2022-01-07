@@ -1,5 +1,6 @@
 import os
 import logging
+import matplotlib.pyplot as plt
 
 from dext.factory.interpretation_method_factory import ExplainerFactory
 from dext.explainer.utils import get_box_feature_index
@@ -79,10 +80,14 @@ def explain_single_object(raw_image_path, image_size, preprocessor_fn,
         det_fig = plot_detection_human(raw_image_path, [detection_selected])
         det_fig.savefig(det_save_name)
         LOGGER.info('Saved detection: %s ' % det_save_name)
+        det_fig.clear()
+        plt.close(det_fig)
 
         sal_fig = plot_saliency_human(raw_image_path, saliency, model_name)
         sal_fig.savefig(sal_save_name)
         LOGGER.info('Saved saliency: %s ' % sal_save_name)
+        sal_fig.clear()
+        plt.close(sal_fig)
 
 
 def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
