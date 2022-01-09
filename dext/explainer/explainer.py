@@ -41,6 +41,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--continuous_run", default=False)
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--plot_gt", default=False)
+@click.option("--load_type", default='rgb')
 @click.option("--log_level", default="INFO",
               type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO",
                                  "DEBUG"]))
@@ -50,7 +51,8 @@ def explainer(config, model_name, explain_mode, dataset_name, data_split,
               reg_layer_name, to_explain, interpretation_method,
               visualize_object_index, visualize_box_offset, num_images,
               save_saliency_images, save_explanation_images, continuous_run,
-              explain_top5_backgrounds, plot_gt, log_level, log_dir):
+              explain_top5_backgrounds, plot_gt, load_type, log_level,
+              log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -60,7 +62,7 @@ def explainer(config, model_name, explain_mode, dataset_name, data_split,
                   interpretation_method, visualize_object_index,
                   visualize_box_offset, num_images, save_saliency_images,
                   save_explanation_images, continuous_run,
-                  explain_top5_backgrounds, plot_gt)
+                  explain_top5_backgrounds, plot_gt, load_type)
 
 
 if __name__ == "__main__":

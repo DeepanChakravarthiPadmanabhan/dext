@@ -29,6 +29,7 @@ class GuidedBackpropagation(Explainer):
         LOGGER.info('STARTING GUIDED BACKPROPAGATION')
         self.model_name = model_name
         self.image = image
+        self.num_channels = image.shape[2]
         self.original_shape = image.shape
         self.explainer = explainer
         self.layer_name = layer_name
@@ -50,7 +51,7 @@ class GuidedBackpropagation(Explainer):
             self.clean_custom_model()
 
     def check_image_size(self, image, image_size):
-        if image.shape != (image_size, image_size, 3):
+        if image.shape != (image_size, image_size, self.num_channels):
             image, image_scale = self.preprocessor_fn(image, image_size, True)
             if len(image.shape) != 3:
                 image = image[0]
@@ -103,9 +104,10 @@ def GuidedBackpropagationExplainer(model, model_name, image_path,
                                    interpretation_method, layer_name,
                                    visualize_index, preprocessor_fn,
                                    image_size, normalize=True,
-                                   prior_boxes=None, explaining=None):
+                                   prior_boxes=None, explaining=None,
+                                   load_type='rgb'):
     if isinstance(image_path, str):
-        image = get_image(image_path)
+        image = get_image(image_path, load_type)
     else:
         image = image_path
     explainer = GuidedBackpropagation(

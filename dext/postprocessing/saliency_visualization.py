@@ -374,10 +374,10 @@ def plot_detection_saliency(detections, raw_image_path, object_index,
                             class_name, explaining_list, box_offset_list,
                             to_explain,
                             interpretation_method="Integrated Gradients",
-                            model_name="EFFICIENTDETD0"):
+                            model_name="EFFICIENTDETD0", load_type='rgb'):
     num_detections = len(detections)
     colors = get_matplotlib_colors(num_detections)
-    image = get_image(raw_image_path)
+    image = get_image(raw_image_path, load_type)
     box_index_to_arg = get_box_index_to_arg(model_name)
     num_axes = len(saliency_list) + 1
     rows, cols, fig_width, fig_height = get_plot_params(num_axes)
@@ -413,7 +413,7 @@ def plot_all_matplotlib(
         saliency_stat_list, confidence, class_name, explaining_list,
         box_offset_list, to_explain, interpretation_method='IG',
         model_name="EFFICIENTDETD0", explanation_result_dir=None,
-        image_index=None, object_arg=None):
+        image_index=None, object_arg=None, load_type='rgb'):
     f = plot_detection_saliency(
         detections, raw_image_path, object_index, saliency_list,
         saliency_stat_list, confidence, class_name, explaining_list,

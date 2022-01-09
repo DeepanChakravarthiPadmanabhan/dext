@@ -1,16 +1,27 @@
 import gin
+import numpy as np
 from paz import processors as pr
-from paz.abstract import SequentialProcessor, Processor
+from paz.abstract import SequentialProcessor
 from dext.model.utils import ResizeImage, find_image_scale
-from paz.models.detection.ssd300 import SSD300
 from dext.model.ssd.ssd_postprocess import nms_per_class, filterboxes
 from dext.model.ssd.ssd_postprocess import denormalize_boxes
 from dext.model.ssd.ssd_postprocess import draw_bounding_boxes
 from dext.model.ssd.ssd_postprocess import get_top5_bg_ssd
 from dext.utils.class_names import get_classes
+from dext.model.marine_debris_utils import NormalizeImageGray
+
+from dext.model.marine_debris_ssd_resnet20.ssd_resnet20 import SSD_ResNet20
 
 
-def marine_debris_ssd_vgg16_preprocess(image, image_size, only_resize=False):
+@gin.configurable
+def marine_debris_ssd_resnet20(weight_path, backbone_folder):
+    model = SSD_ResNet20(12, weight_folder=backbone_folder)
+    model.load_weights(weight_path)
+    return model
+
+
+def marine_debris_ssd_resnet20_preprocess(image, image_size=96,
+                                          only_resize=False):
     input_image_shape = image.shape
     if type(image_size) == int:
         image_size = (image_size, image_size)
@@ -22,23 +33,18 @@ def marine_debris_ssd_vgg16_preprocess(image, image_size, only_resize=False):
     else:
         preprocessing = SequentialProcessor([
             ResizeImage(image_size),
+            NormalizeImageGray(),
             pr.CastImage(float),
-            pr.NormalizeImage(),
             pr.ExpandDims(axis=0)])
     image = preprocessing(image)
+    if len(image.shape) == 3:
+        image = np.expand_dims(image, axis=-1)
     processed_image_shape = image.shape
     image_scale = find_image_scale(input_image_shape, processed_image_shape)
     return image, image_scale
 
 
-@gin.configurable
-def marine_debris_ssd_vgg16(weight_path):
-    model = SSD300(12, None, None)
-    model.load_weights(weight_path)
-    return model
-
-
-def marine_debris_ssd_vgg16_postprocess(
+def marine_debris_ssd_resnet20_postprocess(
         model, outputs, image_scale, raw_image, image_size=512,
         explain_top5_backgrounds=False):
     class_names = get_classes('MarineDebris', 'MarineDebris')

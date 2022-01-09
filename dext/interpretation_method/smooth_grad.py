@@ -18,12 +18,14 @@ class SmoothGrad(Explainer):
                  explainer="SmoothGrad_IntegreatedGradients", layer_name=None,
                  visualize_index=None, preprocessor_fn=None, image_size=512,
                  standard_deviation=0.15, nsamples=5, magnitude=1, steps=5,
-                 batch_size=1, prior_boxes=None, explaining=None):
+                 batch_size=1, prior_boxes=None, explaining=None,
+                 load_type='rgb'):
         super().__init__(model_name, image_path, explainer)
         self.model = model
         self.model_name = model_name
         self.image_path = image_path
-        self.image = get_image(self.image_path)
+        self.image = get_image(self.image_path, load_type)
+        self.num_channels = self.image.shape[2]
         self.original_shape = self.image.shape
         self.image_size = image_size
         self.explainer = explainer
@@ -37,12 +39,13 @@ class SmoothGrad(Explainer):
         self.preprocessor_fn = preprocessor_fn
         self.prior_boxes = prior_boxes
         self.explaining = explaining
+        self.load_type = load_type
 
     def get_saliency_map(self):
         stddev = self.standard_deviation * (np.max(self.image) -
                                             np.min(self.image))
-        total_gradients = np.zeros((1, self.image_size, self.image_size, 3),
-                                   dtype=np.float32)
+        total_gradients = np.zeros((1, self.image_size, self.image_size,
+                                    self.num_channels), dtype=np.float32)
         for i in range(self.nsamples):
             image = self.image.copy()
             noise = np.random.normal(0, stddev, self.original_shape)
@@ -55,14 +58,16 @@ class SmoothGrad(Explainer):
                     self.explainer, self.layer_name, self.visualize_index,
                     self.preprocessor_fn, self.image_size, self.steps,
                     self.batch_size, normalize=False,
-                    prior_boxes=self.prior_boxes, explaining=self.explaining)
+                    prior_boxes=self.prior_boxes, explaining=self.explaining,
+                    load_type=self.load_type)
             elif self.explainer == 'SmoothGrad_GuidedBackpropagation':
                 LOGGER.info('Explanation method %s' % self.explainer)
                 saliency, _ = GuidedBackpropagationExplainer(
                     self.model, self.model_name, image_noise,
                     self.explainer, self.layer_name, self.visualize_index,
                     self.preprocessor_fn, self.image_size, normalize=False,
-                    prior_boxes=self.prior_boxes, explaining=self.explaining)
+                    prior_boxes=self.prior_boxes, explaining=self.explaining,
+                    load_type=self.load_type)
             else:
                 raise ValueError("Explanation method not implemented %s"
                                  % self.explainer)
@@ -79,12 +84,13 @@ def SmoothGradExplainer(model, model_name, image_path, interpretation_method,
                         layer_name, visualize_index, preprocessor_fn,
                         image_size, standard_deviation=0.15, nsamples=75,
                         magnitude=True, steps=10, batch_size=1, normalize=True,
-                        prior_boxes=None, explaining=None):
+                        prior_boxes=None, explaining=None, load_type='rgb'):
     sg = SmoothGrad(model, model_name, image_path,
                     interpretation_method,
                     layer_name, visualize_index, preprocessor_fn,
                     image_size, standard_deviation, nsamples,
-                    magnitude, steps, batch_size, prior_boxes, explaining)
+                    magnitude, steps, batch_size, prior_boxes, explaining,
+                    load_type)
     saliency = sg.get_saliency_map()
     saliency_stat = (np.min(saliency), np.max(saliency))
     if normalize:
