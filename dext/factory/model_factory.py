@@ -8,7 +8,8 @@ from paz.models.detection.ssd512 import SSD512
 from paz.models.detection.ssd300 import SSD300
 from dext.model.faster_rcnn.faster_rcnn_detection_model import (
     faster_rcnn_detection)
-from dext.model.marine_debris_ssd.utils import marine_debris_ssd_vgg16
+from dext.model.marine_debris_ssd.utils import (marine_debris_ssd_vgg16,
+                                                marine_debris_ssd_vgg16_random)
 from dext.model.marine_debris_ssd_resnet20.utils import (
     marine_debris_ssd_resnet20)
 from dext.model.marine_debris_ssd_mobilenet.utils import (
@@ -55,6 +56,9 @@ class ModelFactory:
             return model
         elif self.model_name == 'MarineDebris_SSD_MobileNet':
             model = marine_debris_ssd_mobilenet()
+            return model
+        elif self.model_name == 'MarineDebris_SSD_VGG16_Random':
+            model = marine_debris_ssd_vgg16_random()
             return model
         else:
             raise ValueError("Model not implemented %s" % self.model_name)

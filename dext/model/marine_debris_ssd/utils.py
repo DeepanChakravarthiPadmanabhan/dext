@@ -38,6 +38,13 @@ def marine_debris_ssd_vgg16(weight_path):
     return model
 
 
+@gin.configurable
+def marine_debris_ssd_vgg16_random(weight_path):
+    model = SSD300(12, None, None)
+    model.load_weights(weight_path)
+    return model
+
+
 def marine_debris_ssd_vgg16_postprocess(
         model, outputs, image_scale, raw_image, image_size=512,
         explain_top5_backgrounds=False):

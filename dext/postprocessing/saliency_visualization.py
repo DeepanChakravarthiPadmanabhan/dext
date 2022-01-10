@@ -177,7 +177,7 @@ def plot_single_saliency(detection_image, image, saliency, confidence=0.5,
     (figwidth, figheight, top, bottom,
      left, right, wspace, hspace) = get_auto_plot_params(rows, columns, image)
     fig, axes = plt.subplots(nrows=rows, ncols=columns,
-                             figsize=(figwidth+2, figheight+1))
+                             figsize=(figwidth+4.5, figheight+2.5))
     plt.subplots_adjust(top=top, bottom=bottom, left=left, right=right-0.04,
                         wspace=wspace, hspace=hspace)
     ax1, ax2 = axes

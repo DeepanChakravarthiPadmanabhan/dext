@@ -35,6 +35,10 @@ def get_single_saliency(
     # interpret - apply interpretation method
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
+    # Model trained for data randomization test
+    # model = get_model('MarineDebris_SSD_VGG16_Random')
+    # custom_model = build_general_custom_model(
+    #     model, layer_name, layer_name)
     saliency = interpretation_method_fn(
         custom_model, model_name, raw_image_path, interpretation_method,
         layer_name, box_features, preprocessor_fn, image_size,
