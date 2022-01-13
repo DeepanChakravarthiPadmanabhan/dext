@@ -108,3 +108,5 @@ All above detectors are available with COCO weights. The weights are ported from
 [18] Mingxing Tan, Ruoming Pang, and Quoc V. Le. "Efficientdet: Scalable and efficient object detection." In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 10781-10790. 2020.
 
 [19] Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian Szegedy, Scott Reed, Cheng-Yang Fu, and Alexander C. Berg. "Ssd: Single shot multibox detector." In European conference on computer vision, pp. 21-37. Springer, Cham, 2016.
+
+[20] Heungsub Lee, "Elo, the classic rating system", GitHub, Available at: https://github.com/sublee/elo/, Accessed on: 13. 01. 2022. 
