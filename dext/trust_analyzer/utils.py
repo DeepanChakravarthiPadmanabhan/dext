@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import matplotlib.pyplot as plt
 
 from dext.utils.class_names import get_classes
 from paz.backend.boxes import compute_iou
@@ -93,3 +94,60 @@ def refactor_method_mapper(explainer):
     else:
         raise ValueError("Explanation method not implemented %s"
                          % explainer)
+
+
+def make_detection(det_path):
+    det_image = plt.imread(det_path)
+    fig, ax = plt.subplots(figsize=(6.4, 4.8))
+    ax.imshow(det_image)
+    ax.axis('off')
+    fig_title = 'Detection'
+    plt.text(0.5, 1.08, fig_title, horizontalalignment='center',
+             fontsize=14, transform=ax.transAxes)
+    # plt.show()
+    return fig
+
+
+def make_class_explanation(class_path, title):
+    det_image = plt.imread(class_path)
+    fig, ax = plt.subplots(figsize=(6.4, 4.8))
+    ax.imshow(det_image)
+    ax.axis('off')
+    fig_title = ('%s explaining classification decision' % title)
+    plt.text(0.5, 1.08, fig_title, horizontalalignment='center',
+             fontsize=14, transform=ax.transAxes)
+    # plt.show()
+    return fig
+
+
+def make_box_explanation(xmin_path, ymin_path, xmax_path, ymax_path, title):
+    fig, axes = plt.subplots(1, 4, figsize=(25, 6))
+    ax = axes.flatten()
+
+    xmin_image = plt.imread(xmin_path)
+    ax[0].imshow(xmin_image)
+    ax[0].axis('off')
+    ax[0].set_title('x_min decision')
+
+    ymin_image = plt.imread(ymin_path)
+    ax[1].imshow(ymin_image)
+    ax[1].axis('off')
+    ax[1].set_title('y_min decision')
+
+    xmax_image = plt.imread(xmax_path)
+    ax[2].imshow(xmax_image)
+    ax[2].axis('off')
+    ax[2].set_title('x_max decision')
+
+    ymax_image = plt.imread(ymax_path)
+    ax[3].imshow(ymax_image)
+    ax[3].axis('off')
+    ax[3].set_title('y_max decision')
+
+    plt.subplots_adjust(left=0.03, bottom=0.129, right=0.97, top=0.88,
+                        wspace=0.017, hspace=0.11)
+    fig_title = '%s explaining bounding box decision' % title
+    plt.text(1, 1.1, fig_title, horizontalalignment='center',
+             fontsize=14, transform=ax[1].transAxes)
+    # plt.show()
+    return fig

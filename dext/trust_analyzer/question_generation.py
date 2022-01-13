@@ -91,7 +91,7 @@ def get_box_question(detection_label):
     return box_question
 
 
-def generate_model_questions(num_question=30):
+def generate_model_questions(num_question=50):
     # Fix model explanation questions
     num_models = num_question
 
@@ -101,7 +101,7 @@ def generate_model_questions(num_question=30):
                          for _ in selected_models]
 
     # Get text data
-    file = get_history_file(results_folder, 'saliency_image_paths')
+    file = get_history_file(model_folder, 'saliency_image_paths')
     data = [json.loads(line) for line in open(file, 'r')]
     data = np.array(data)
 
@@ -140,8 +140,8 @@ def generate_model_questions(num_question=30):
         method1 = interpretation_methods[selected_methods[n][0]]
         method2 = interpretation_methods[selected_methods[n][1]]
 
-        path1 = os.path.join(results_folder, model_name + '_' + method1)
-        path2 = os.path.join(results_folder, model_name + '_' + method2)
+        path1 = os.path.join(model_folder, model_name + '_' + method1)
+        path2 = os.path.join(model_folder, model_name + '_' + method2)
 
         image_id = selected_image_ids[n]
         det_id = selected_det_ids[n]
@@ -218,17 +218,111 @@ def generate_model_questions(num_question=30):
     return model_question_jsons
 
 
+def get_class_mov_questions():
+    # A single detection in the image is represented by a bounding box providing the location and text near the box representing the category of the image identified by the artificial intelligence agent.
+    class_question = ('Below given 4 images provide the detections and the '
+                    'image regions more important to categorize the'
+                    ' corresponding objects in 4 different ways. Which image '
+                    'is better understandable for you?')
+    return class_question
+
+
+def get_box_mov_questions(q_type):
+    box_question = ('Below given 4 images provide the detections and the '
+                    'image regions more important to predict the %s of the'
+                    ' corresponding objects in 4 different ways. Which image '
+                    'is better understandable for you?' % q_type)
+    return box_question
+
+
+def get_mov_images(image_id, type):
+    file_dir = os.path.join(mov_folder, type)
+    ellipse = os.path.join(
+        file_dir, image_id + '_EFFICIENTDETD0_' + 'ellipse.jpg')
+    contours = os.path.join(
+        file_dir, image_id + '_EFFICIENTDETD0_' + 'contours.jpg')
+    dbscan_points = os.path.join(
+        file_dir, image_id + '_EFFICIENTDETD0_' + 'dbscan_points.jpg')
+    convex = os.path.join(
+        file_dir, image_id + '_EFFICIENTDETD0_' + 'convex.jpg')
+    images = [ellipse, contours, dbscan_points, convex]
+    return images
+
+
+def generate_mov_questions(num_questions, question_num):
+    all_image_ids = ['2010_001212', '46400', '50384', '102731', '109741',
+                     '152137', '162701', '422994', '575232', '2008_000008',
+                     '2008_000144', '2008_000251', '2010_005511',
+                     '2011_007177', '2012_000072', '2007_001239',
+                     '2007_000847', '2007_001408', '2007_005264',
+                     '2007_005273', '2008_000519', '2008_001448',
+                     '2008_001852', '2008_002601', '2008_004296',
+                     '2008_005929', '2008_006117']
+
+    all_types = ['class', 'class', 'class', 'class', 'class', 'class', 'class',
+                 'class', 'class', 'class', 'class', 'class', 'class', 'class',
+                 'class', 'class', 'x_left_top', 'x_left_top', 'y_left_top',
+                 'y_left_top', 'x_right_bottom', 'x_right_bottom',
+                 'x_right_bottom', 'y_right_bottom', 'y_right_bottom',
+                 'y_right_bottom', 'y_right_bottom']
+
+    # class_image_ids = ['2010_001212', '46400', '50384', '102731', '109741',
+    #                    '152137', '162701', '422994', '575232', '2008_000008',
+    #                    '2008_000144', '2008_000251', '2010_005511',
+    #                    '2011_007177', '2012_000072', '2007_001239']
+    # xmin_image_ids = ['2007_000847', '2007_001408']
+    # ymin_image_ids = ['2007_005264', '2007_005273']
+    # xmax_image_ids = ['2008_000519', '2008_001448', '2008_001852']
+    # ymax_image_ids = ['2008_002601', '2008_004296', '2008_005929',
+    #                   '2008_006117']
+
+    # selected_image_ids = random.choices(all_image_ids, k=num_questions)
+    selected_image_ids = all_image_ids
+    # selected_types = [all_types[all_image_ids.index(i)]
+    #                   for n, i in enumerate(selected_image_ids)]
+    selected_types = all_types
+
+    model_question_jsons = []
+    for n, i in enumerate(selected_image_ids):
+        question = dict()
+        if selected_types[n] == 'class':
+            question['unique_id'] = str(question_num)
+            question['type'] = 'three'
+            question['question'] = get_class_mov_questions()
+            question['images'] = get_mov_images(i, selected_types[n])
+            question['options'] = responses_visualization
+        else:
+            question['unique_id'] = str(question_num)
+            question['type'] = 'four'
+            question['question'] = get_box_mov_questions(selected_types[n])
+            question['images'] = get_mov_images(i, selected_types[n])
+            question['options'] = responses_visualization
+
+        question_num += 1
+        model_question_jsons.append(question)
+
+    return model_question_jsons
+
+
 interpretation_methods = ['IntegratedGradients', 'GuidedBackpropagation',
                           'SmoothGrad_IntegratedGradients',
                           'SmoothGrad_GuidedBackpropagation']
 model_names = ['EFFICIENTDETD0', 'SSD512', 'FasterRCNN']
+model_folder = 'trust_analysis'
 responses_model = ["Robot A explanation is \"much better\"",
                    "Robot A explanation is \"slightly better\"",
                    "Both explanations are \"same\"",
                    "Robot A explanation is \"slightly worse\"",
                    "Robot A explanation is \"much worse\""]
-responses_visualization = ['1', '2', '3', '4']
-results_folder = 'trust_analysis'
-all_questions = generate_model_questions()
+responses_visualization = ['Method 1', 'Method 2', 'Method 3', 'Method 4',
+                           'None of the methods']
+
+model_questions = generate_model_questions(50)
+print('Total model questions: ', len(model_questions))
+mov_folder = 'mov'
+mov_questions = generate_mov_questions(27, len(model_questions) + 1)
+print('Total mov questions: ', len(mov_questions))
+all_questions = model_questions + mov_questions
+print('Total questions: ', len(all_questions))
 with open('questions.pkl', 'wb') as f:
     pickle.dump(all_questions, f)

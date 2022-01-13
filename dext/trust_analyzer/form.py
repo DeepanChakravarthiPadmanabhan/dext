@@ -25,12 +25,19 @@ def show():
 
     @st.cache
     def get_questions(session_id):
+        num_mov_questions = 5
+        num_model_questions = num_questions_to_show - num_mov_questions
         question_seed = session_id
         random.seed(question_seed)
         with open('questions.pkl', 'rb') as f:
             all_questions = pickle.load(f)
-        questions = random.sample(all_questions, 3)
-        return questions
+
+        model_questions = random.sample(all_questions[:100],
+                                        num_model_questions)
+        mov_questions = random.sample(all_questions[100:],
+                                      num_mov_questions)
+        all_questions = model_questions + mov_questions
+        return all_questions
 
     def go_to_next_question():
         st.session_state.curr_question_idx += 1
@@ -48,24 +55,23 @@ def show():
     def store_final_user_stats(answers):
         result = st.session_state.firebase_table.post(
             '/dexttrustanalysis-default-rtdb/all_answer:', answers)
+        pass
 
     def display_question(questions, qno):
         question = questions[qno]
         st.write("Question ID: ", question["unique_id"])
-        caption = '<div style="text-align: left; color: Black; font-size: 20pxx; font-family:sans-serif"> ' \
-                  'An object detected by an artificial intelligence system is shown below. ' \
-                  'Robot A and Robot B are two robots trying to explain the detection result. ' \
-                  '<b>Which Robot\'s explanation is reasonable to the detected object?</div>'
-        st.markdown(caption, unsafe_allow_html=True)
-        images = question["images"]
-        det_image = Image.open(images[0])
-        st.header('Detected object')
-        col1, col2, col3 = st.columns([2.5, 5, 2.5])
-        with col2:
-            st.image(det_image)
-
-
         if question["type"] == "one":
+            caption = '<div style="text-align: left; color: Black; font-size: 20pxx; font-family:sans-serif"> ' \
+                      'An object detected by an artificial intelligence system is shown below. ' \
+                      'Robot A and Robot B are two robots trying to explain the detection result. ' \
+                      '<b>Which Robot\'s explanation is reasonable to the detected object?</div>'
+            st.markdown(caption, unsafe_allow_html=True)
+            images = question["images"]
+            det_image = Image.open(images[0])
+            st.header('Detected object')
+            col1, col2, col3 = st.columns([2.5, 5, 2.5])
+            with col2:
+                st.image(det_image)
             caption = '<div style="text-align: left; color: Black; font-size: 20pxx; font-family:sans-serif">' \
                       'The explanations for the detected object is provided by ' \
                       '<b>highlighting the pixels important </b>for the decision making process. ' \
@@ -83,34 +89,47 @@ def show():
                 st.markdown(caption, unsafe_allow_html=True)
                 image_two = Image.open(images[1])
                 st.image(image_two)
+            result = st.radio(question["question"], question["options"])
+            st.button('Next question', on_click=store_and_go,
+                      args=(result, question["unique_id"]))
 
         if question["type"] == "two":
+            caption = '<div style="text-align: left; color: Black; font-size: 20pxx; font-family:sans-serif"> ' \
+                      'An object detected by an artificial intelligence system is shown below. ' \
+                      'Robot A and Robot B are two robots trying to explain the detection result. ' \
+                      '<b>Which Robot\'s explanation is reasonable to the detected object?</div>'
+            st.markdown(caption, unsafe_allow_html=True)
+            images = question["images"]
+            det_image = Image.open(images[0])
+            st.header('Detected object')
+            col1, col2, col3 = st.columns([2.5, 5, 2.5])
+            with col2:
+                st.image(det_image)
             caption = '<div style="text-align: left; color: Black; font-size: 20pxx; font-family:sans-serif">' \
                       'The explanations for the detected object is provided by ' \
                       '<b>highlighting the pixels important </b>for the decision making process. ' \
                       'The colorbar on the right of the image indicates the pixel importance scale. ' \
                       'Each image explain a particular bounding box coordinate decision.</div>'
             st.markdown(caption, unsafe_allow_html=True)
-
             st.header('Robot A bounding box decision explanation')
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_min explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_left_top explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_one = Image.open(images[1])
                 st.image(image_one)
             with col2:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> y_min explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> y_left_top explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_two = Image.open(images[2])
                 st.image(image_two)
             with col3:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_max explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_right_bottom explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_three = Image.open(images[3])
                 st.image(image_three)
             with col4:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif">  y_max explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif">  y_right_bottom explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_four = Image.open(images[4])
                 st.image(image_four)
@@ -118,30 +137,74 @@ def show():
             st.header('Robot B bounding box decision explanation')
             col1, col2, col3, col4 = st.columns(4)
             with col1:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_min explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_left_top explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_five = Image.open(images[5])
                 st.image(image_five)
             with col2:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> y_min explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> y_left_top explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_six = Image.open(images[6])
                 st.image(image_six)
             with col3:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_max explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> x_right_bottom explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_seven = Image.open(images[7])
                 st.image(image_seven)
             with col4:
-                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif">  y_max explanation </div>'
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif">  y_right_bottom explanation </div>'
                 st.markdown(caption, unsafe_allow_html=True)
                 image_eight = Image.open(images[8])
                 st.image(image_eight)
 
-        result = st.radio(question["question"],  question["options"])
-        st.button('Next question', on_click=store_and_go,
-                  args=(result, question["unique_id"]))
+            result = st.radio(question["question"], question["options"])
+            st.button('Next question', on_click=store_and_go,
+                      args=(result, question["unique_id"]))
 
+        if question['type'] == "three" or question['type'] == 'four':
+            images = question["images"]
+            st.write('three')
+            caption = '<div style="text-align: left; color: Black; font-size: 20pxx; font-family:sans-serif"> ' \
+                      'The images below include detections (rectangular' \
+                      ' box) predicted by an artificial intelligence agent ' \
+                      'and important pixels (marked by ellipses, dots or ' \
+                      'irregular polygons) responsible for the corresponding' \
+                      ' detection result in the same color as the detection ' \
+                      'rectangular box. Each detection is represented by ' \
+                      'a rectangular bounding boxes indicating the location ' \
+                      'and text near the box indicating the category of' \
+                      ' the object enclosed within the box. </div>'
+            st.markdown(caption, unsafe_allow_html=True)
+            result = st.radio(question["question"], question["options"])
+
+            col1, col2 = st.columns(2)
+            with col1:
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> Method 1 </div>'
+                st.markdown(caption, unsafe_allow_html=True)
+                image_five = Image.open(images[0])
+                st.image(image_five)
+            with col2:
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> Method 2 </div>'
+                st.markdown(caption, unsafe_allow_html=True)
+                image_six = Image.open(images[1])
+                st.image(image_six)
+
+            col1, col2 = st.columns(2)
+            with col1:
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> Method 3 </div>'
+                st.markdown(caption, unsafe_allow_html=True)
+                image_five = Image.open(images[2])
+                st.image(image_five)
+            with col2:
+                caption = '<div style="text-align: center; color: Black; font-size: 20pxx; font-family:sans-serif"> Method 4 </div>'
+                st.markdown(caption, unsafe_allow_html=True)
+                image_six = Image.open(images[3])
+                st.image(image_six)
+
+            st.button('Next question', on_click=store_and_go,
+                      args=(result, question["unique_id"]))
+
+    num_questions_to_show = 15
     user_session, session_id = _get_session()
     questions = get_questions(session_id)
     st.session_state.get(questions)
@@ -156,6 +219,8 @@ def show():
         st.session_state.total_questions = len(st.session_state.questions)
 
     st.sidebar.text('Task hints:')
+    st.sidebar.text('Terms in detection')
+    st.sidebar.image('trust_analysis/coordinates.png')
     st.sidebar.text('Pixel importance colorbar (heatmap)')
     st.sidebar.image('trust_analysis/heatmap2.png')
     st.sidebar.text('Email: depa03@dfki.de')
