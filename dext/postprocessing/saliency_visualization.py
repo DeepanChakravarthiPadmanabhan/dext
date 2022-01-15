@@ -73,7 +73,8 @@ def plot_detection_human(raw_image_path, detection):
     image = get_image(raw_image_path)
     fig, ax = plt.subplots()
     plot_detections_matplotlib(detection, image, ax, None, color,
-                               fontsize=12, text_color=textcolor)
+                               fontsize=12, text_color=textcolor,
+                               title_on=False)
     ax.axis('off')
     # To match the size of detection image and saliency image in the output
     divider = make_axes_locatable(ax)
@@ -340,8 +341,23 @@ def plot_text_matplotlib(box, color, ax, text, fontsize=8):
             clip_on=True, wrap=True, weight='bold')
 
 
+def plot_all_detections_matplotlib(detections, image_path):
+    fig, ax = plt.subplots()
+    image = get_image(image_path)
+    colors = get_matplotlib_colors(len(detections))
+    plot_detections_matplotlib(detections, image, ax, None, colors,
+                               title_on=False)
+    ax.axis('off')
+    # To match the size of detection image and saliency image in the output
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
+    fig.tight_layout()
+    return fig
+
+
 def plot_detections_matplotlib(detections, image, ax, det_id, colors,
-                               fontsize=8, text_color=None):
+                               fontsize=8, text_color=None, title_on=True):
     if text_color:
         text_colors = [text_color, ] * len(colors)
     else:
@@ -362,7 +378,8 @@ def plot_detections_matplotlib(detections, image, ax, det_id, colors,
                                  text, fontsize)
     ax.imshow(image)
     ax.axis('off')
-    ax.set_title('Detection')
+    if title_on:
+        ax.set_title('Detection')
     # To match the size of detection image and saliency image in the output
     divider = make_axes_locatable(ax)
     caz = divider.append_axes("right", size="5%", pad=0.1)
