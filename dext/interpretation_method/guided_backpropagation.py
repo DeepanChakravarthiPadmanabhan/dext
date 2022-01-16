@@ -105,9 +105,11 @@ def GuidedBackpropagationExplainer(model, model_name, image_path,
                                    visualize_index, preprocessor_fn,
                                    image_size, normalize=True,
                                    prior_boxes=None, explaining=None,
-                                   load_type='rgb'):
+                                   load_type='rgb', use_pil=False):
     if isinstance(image_path, str):
         image = get_image(image_path, load_type)
+    elif use_pil:
+        image = get_image(image_path, load_type, use_pil)
     else:
         image = image_path
     explainer = GuidedBackpropagation(

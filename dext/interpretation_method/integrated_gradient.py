@@ -218,14 +218,14 @@ def IntegratedGradientExplainer(model, model_name, image_path,
                                 visualize_index, preprocessor_fn, image_size,
                                 steps=20, batch_size=1, normalize=True,
                                 prior_boxes=None, explaining=None,
-                                load_type='rgb'):
+                                load_type='rgb', use_pil=False):
     """
     https://github.com/GoogleCloudPlatform/training-data-analyst/blob/master/
     blogs/integrated_gradients/integrated_gradients.ipynb
     https://github.com/ankurtaly/Integrated-Gradients
     """
     if isinstance(image_path, str):
-        image = get_image(image_path, load_type)
+        image = get_image(image_path, load_type, use_pil)
     else:
         image = image_path
     ig = IntegratedGradients(model, model_name, image, interpretation_method,

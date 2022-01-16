@@ -67,10 +67,10 @@ def plot_saliency(saliency, ax, title='Saliency map', saliency_stat=[0, 1]):
     ax.set_title(title)
 
 
-def plot_detection_human(raw_image_path, detection):
+def plot_detection_human(raw_image_path, detection, use_pil=False):
     color = ['red']
     textcolor = 'white'
-    image = get_image(raw_image_path)
+    image = get_image(raw_image_path, use_pil=use_pil)
     fig, ax = plt.subplots()
     plot_detections_matplotlib(detection, image, ax, None, color,
                                fontsize=12, text_color=textcolor,
@@ -84,8 +84,19 @@ def plot_detection_human(raw_image_path, detection):
     return fig
 
 
-def plot_saliency_human(raw_image_path, saliency, model_name):
-    image = get_image(raw_image_path)
+def plot_modified_image(modified_image):
+    fig, ax = plt.subplots()
+    ax.imshow(modified_image)
+    ax.axis('off')
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
+    fig.tight_layout()
+    return fig
+
+
+def plot_saliency_human(raw_image_path, saliency, model_name, use_pil=False):
+    image = get_image(raw_image_path, use_pil=use_pil)
     saliency_shape = (image.shape[1], image.shape[0])
     if model_name == 'FasterRCNN':
         temp_image, window, scale, pad, crop = resize_image(
@@ -341,9 +352,9 @@ def plot_text_matplotlib(box, color, ax, text, fontsize=8):
             clip_on=True, wrap=True, weight='bold')
 
 
-def plot_all_detections_matplotlib(detections, image_path):
+def plot_all_detections_matplotlib(detections, image_path, use_pil=False):
     fig, ax = plt.subplots()
-    image = get_image(image_path)
+    image = get_image(image_path, use_pil=use_pil)
     colors = get_matplotlib_colors(len(detections))
     plot_detections_matplotlib(detections, image, ax, None, colors,
                                title_on=False)

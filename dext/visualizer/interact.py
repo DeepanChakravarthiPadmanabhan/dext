@@ -149,23 +149,23 @@ def interactions(image_path, model_name, visualize_object_index,
 
     return changed_det_fig, xmin, ymin, xmax, ymax, confidence, modified_fig
 
-
-image_path = '/media/deepan/externaldrive1/project_repos/DEXT_versions/dext/images/000000162701.jpg'
-model_name = 'SSD512'
-explanation_method = 'GuidedBackpropagation'
-visualize_object_index = 1
-
-detections, box_indices, all_det_fig = get_detections(
-    image_path, model_name, image_size=512)
-
-det_fig, sal_fig, saliency = get_saliency(
-    image_path, model_name, explanation_method, visualize_object_index,
-    detections, box_indices, explaining='Classification',
-    visualize_box_offset='None', class_layer_name='boxes',
-    reg_layer_name='boxes', image_size=512, load_type='rgb')
-
-interact_outs = interactions(
-    image_path, model_name, visualize_object_index,
-    explaining='Classification', visualize_box_offset='None',
-    percentage_change=0.80, saliency=saliency, box_indices=box_indices,
-    image_size=512)
+#
+# image_path = '/media/deepan/externaldrive1/project_repos/DEXT_versions/dext/images/000000162701.jpg'
+# model_name = 'EFFICIENTDETD0'
+# explanation_method = 'GuidedBackpropagation'
+# visualize_object_index = 1
+#
+# detections, box_indices, all_det_fig = get_detections(
+#     image_path, model_name, image_size=512)
+#
+# det_fig, sal_fig, saliency = get_saliency(
+#     image_path, model_name, explanation_method, visualize_object_index,
+#     detections, box_indices, explaining='Classification',
+#     visualize_box_offset='None', class_layer_name='boxes',
+#     reg_layer_name='boxes', image_size=512, load_type='rgb')
+#
+# interact_outs = interactions(
+#     image_path, model_name, visualize_object_index,
+#     explaining='Classification', visualize_box_offset='None',
+#     percentage_change=0.80, saliency=saliency, box_indices=box_indices,
+#     image_size=512)

@@ -27,7 +27,8 @@ LOGGER = logging.getLogger(__name__)
 def get_single_saliency(
         interpretation_method, box_index, explaining, visualize_object_index,
         visualize_box_offset, model_name, raw_image_path, layer_name,
-        preprocessor_fn, image_size, custom_model, prior_boxes, load_type):
+        preprocessor_fn, image_size, custom_model, prior_boxes, load_type,
+        use_pil=False):
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
         box_index, explaining, visualize_object_index, model_name,
@@ -42,7 +43,8 @@ def get_single_saliency(
     saliency = interpretation_method_fn(
         custom_model, model_name, raw_image_path, interpretation_method,
         layer_name, box_features, preprocessor_fn, image_size,
-        prior_boxes=prior_boxes, explaining=explaining, load_type=load_type)
+        prior_boxes=prior_boxes, explaining=explaining, load_type=load_type,
+        use_pil=use_pil)
     return saliency
 
 
