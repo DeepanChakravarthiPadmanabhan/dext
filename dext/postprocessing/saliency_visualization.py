@@ -52,6 +52,18 @@ def plot_detection_image(detection_image, ax=None):
     caz.set_visible(False)
 
 
+def convert_to_fig(show_image):
+    fig, ax = plt.subplots()
+    ax.imshow(show_image)
+    ax.axis('off')
+    # To match the size of detection image and saliency image in the output
+    divider = make_axes_locatable(ax)
+    caz = divider.append_axes("right", size="5%", pad=0.1)
+    caz.set_visible(False)
+    fig.tight_layout()
+    return fig
+
+
 def plot_saliency(saliency, ax, title='Saliency map', saliency_stat=[0, 1]):
     im = ax.imshow(saliency, cmap='inferno')
     divider = make_axes_locatable(ax)

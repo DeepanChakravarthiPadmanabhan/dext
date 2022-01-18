@@ -66,14 +66,14 @@ def get_saliency(
     detection_selected = detections[visualize_object_index]
     det_fig = plot_detection_human(image_path, [detection_selected],
                                    use_pil=True)
-    # det_fig.savefig('det.jpg')
-    # det_fig.clear()
-    # plt.close(det_fig)
+    det_fig.savefig('det.jpg')
+    det_fig.clear()
+    plt.close(det_fig)
     sal_fig = plot_saliency_human(image_path, saliency, model_name,
                                   use_pil=True)
-    # sal_fig.savefig('sal.jpg')
-    # sal_fig.clear()
-    # plt.close(sal_fig)
+    sal_fig.savefig('sal.jpg')
+    sal_fig.clear()
+    plt.close(sal_fig)
     return det_fig, sal_fig, saliency
 
 
@@ -114,9 +114,9 @@ def interactions(image_path, model_name, visualize_object_index,
     else:
         modified_image = resized_image
     modified_fig = plot_modified_image(modified_image)
-    # modified_fig.savefig('mod_fig.jpg')
-    # modified_fig.clear()
-    # plt.close(modified_fig)
+    modified_fig.savefig('mod_fig.jpg')
+    modified_fig.clear()
+    plt.close(modified_fig)
 
     input_image, _ = preprocessor_fn(modified_image, image_size)
     convouts = model(input_image)
@@ -142,10 +142,11 @@ def interactions(image_path, model_name, visualize_object_index,
     class_name = class_names[visualize_index[2] - 4]
     box = Box2D(coordinates=[int(xmin), int(ymin), int(xmax), int(ymax)],
                 class_name=class_name, score=confidence)
+    print('Changed: ', box)
     changed_det_fig = plot_detection_human(image_path, [box], use_pil=True)
-    # changed_det_fig.savefig('all_det.jpg')
-    # changed_det_fig.clear()
-    # plt.close(changed_det_fig)
+    changed_det_fig.savefig('all_det.jpg')
+    changed_det_fig.clear()
+    plt.close(changed_det_fig)
 
     return changed_det_fig, xmin, ymin, xmax, ymax, confidence, modified_fig
 
@@ -153,7 +154,7 @@ def interactions(image_path, model_name, visualize_object_index,
 image_path = '/media/deepan/externaldrive1/project_repos/DEXT_versions/dext/images/000000162701.jpg'
 model_name = 'SSD512'
 explanation_method = 'GuidedBackpropagation'
-visualize_object_index = 1
+visualize_object_index = 2
 
 detections, box_indices, all_det_fig = get_detections(
     image_path, model_name, image_size=512)
@@ -167,5 +168,5 @@ det_fig, sal_fig, saliency = get_saliency(
 interact_outs = interactions(
     image_path, model_name, visualize_object_index,
     explaining='Classification', visualize_box_offset='None',
-    percentage_change=0.80, saliency=saliency, box_indices=box_indices,
+    percentage_change=0.1, saliency=saliency, box_indices=box_indices,
     image_size=512)
