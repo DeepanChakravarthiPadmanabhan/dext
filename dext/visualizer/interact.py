@@ -27,7 +27,7 @@ def get_detections(image_path, model_name, image_size=512):
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     inference_fn = InferenceFactory(model_name).factory()
     forwards = inference_fn(model, image_path, preprocessor_fn,
-                            postprocessor_fn, image_size, use_pile=True)
+                            postprocessor_fn, image_size, use_pil=True)
     detections = forwards[1]
     box_indices = forwards[2]
     print("Detections: %s" % detections)
@@ -113,7 +113,8 @@ def interactions(image_path, model_name, visualize_object_index,
         modified_image = resized_image
     else:
         modified_image = resized_image
-    modified_fig = plot_modified_image(modified_image)
+    modified_fig = plot_modified_image(modified_image, raw_image_modifier,
+                                       saliency, model_name)
     # modified_fig.savefig('mod_fig.jpg')
     # modified_fig.clear()
     # plt.close(modified_fig)
@@ -149,23 +150,63 @@ def interactions(image_path, model_name, visualize_object_index,
 
     return changed_det_fig, xmin, ymin, xmax, ymax, confidence, modified_fig
 
-#
-# image_path = '/media/deepan/externaldrive1/project_repos/DEXT_versions/dext/images/000000162701.jpg'
-# model_name = 'EFFICIENTDETD0'
-# explanation_method = 'GuidedBackpropagation'
-# visualize_object_index = 1
-#
-# detections, box_indices, all_det_fig = get_detections(
-#     image_path, model_name, image_size=512)
-#
-# det_fig, sal_fig, saliency = get_saliency(
-#     image_path, model_name, explanation_method, visualize_object_index,
-#     detections, box_indices, explaining='Classification',
-#     visualize_box_offset='None', class_layer_name='boxes',
-#     reg_layer_name='boxes', image_size=512, load_type='rgb')
-#
-# interact_outs = interactions(
-#     image_path, model_name, visualize_object_index,
-#     explaining='Classification', visualize_box_offset='None',
-#     percentage_change=0.80, saliency=saliency, box_indices=box_indices,
-#     image_size=512)
+
+def interactions_real(
+        image_path, model_name, visualize_object_index,
+        explaining='Classification', visualize_box_offset=None,
+        percentage_change=0.25, saliency=None, box_indices=None,
+        image_size=512):
+    visualize_object_index = visualize_object_index - 1
+    model = get_model(model_name)
+
+    preprocessor_fn = PreprocessorFactory(model_name).factory()
+    postprocessor_fn = PostprocessorFactory(model_name).factory()
+
+    # Adulteration and remove most important pixels
+    raw_image_modifier = get_image(raw_image_path=image_path, use_pil=True)
+    original_image_shape = raw_image_modifier.shape
+    num_pixels = saliency.size
+    sorted_saliency = (-saliency).argsort(axis=None, kind='mergesort')
+    sorted_flat_indices = np.unravel_index(sorted_saliency, saliency.shape)
+    sorted_indices = np.vstack(sorted_flat_indices).T
+
+    resized_image, image_scales = preprocessor_fn(raw_image_modifier,
+                                                  image_size, True)
+    resized_image = resized_image[0].astype('uint8')
+    num_pixels_selected = int(num_pixels * percentage_change)
+    change_pixels = sorted_indices[:num_pixels_selected]
+
+    image_adulteration_method = 'constant_graying'
+    if image_adulteration_method == 'inpainting':
+        mask = np.zeros(saliency.shape).astype('uint8')
+        mask[change_pixels[:, 0], change_pixels[:, 1]] = 1
+        modified_image = cv2.inpaint(resized_image, mask, 3, cv2.INPAINT_TELEA)
+    elif image_adulteration_method == 'zeroing':
+        resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 0
+        modified_image = resized_image
+    elif image_adulteration_method == 'constant_graying':
+        resized_image[change_pixels[:, 0], change_pixels[:, 1], :] = 128
+        modified_image = resized_image
+    else:
+        modified_image = resized_image
+    modified_fig = plot_modified_image(modified_image, raw_image_modifier,
+                                       saliency, model_name)
+    modified_fig.savefig('mod_fig.jpg')
+    modified_fig.clear()
+    plt.close(modified_fig)
+
+    input_image, _ = preprocessor_fn(modified_image, image_size)
+    outputs = model(input_image)
+    detection_image, detections, box_index = postprocessor_fn(
+        model, outputs, image_scales, get_image(image_path, use_pil=True),
+        image_size)
+    if detections:
+        all_det_fig = plot_all_detections_matplotlib(detections, image_path,
+                                                     use_pil=True)
+        # all_det_fig.savefig('mod_fig_all_det.jpg')
+        # all_det_fig.clear()
+        # plt.close(all_det_fig)
+    else:
+        all_det_fig = plot_modified_image(
+            raw_image_modifier, raw_image_modifier, saliency, model_name)
+    return all_det_fig

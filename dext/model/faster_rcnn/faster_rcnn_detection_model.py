@@ -44,6 +44,7 @@ def rpn_layer(rpn_feature_maps, rpn_anchor_stride=1,
                for output, name in zip(outputs, names)]
     return outputs
 
+
 def create_multibox_head(classes, frcnn_bbox, proposals):
     classes = classes[0]
     frcnn_bbox = frcnn_bbox[0]
@@ -55,6 +56,7 @@ def create_multibox_head(classes, frcnn_bbox, proposals):
         [delta_specifics, classes, proposals])
     outputs = tf.expand_dims(outputs, axis=0)
     return outputs
+
 
 @gin.configurable
 def faster_rcnn_detection(image_size=(512, 512, 3), weights='COCO',

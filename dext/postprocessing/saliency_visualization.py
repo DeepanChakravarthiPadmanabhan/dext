@@ -96,7 +96,16 @@ def plot_detection_human(raw_image_path, detection, use_pil=False):
     return fig
 
 
-def plot_modified_image(modified_image):
+def plot_modified_image(modified_image, raw_image, saliency,
+                        model_name='SSD512'):
+    if modified_image.shape != raw_image.shape:
+        saliency_image_shape = (raw_image.shape[1], raw_image.shape[0])
+        if model_name == 'FasterRCNN':
+            temp_image, window, scale, pad, crop = resize_image(
+                raw_image, saliency.shape[1], saliency.shape[0])
+            modified_image = modified_image[
+                             window[0]:window[2], window[1]:window[3]]
+        modified_image = cv2.resize(modified_image, saliency_image_shape)
     fig, ax = plt.subplots()
     ax.imshow(modified_image)
     ax.axis('off')

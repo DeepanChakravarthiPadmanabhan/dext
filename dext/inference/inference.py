@@ -5,8 +5,8 @@ from dext.utils.get_image import get_image
 def inference_image_efficientdet(model, raw_image_path, preprocessor_fn,
                                  postprocessor_fn, image_size,
                                  explain_top5_backgrounds=False,
-                                 load_type='rgb', use_pile=False):
-    raw_image = get_image(raw_image_path, load_type, use_pile)
+                                 load_type='rgb', use_pil=False):
+    raw_image = get_image(raw_image_path, load_type, use_pil)
     input_image, image_scales = preprocessor_fn(raw_image, image_size)
     outputs = model(input_image)
     detection_image, detections, box_index = postprocessor_fn(
@@ -19,8 +19,8 @@ def inference_image_efficientdet(model, raw_image_path, preprocessor_fn,
 def inference_image_ssd(model, raw_image_path, preprocessor_fn,
                         postprocessor_fn, image_size,
                         explain_top5_backgrounds=False, load_type='rgb',
-                        use_pile=False):
-    raw_image = get_image(raw_image_path, load_type, use_pile)
+                        use_pil=False):
+    raw_image = get_image(raw_image_path, load_type, use_pil)
     input_image, image_scales = preprocessor_fn(raw_image, image_size)
     outputs = model(input_image)
     detection_image, detections, box_index = postprocessor_fn(

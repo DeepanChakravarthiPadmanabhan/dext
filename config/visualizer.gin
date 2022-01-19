@@ -1,0 +1,4 @@
+EFFICIENTDET_WEIGHT_PATH = "/media/deepan/externaldrive1/project_repos/DEXT_versions/weights/paz_efficientdet_weights/"
+FASTER_RCNN_WEIGHT_PATH = "/media/deepan/externaldrive1/project_repos/DEXT_versions/weights/paz_faster_rcnn_weights/"
+EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH
+faster_rcnn_detection.weight_path = %FASTER_RCNN_WEIGHT_PATH
