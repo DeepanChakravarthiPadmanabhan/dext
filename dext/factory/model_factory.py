@@ -14,7 +14,14 @@ from dext.model.marine_debris_ssd_resnet20.utils import (
     marine_debris_ssd_resnet20)
 from dext.model.marine_debris_ssd_mobilenet.utils import (
     marine_debris_ssd_mobilenet)
-
+from dext.model.marine_debris_ssd_densenet121.utils import (
+    marine_debris_ssd_densenet121)
+from dext.model.marine_debris_ssd_squeezenet.utils import (
+    marine_debris_ssd_squeezenet)
+from dext.model.marine_debris_ssd_minixception.utils import (
+    marine_debris_ssd_minixception)
+from dext.model.marine_debris_ssd_autoencoder.utils import (
+    marine_debris_ssd_autoencoder)
 
 class ModelFactory:
     def __init__(self, model_name):
@@ -56,6 +63,18 @@ class ModelFactory:
             return model
         elif self.model_name == 'MarineDebris_SSD_MobileNet':
             model = marine_debris_ssd_mobilenet()
+            return model
+        elif self.model_name == 'MarineDebris_SSD_DenseNet121':
+            model = marine_debris_ssd_densenet121()
+            return model
+        elif self.model_name == 'MarineDebris_SSD_SqueezeNet':
+            model = marine_debris_ssd_squeezenet()
+            return model
+        elif self.model_name == 'MarineDebris_SSD_MiniXception':
+            model = marine_debris_ssd_minixception()
+            return model
+        elif self.model_name == 'MarineDebris_SSD_Autoencoder':
+            model = marine_debris_ssd_autoencoder()
             return model
         elif self.model_name == 'MarineDebris_SSD_VGG16_Random':
             model = marine_debris_ssd_vgg16_random()

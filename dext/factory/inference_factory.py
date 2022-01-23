@@ -4,6 +4,14 @@ from dext.inference.inference import inference_image_faster_rcnn
 from dext.inference.inference import inference_image_marine_debris_ssd_resnet20
 from dext.inference.inference import (
     inference_image_marine_debris_ssd_mobilenet)
+from dext.inference.inference import (
+    inference_image_marine_debris_ssd_densenet121)
+from dext.inference.inference import (
+    inference_image_marine_debris_ssd_squeezenet)
+from dext.inference.inference import (
+    inference_image_marine_debris_ssd_minixception)
+from dext.inference.inference import (
+    inference_image_marine_debris_ssd_autoencoder)
 
 
 class InferenceFactory:
@@ -23,6 +31,14 @@ class InferenceFactory:
             return inference_image_marine_debris_ssd_resnet20
         elif self.model_name == "MarineDebris_SSD_MobileNet":
             return inference_image_marine_debris_ssd_mobilenet
+        elif self.model_name == "MarineDebris_SSD_DenseNet121":
+            return inference_image_marine_debris_ssd_densenet121
+        elif self.model_name == "MarineDebris_SSD_SqueezeNet":
+            return inference_image_marine_debris_ssd_squeezenet
+        elif self.model_name == "MarineDebris_SSD_MiniXception":
+            return inference_image_marine_debris_ssd_minixception
+        elif self.model_name == "MarineDebris_SSD_Autoencoder":
+            return inference_image_marine_debris_ssd_autoencoder
         else:
             raise ValueError(
                 "Preprocessor not implemented %s" % self.model_name)

@@ -5,10 +5,18 @@ from dext.model.faster_rcnn.faster_rcnn_postprocess import (
     faster_rcnn_postprocess)
 from dext.model.marine_debris_ssd.utils import (
     marine_debris_ssd_vgg16_postprocess)
-from dext.model.marine_debris_ssd_mobilenet.utils import (
-    marine_debris_ssd_mobilenet_postprocess)
 from dext.model.marine_debris_ssd_resnet20.utils import (
     marine_debris_ssd_resnet20_postprocess)
+from dext.model.marine_debris_ssd_mobilenet.utils import (
+    marine_debris_ssd_mobilenet_postprocess)
+from dext.model.marine_debris_ssd_densenet121.utils import (
+    marine_debris_ssd_densenet121_postprocess)
+from dext.model.marine_debris_ssd_squeezenet.utils import (
+    marine_debris_ssd_squeezenet_postprocess)
+from dext.model.marine_debris_ssd_minixception.utils import (
+    marine_debris_ssd_minixception_postprocess)
+from dext.model.marine_debris_ssd_autoencoder.utils import (
+    marine_debris_ssd_autoencoder_postprocess)
 
 
 class PostprocessorFactory:
@@ -28,6 +36,14 @@ class PostprocessorFactory:
             return marine_debris_ssd_resnet20_postprocess
         elif "MarineDebris_SSD_MobileNet" == self.model_name:
             return marine_debris_ssd_mobilenet_postprocess
+        elif "MarineDebris_SSD_DenseNet121" == self.model_name:
+            return marine_debris_ssd_densenet121_postprocess
+        elif "MarineDebris_SSD_SqueezeNet" == self.model_name:
+            return marine_debris_ssd_squeezenet_postprocess
+        elif "MarineDebris_SSD_MiniXception" == self.model_name:
+            return marine_debris_ssd_minixception_postprocess
+        elif "MarineDebris_SSD_Autoencoder" == self.model_name:
+            return marine_debris_ssd_autoencoder_postprocess
         else:
             raise ValueError(
                 "Preprocessor not implemented %s" % self.model_name)

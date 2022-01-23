@@ -151,6 +151,47 @@ def get_prior_box_configuration(configuration_name='VOC'):
             'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
             'variance': [0.1, 0.2]}
 
+    elif configuration_name in {'SSD-DenseNet121'}:
+        configuration = {
+            'feature_map_sizes': [48, 24, 12, 6, 4, 1],
+            'image_size': 96,
+            'steps': [2, 5, 10, 21, 31, 96],
+            'min_sizes': [8, 19, 35, 51, 68, 84],
+            'max_sizes': [19, 35, 51, 68, 84, 101],
+            'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+            'variance': [0.1, 0.2]}
+
+    elif configuration_name in {'SSD-SqueezeNet'}:
+        configuration = {
+            'feature_map_sizes': [48, 24, 12, 6, 4, 1],
+            'image_size': 96,
+            'steps': [2, 5, 10, 21, 31, 96],
+            'min_sizes': [8, 19, 35, 51, 68, 84],
+            'max_sizes': [19, 35, 51, 68, 84, 101],
+            'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+            'variance': [0.1, 0.2]}
+
+    elif configuration_name in {'SSD-MiniXception'}:
+        configuration = {
+            'feature_map_sizes': [48, 24, 12, 6, 4, 1],
+            'image_size': 96,
+            'steps': [2, 5, 10, 21, 31, 96],
+            'min_sizes': [8, 19, 35, 51, 68, 84],
+            'max_sizes': [19, 35, 51, 68, 84, 101],
+            'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+            'variance': [0.1, 0.2]}
+
+    elif configuration_name in {'SSD-Autoencoder'}:
+        configuration = {
+            'feature_map_sizes': [48, 24, 12, 6, 4, 1],
+            'image_size': 96,
+            'steps': [2, 5, 10, 21, 31, 96],
+            'min_sizes': [8, 19, 35, 51, 68, 84],
+            'max_sizes': [19, 35, 51, 68, 84, 101],
+            'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+            'variance': [0.1, 0.2]}
+
+
     else:
         raise ValueError('Invalid configuration name:', configuration_name)
     return configuration
