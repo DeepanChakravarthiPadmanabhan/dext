@@ -11,7 +11,7 @@ from dext.model.faster_rcnn.faster_rcnn_detection_model import (
 from dext.model.marine_debris_ssd.utils import (marine_debris_ssd_vgg16,
                                                 marine_debris_ssd_vgg16_random)
 from dext.model.marine_debris_ssd_resnet20.utils import (
-    marine_debris_ssd_resnet20)
+    marine_debris_ssd_resnet20, marine_debris_ssd_resnet20_random)
 from dext.model.marine_debris_ssd_mobilenet.utils import (
     marine_debris_ssd_mobilenet)
 from dext.model.marine_debris_ssd_densenet121.utils import (
@@ -78,6 +78,9 @@ class ModelFactory:
             return model
         elif self.model_name == 'MarineDebris_SSD_VGG16_Random':
             model = marine_debris_ssd_vgg16_random()
+            return model
+        elif self.model_name == 'MarineDebris_SSD_ResNet20_Random':
+            model = marine_debris_ssd_resnet20_random()
             return model
         else:
             raise ValueError("Model not implemented %s" % self.model_name)

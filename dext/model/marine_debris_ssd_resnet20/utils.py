@@ -20,6 +20,13 @@ def marine_debris_ssd_resnet20(weight_path, backbone_folder):
     return model
 
 
+@gin.configurable
+def marine_debris_ssd_resnet20_random(weight_path, backbone_folder):
+    model = SSD_ResNet20(12, weight_folder=backbone_folder)
+    model.load_weights(weight_path)
+    return model
+
+
 def marine_debris_ssd_resnet20_preprocess(image, image_size=96,
                                           only_resize=False):
     input_image_shape = image.shape

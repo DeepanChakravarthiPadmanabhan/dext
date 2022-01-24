@@ -29,6 +29,8 @@ class InferenceFactory:
             return inference_image_ssd
         elif self.model_name == "MarineDebris_SSD_ResNet20":
             return inference_image_marine_debris_ssd_resnet20
+        elif self.model_name == "MarineDebris_SSD_ResNet20_Random":
+            return inference_image_marine_debris_ssd_resnet20
         elif self.model_name == "MarineDebris_SSD_MobileNet":
             return inference_image_marine_debris_ssd_mobilenet
         elif self.model_name == "MarineDebris_SSD_DenseNet121":

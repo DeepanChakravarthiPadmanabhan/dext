@@ -32,6 +32,8 @@ class PreprocessorFactory:
             return marine_debris_ssd_vgg16_preprocess
         elif "MarineDebris_SSD_ResNet20" == self.model_name:
             return marine_debris_ssd_resnet20_preprocess
+        elif "MarineDebris_SSD_ResNet20_Random" == self.model_name:
+            return marine_debris_ssd_resnet20_preprocess
         elif "MarineDebris_SSD_MobileNet" == self.model_name:
             return marine_debris_ssd_mobilenet_preprocess
         elif "MarineDebris_SSD_DenseNet121" == self.model_name:
