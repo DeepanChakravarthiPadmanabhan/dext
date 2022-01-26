@@ -60,6 +60,7 @@ def get_random_model(model_name, percent_alter):
                 (conv, non_conv, total_weights))
     return model
 
+
 @gin.configurable
 def randomization_test(
         model_name, explain_mode, dataset_name, data_split, data_split_name,
