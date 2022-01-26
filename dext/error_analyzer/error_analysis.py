@@ -41,7 +41,7 @@ def generate_saliency(interpretation_method, custom_model, model_name,
         preprocessor_fn, image_size, prior_boxes=prior_boxes,
         explaining=to_explain, normalize=normalize_saliency,
         load_type=load_type)
-    np.save('epoch2.npy', saliency)
+    np.save('saliency_map.npy', saliency)
 
     if grad_times_input:
         saliency = get_grad_times_input(saliency, image)
@@ -117,8 +117,9 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
         data['width'] = 320
         data['height'] = 480
         # gt of the single_image analyzing
-        gt = np.asarray([[0.415, 0.122, 0.893, 0.45, 3],
-                         [0.259, 0.656, 0.346, 0.70, 4]])
+        gt = np.asarray([[0.03125, 0.05833333, 0.7875, 0.16666667, 11],
+                         [0.31875, 0.3875, 0.58125, 0.49375, 5],
+                         [0.45, 0.62083333, 0.68125, 0.78541667, 9]])
     gt_list = get_scaled_gt(gt, data['width'], data['height'], model_name)
     LOGGER.info('GT loaded: %s' % gt_list)
     LOGGER.info('%%% BEGIN EXPLANATION MODULE %%%')
@@ -135,162 +136,155 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
     LOGGER.info("Detections: %s" % detections)
     LOGGER.info("Box index of detections: %s" % box_index)
 
-    if len(detections):
-        if plot_gt:
-            detection_image = plot_gt_on_detection(detection_image, gt,
-                                                   dataset_name, model_name)
-            LOGGER.info('No. of. detections: %s, No. of. GT labels: %s' %
-                        (len(detections), len(gt_list)))
-            plt.imsave('det_' + str(image_index) + '.jpg',
-                       detection_image)
+    if plot_gt and len(detections):
+        detection_image = plot_gt_on_detection(detection_image, gt,
+                                               dataset_name, model_name)
+        LOGGER.info('No. of. detections: %s, No. of. GT labels: %s' %
+                    (len(detections), len(gt_list)))
+        plt.imsave('det_' + str(image_index) + '.jpg',
+                   detection_image)
+    # metrics for analysis
+    det_list = get_detection_list(detections, model_name,
+                                  dataset_name=dataset_name)
 
-        # metrics for analysis
-        det_list = get_detection_list(detections, model_name,
-                                      dataset_name=dataset_name)
+    # Det with correct pre (TP) and gt matching correct det (GT_TP)
+    tp_list, gt_tp_list, tp_iou = get_tp_gt_det(
+        det_list, gt_list)
+    poor_localization_tp = get_poor_localization(tp_iou)
 
-        # Det with correct pre (TP) and gt matching correct det (GT_TP)
-        tp_list, gt_tp_list, tp_iou = get_tp_gt_det(
-            det_list, gt_list)
-        poor_localization_tp = get_poor_localization(tp_iou)
+    # Det with wrong pred (FP) and missed GT (FN)
+    fp_list, fn_list = get_missed_gt_det(tp_list, gt_tp_list,
+                                         det_list, gt_list)
+    LOGGER.info('TP detection index: %s' % tp_list)
+    LOGGER.info('FP detection index: %s' % fp_list)
+    LOGGER.info('FN detection index: %s' % fn_list)
+    LOGGER.info('GT as TP, GT index: %s' % gt_tp_list)
+    LOGGER.info('GT as detection index, GT index: %s' % gt_tp_list)
+    LOGGER.info('TP IoUs: %s' % tp_iou)
+    LOGGER.info('TP poor localization: %s' % poor_localization_tp)
 
-        # Det with wrong pred (FP) and missed GT (FN)
-        fp_list, fn_list = get_missed_gt_det(tp_list, gt_tp_list,
-                                             det_list, gt_list)
-        LOGGER.info('TP detection index: %s' % tp_list)
-        LOGGER.info('FP detection index: %s' % fp_list)
-        LOGGER.info('FN detection index: %s' % fn_list)
-        LOGGER.info('GT as TP, GT index: %s' % gt_tp_list)
-        LOGGER.info('GT as detection index, GT index: %s' % gt_tp_list)
-        LOGGER.info('TP IoUs: %s' % tp_iou)
-        LOGGER.info('TP poor localization: %s' % poor_localization_tp)
+    if analyze_error_type == 'missed' and len(fn_list) > 0 and (
+            len(fn_list) - 1 >= visualize_object_index):
+        # Visually check if the detection and gt matches
+        # If missed detections -- FN
+        # method 1: get prior box matching the missed gt position and
+        # propagate class and offset. Answers why did the best box miss?
+        (fn_box_index_pred, fn_box_index_gt,
+         pred_boxes) = get_closest_outbox_to_fn(
+            prior_boxes, fn_list, gt_list, model_name, detection_image,
+            outputs, image_size, raw_image_path, dataset_name, load_type)
 
-        if analyze_error_type == 'missed' and len(fn_list) > 0 and (
-                len(fn_list) - 1 >= visualize_object_index):
-            # Visually check if the detection and gt matches
-            # If missed detections -- FN
-            # method 1: get prior box matching the missed gt position and
-            # propagate class and offset. Answers why did the best box miss?
-            (fn_box_index_pred, fn_box_index_gt,
-             pred_boxes) = get_closest_outbox_to_fn(
-                prior_boxes, fn_list, gt_list, model_name, detection_image,
-                outputs, image_size, raw_image_path, dataset_name, load_type)
-
-            if missed_with_gt:
-                box_index = fn_box_index_gt
-            else:
-                box_index = fn_box_index_pred
-            # box_index contains (0, box, classid)
-
-            # get box index from the object index to visualize
-            box_features = box_index[visualize_object_index].copy()
-            box_features[-1] = get_interest_neuron(
-                to_explain, box_features[-1], visualize_box_offset,
-                visualize_class, use_own_class)
-            LOGGER.info('Box feature for missed study: %s' % box_features)
-
-            if to_explain == 'Classification':
-                confidence = round(outputs[0, box_features[1],
-                                           box_features[2]].numpy(), 3)
-                class_name = class_names[box_features[2] - 4]
-            else:
-                idx = get_interest_neuron(
-                    'Classification', box_index[visualize_object_index][-1],
-                    None, visualize_class, use_own_class)
-                confidence = round(
-                    outputs[0, box_features[1], idx].numpy(), 3)
-                class_name = class_names[idx - 4]
-
-            if len(detections) >= fn_list[visualize_object_index]:
-                detections.insert(fn_list[visualize_object_index],
-                                  pred_boxes[visualize_object_index])
-            else:
-                diff_len = fn_list[visualize_object_index] - len(detections)
-                for i in range(diff_len+1):
-                    detections.append(0)
-                detections.insert(fn_list[visualize_object_index],
-                                  pred_boxes[visualize_object_index])
-
-            generate_saliency(interpretation_method, custom_model, model_name,
-                              raw_image_path, layer_name, box_features,
-                              preprocessor_fn, image_size, prior_boxes,
-                              to_explain, normalize_saliency, grad_times_input,
-                              image, saliency_threshold, confidence,
-                              class_name, image_index, visualize_box_offset,
-                              detections, fn_list[visualize_object_index],
-                              gt_list, dataset_name, analyze_error_type,
-                              result_dir, load_type)
-
-        elif analyze_error_type == 'wrong_class' and len(fp_list) > 0 and (
-                len(fp_list) - 1 >= visualize_object_index):
-            # If wrong class -- FP
-            # method 1: get the output box and propagate the wrong class and
-            # correct class region
-            # --> Finding the features resemble the wrong class feature
-            selected_fp = fp_list[visualize_object_index]
-            box_features = [0, int(box_index[selected_fp][0]),
-                            int(box_index[selected_fp][1])]
-            box_features[-1] = get_interest_neuron(
-                to_explain, box_features[-1], visualize_box_offset,
-                visualize_class, use_own_class)
-            LOGGER.info('Box feature for wrong class study: %s' % box_features)
-
-            if to_explain == 'Classification':
-                confidence = round(outputs[0, box_features[1],
-                                           box_features[2]].numpy(), 3)
-                class_name = class_names[box_features[2] - 4]
-            else:
-                confidence = box_index[selected_fp][2]
-                class_name = class_names[box_index[selected_fp][1]]
-
-            generate_saliency(interpretation_method, custom_model, model_name,
-                              raw_image_path, layer_name, box_features,
-                              preprocessor_fn, image_size, prior_boxes,
-                              to_explain, normalize_saliency, grad_times_input,
-                              image, saliency_threshold, confidence,
-                              class_name, image_index, visualize_box_offset,
-                              detections, fp_list[visualize_object_index],
-                              gt_list, dataset_name, analyze_error_type,
-                              result_dir, load_type)
-
-        elif analyze_error_type == 'poor_localization' and (
-                len(poor_localization_tp) > 0) and (
-                len(poor_localization_tp) - 1 >= visualize_object_index):
-            # If poor localization -- TP but less IOU
-            # method 1: get the output box and propagate the offsets
-            # method 2: get the prior box matching the gt box and
-            # propagate the offsets
-            selected_tp = poor_localization_tp[visualize_object_index]
-            box_features = [0, int(box_index[selected_tp][0]),
-                            int(box_index[selected_tp][1])]
-            box_features[-1] = get_interest_neuron(
-                to_explain, box_features[-1], visualize_box_offset,
-                visualize_class, use_own_class)
-            LOGGER.info('Box feature for poor ROI study: %s' % box_features)
-
-            if to_explain == 'Classification':
-                confidence = round(outputs[0, box_features[1],
-                                           box_features[2]].numpy(), 3)
-                class_name = class_names[box_features[2] - 4]
-            else:
-                confidence = box_index[selected_tp][2]
-                class_name = class_names[box_index[selected_tp][1]]
-
-            generate_saliency(interpretation_method, custom_model, model_name,
-                              raw_image_path, layer_name, box_features,
-                              preprocessor_fn, image_size, prior_boxes,
-                              to_explain, normalize_saliency, grad_times_input,
-                              image, saliency_threshold, confidence,
-                              class_name, image_index, visualize_box_offset,
-                              detections,
-                              poor_localization_tp[visualize_object_index],
-                              gt_list, dataset_name, analyze_error_type,
-                              result_dir, load_type)
-
+        if missed_with_gt:
+            box_index = fn_box_index_gt
         else:
-            print('Analysis type is not possible')
+            box_index = fn_box_index_pred
+        # box_index contains (0, box, classid)
 
-    else:
-        LOGGER.info("No detections to analyze.")
+        # get box index from the object index to visualize
+        box_features = box_index[visualize_object_index].copy()
+        box_features[-1] = get_interest_neuron(
+            to_explain, box_features[-1], visualize_box_offset,
+            visualize_class, use_own_class)
+        LOGGER.info('Box feature for missed study: %s' % box_features)
+
+        if to_explain == 'Classification':
+            confidence = round(outputs[0, box_features[1],
+                                       box_features[2]].numpy(), 3)
+            class_name = class_names[box_features[2] - 4]
+        else:
+            idx = get_interest_neuron(
+                'Classification', box_index[visualize_object_index][-1],
+                None, visualize_class, use_own_class)
+            confidence = round(
+                outputs[0, box_features[1], idx].numpy(), 3)
+            class_name = class_names[idx - 4]
+
+        if len(detections) >= fn_list[visualize_object_index]:
+            detections.insert(fn_list[visualize_object_index],
+                              pred_boxes[visualize_object_index])
+        else:
+            diff_len = fn_list[visualize_object_index] - len(detections)
+            for i in range(diff_len+1):
+                detections.append(0)
+            detections.insert(fn_list[visualize_object_index],
+                              pred_boxes[visualize_object_index])
+
+        generate_saliency(interpretation_method, custom_model, model_name,
+                          raw_image_path, layer_name, box_features,
+                          preprocessor_fn, image_size, prior_boxes,
+                          to_explain, normalize_saliency, grad_times_input,
+                          image, saliency_threshold, confidence,
+                          class_name, image_index, visualize_box_offset,
+                          detections, fn_list[visualize_object_index],
+                          gt_list, dataset_name, analyze_error_type,
+                          result_dir, load_type)
+
+    elif analyze_error_type == 'wrong_class' and len(fp_list) > 0 and (
+            len(fp_list) - 1 >= visualize_object_index):
+        # If wrong class -- FP
+        # method 1: get the output box and propagate the wrong class and
+        # correct class region
+        # --> Finding the features resemble the wrong class feature
+        selected_fp = fp_list[visualize_object_index]
+        box_features = [0, int(box_index[selected_fp][0]),
+                        int(box_index[selected_fp][1])]
+        box_features[-1] = get_interest_neuron(
+            to_explain, box_features[-1], visualize_box_offset,
+            visualize_class, use_own_class)
+        LOGGER.info('Box feature for wrong class study: %s' % box_features)
+
+        if to_explain == 'Classification':
+            confidence = round(outputs[0, box_features[1],
+                                       box_features[2]].numpy(), 3)
+            class_name = class_names[box_features[2] - 4]
+        else:
+            confidence = box_index[selected_fp][2]
+            class_name = class_names[box_index[selected_fp][1]]
+
+        generate_saliency(interpretation_method, custom_model, model_name,
+                          raw_image_path, layer_name, box_features,
+                          preprocessor_fn, image_size, prior_boxes,
+                          to_explain, normalize_saliency, grad_times_input,
+                          image, saliency_threshold, confidence,
+                          class_name, image_index, visualize_box_offset,
+                          detections, fp_list[visualize_object_index],
+                          gt_list, dataset_name, analyze_error_type,
+                          result_dir, load_type)
+
+    elif analyze_error_type == 'poor_localization' and (
+            len(poor_localization_tp) > 0) and (
+            len(poor_localization_tp) - 1 >= visualize_object_index):
+        # If poor localization -- TP but less IOU
+        # method 1: get the output box and propagate the offsets
+        # method 2: get the prior box matching the gt box and
+        # propagate the offsets
+        selected_tp = poor_localization_tp[visualize_object_index]
+        box_features = [0, int(box_index[selected_tp][0]),
+                        int(box_index[selected_tp][1])]
+        box_features[-1] = get_interest_neuron(
+            to_explain, box_features[-1], visualize_box_offset,
+            visualize_class, use_own_class)
+        LOGGER.info('Box feature for poor ROI study: %s' % box_features)
+
+        if to_explain == 'Classification':
+            confidence = round(outputs[0, box_features[1],
+                                       box_features[2]].numpy(), 3)
+            class_name = class_names[box_features[2] - 4]
+        else:
+            confidence = box_index[selected_tp][2]
+            class_name = class_names[box_index[selected_tp][1]]
+
+        generate_saliency(interpretation_method, custom_model, model_name,
+                          raw_image_path, layer_name, box_features,
+                          preprocessor_fn, image_size, prior_boxes,
+                          to_explain, normalize_saliency, grad_times_input,
+                          image, saliency_threshold, confidence,
+                          class_name, image_index, visualize_box_offset,
+                          detections,
+                          poor_localization_tp[visualize_object_index],
+                          gt_list, dataset_name, analyze_error_type,
+                          result_dir, load_type)
+
     end_time = time.time()
     memory_profile_in_mb = process.memory_info().rss / 1024 ** 2
     LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)
