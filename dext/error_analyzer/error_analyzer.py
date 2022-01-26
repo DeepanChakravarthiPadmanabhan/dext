@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--explain_mode", default="dataset",
               type=click.Choice(["single_image", "dataset"]))
 @click.option("--dataset_name", default="VOC",
-              type=click.Choice(["COCO", "VOC"]))
+              type=click.Choice(["COCO", "VOC", "MarineDebris"]))
 @click.option("--data_split", default="train",  # VOC - train, COCO - test
               type=click.Choice(["test", "train", "val"]))
 @click.option("--data_split_name", default="VOC2012",
@@ -40,6 +40,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--save_explanation_images", default=True)
 @click.option("--continuous_run", default=False)
 @click.option("--plot_gt", default=False)
+@click.option("--load_type", default='rgb')
 @click.option("--analyze_error_type", default='missed',
               type=click.Choice(['missed', 'wrong_class',
                                  'poor_localization']))
@@ -55,8 +56,9 @@ def explainer(config, model_name, explain_mode, dataset_name, data_split,
               reg_layer_name, to_explain, interpretation_method,
               visualize_object_index, visualize_box_offset, visualize_class,
               num_images, save_saliency_images, save_explanation_images,
-              continuous_run, plot_gt, analyze_error_type, use_own_class,
-              saliency_threshold, grad_times_input, log_level, log_dir):
+              continuous_run, plot_gt, load_type, analyze_error_type,
+              use_own_class, saliency_threshold, grad_times_input, log_level,
+              log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
     gin.parse_config_file(config)
     LOGGER.info("Running explainer")
@@ -66,8 +68,8 @@ def explainer(config, model_name, explain_mode, dataset_name, data_split,
                    interpretation_method, visualize_object_index,
                    visualize_box_offset, visualize_class, num_images,
                    save_saliency_images, save_explanation_images,
-                   continuous_run, plot_gt, analyze_error_type, use_own_class,
-                   saliency_threshold, grad_times_input)
+                   continuous_run, plot_gt, load_type, analyze_error_type,
+                   use_own_class, saliency_threshold, grad_times_input)
 
 
 if __name__ == "__main__":

@@ -510,7 +510,7 @@ def plot_error_analyzer(
         explaining="Classification", interpretation_method="IG",
         model_name="EfficientDet", saliency_stat=None, box_offset=None,
         detections=None, object_index=None, gts=None, error_type='missed',
-        dataset_name='VOC'):
+        dataset_name='VOC', load_type='rgb'):
     model_name = refactor_model_names(model_name)
     interpretation_method = refactor_method_names(interpretation_method)
     num_detections = max(len(gts), len(detections))
@@ -518,7 +518,7 @@ def plot_error_analyzer(
     det_colors = get_matplotlib_colors(num_detections)
     # gt_colors = ['red', ] * len(gts)
     # det_colors = ['green', ] * len(detections)
-    image = get_image(raw_image_path)
+    image = get_image(raw_image_path, load_type=load_type)
 
     rows, columns = 1, 3
     (figwidth, figheight, top, bottom,
@@ -590,8 +590,8 @@ def refactor_model_names(model_name):
         return 'SSD300'
     elif model_name == 'FasterRCNN':
         return 'Faster R-CNN'
-    elif model_name == 'MarineDebris':
-        return 'Marine Debris SSD512'
+    elif 'MarineDebris' in model_name:
+        return 'Marine Debris SSD-ResNet20'
     else:
         raise ValueError("Model not implemented %s" % model_name)
 

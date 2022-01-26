@@ -191,9 +191,9 @@ def interactions_real(
         modified_image = resized_image
     modified_fig = plot_modified_image(modified_image, raw_image_modifier,
                                        saliency, model_name)
-    modified_fig.savefig('mod_fig.jpg')
-    modified_fig.clear()
-    plt.close(modified_fig)
+    # modified_fig.savefig('mod_fig.jpg')
+    # modified_fig.clear()
+    # plt.close(modified_fig)
 
     input_image, _ = preprocessor_fn(modified_image, image_size)
     outputs = model(input_image)
