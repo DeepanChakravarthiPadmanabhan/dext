@@ -68,7 +68,7 @@ def randomization_test(
         visualize_box_offset, cascade_study, randomize_weights_percent,
         random_linspace, num_images, save_saliency_images,
         save_explanation_images, continuous_run, explain_top5_backgrounds,
-        result_dir):
+        load_type, result_dir):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     test_gpus()
@@ -125,7 +125,7 @@ def randomization_test(
                     out_result_dir, class_layer_name, reg_layer_name,
                     visualize_box_offset, model_name, image_index,
                     save_saliency_images, save_explanation_images,
-                    custom_model, prior_boxes, dataset_name)
+                    custom_model, prior_boxes, dataset_name, load_type)
             else:
                 LOGGER.info("No detections to analyze.")
         end_time = time.time()
