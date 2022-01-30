@@ -121,7 +121,7 @@ def EfficientDet(num_classes, base_weights, head_weights, input_shape,
     if (base_weights == 'COCO') and (head_weights == 'COCO'):
         weights_url = WEIGHTS_PATH + model_name + '.h5'
         weights_path = get_file(os.path.basename(weights_url), weights_url,
-                                cache_subdir='dext/models')
+                                cache_subdir='dext/tmp_models')
         model.load_weights(weights_path)
     model.prior_boxes = get_prior_boxes(
         min_level, max_level, num_scales, aspect_ratios, anchor_scale,

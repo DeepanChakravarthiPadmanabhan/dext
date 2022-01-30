@@ -126,6 +126,6 @@ def faster_rcnn_detection(image_size=(512, 512, 3), weights='COCO',
         inputs=input_image, outputs=detections, name='faster_rcnn')
     weights_url = WEIGHTS_PATH + 'faster_rcnn.h5'
     weights_path = get_file(os.path.basename(weights_url), weights_url,
-                            cache_subdir='dext/models')
+                            cache_subdir='dext/tmp_models')
     model.load_weights(weights_path)
     return model
