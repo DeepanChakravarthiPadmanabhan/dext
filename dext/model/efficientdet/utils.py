@@ -4,8 +4,22 @@ import tensorflow.keras.backend as K
 from tensorflow.keras.layers import Reshape, Concatenate, Flatten, Activation
 
 import paz.processors as pr
-from paz.abstract import SequentialProcessor
+from paz.abstract import SequentialProcessor, Processor
 from dext.model.utils import ResizeImage
+
+
+class DivideStandardDeviationImage(Processor):
+    """Divide channel-wise standard deviation to image.
+
+    # Arguments
+        mean: List of length 3, containing the channel-wise mean.
+    """
+    def __init__(self, standard_deviation):
+        self.standard_deviation = standard_deviation
+        super(DivideStandardDeviationImage, self).__init__()
+
+    def call(self, image):
+        return image / self.standard_deviation
 
 
 def get_drop_connect(features, is_training, survival_rate):
@@ -69,7 +83,7 @@ def efficientdet_preprocess(image, image_size, only_resize=False):
         preprocessing = SequentialProcessor([
             ResizeImage(image_size),
             pr.SubtractMeanImage(mean=pr.RGB_IMAGENET_MEAN),
-            pr.DivideStandardDeviationImage(
+            DivideStandardDeviationImage(
                 standard_deviation=pr.RGB_IMAGENET_STDEV),
             pr.CastImage(float),
             pr.ExpandDims(axis=0)

@@ -26,6 +26,7 @@ dependencies = [
     "jupyter",
     "psutil",
     "memory_profiler",
+    "kneed",
     "streamlit==1.3.1",
 ]
 
