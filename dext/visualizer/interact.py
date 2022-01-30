@@ -23,9 +23,6 @@ from dext.postprocessing.saliency_visualization import plot_modified_image
 
 
 def get_detections(image_path, model_name, image_size=512):
-    if os.path.exists('dext/tmp_models/'):
-        for tmp_file in os.listdir('dext/tmp_models/'):
-            os.remove(tmp_file)
     model = get_model(model_name)
     preprocessor_fn = PreprocessorFactory(model_name).factory()
     postprocessor_fn = PostprocessorFactory(model_name).factory()
@@ -47,10 +44,6 @@ def get_saliency(
         visualize_box_offset='None', class_layer_name='boxes',
         reg_layer_name='boxes', image_size=512, load_type='rgb'):
     visualize_object_index = visualize_object_index - 1
-
-    if os.path.exists('dext/tmp_models/'):
-        for tmp_file in os.listdir('dext/tmp_models/'):
-            os.remove(tmp_file)
     model = get_model(model_name)
     custom_model = build_general_custom_model(model, class_layer_name,
                                               reg_layer_name)
@@ -90,9 +83,6 @@ def interactions(image_path, model_name, visualize_object_index,
                  percentage_change=0.25, saliency=None, box_indices=None,
                  image_size=512):
     visualize_object_index = visualize_object_index - 1
-    if os.path.exists('dext/tmp_models/'):
-        for tmp_file in os.listdir('dext/tmp_models/'):
-            os.remove(tmp_file)
     model = get_model(model_name)
 
     preprocessor_fn = PreprocessorFactory(model_name).factory()
@@ -168,9 +158,6 @@ def interactions_real(
         percentage_change=0.25, saliency=None, box_indices=None,
         image_size=512):
     visualize_object_index = visualize_object_index - 1
-    if os.path.exists('dext/tmp_models/'):
-        for tmp_file in os.listdir('dext/tmp_models/'):
-            os.remove(tmp_file)
     model = get_model(model_name)
 
     preprocessor_fn = PreprocessorFactory(model_name).factory()
