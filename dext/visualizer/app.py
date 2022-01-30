@@ -1,4 +1,3 @@
-import gin
 import streamlit as st
 from PIL import Image
 import numpy as np
@@ -6,6 +5,7 @@ from dext.visualizer.interact import get_detections, get_saliency, interactions
 from dext.visualizer.interact import interactions_real
 from dext.postprocessing.saliency_visualization import convert_to_fig
 from io import BytesIO
+
 
 def load_image(image_file):
     img = Image.open(image_file)
@@ -26,9 +26,9 @@ def run_interactions():
     confidence = values[5]
     modified_fig = values[6]
     box = str(xmin) + ', ' + str(ymin) + ', ' + str(xmax) + ', ' + str(ymax)
-    st.session_state.box_values = f'<div style="color: Black; font-size: 20pxx; font-family:sans-serif"> Bounding box="{box}"</div>'
+    st.session_state.box_values = f'<div style="color: Gray; font-size: 20pxx; font-family:sans-serif"> Bounding box="{box}"</div>'
     conf = str(confidence)
-    st.session_state.conf_values = f'<div style="color: Black; font-size: 20pxx; font-family:sans-serif"> Confidence="{conf}"</div>'
+    st.session_state.conf_values = f'<div style="color: Gray; font-size: 20pxx; font-family:sans-serif"> Confidence="{conf}"</div>'
     st.session_state.changed_det_fig = changed_det_fig
     st.session_state.modified_fig = modified_fig
 
@@ -46,12 +46,6 @@ def initializations():
     st.session_state.old_decision = 'Classification'
     st.session_state.old_bb = 'None'
     st.session_state.curr_image = 'available'
-
-
-@st.cache(suppress_st_warning=True)
-def gin_configuring():
-    config = 'config/visualizer_local.gin'
-    gin.parse_config_file(config)
 
 
 def run_detections():
@@ -108,12 +102,11 @@ if image_file:
     curr_image = 'uploaded'
 else:
     print('Using available file')
-    image_file = '/media/deepan/externaldrive1/project_repos/DEXT_versions/dext/images/000000162701.jpg'
+    image_file = 'data/000000162701.jpg'
     image = load_image(image_file)
     st.session_state.image_file = image
     curr_image = 'available'
 
-gin_configuring()
 initializations()
 if 'old_detector' not in st.session_state:
     run_detections()
