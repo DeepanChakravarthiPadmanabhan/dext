@@ -108,7 +108,7 @@ if image_file:
     curr_image = 'uploaded'
 else:
     print('Using available file')
-    image_file = '/media/deepan/externaldrive1/project_repos/DEXT_versions/dext/images/000000162701.jpg'
+    image_file = 'data/000000133861.jpg'
     image = load_image(image_file)
     st.session_state.image_file = image
     curr_image = 'available'
