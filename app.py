@@ -40,7 +40,7 @@ def run_interactions():
     st.session_state.all_det_on_modified_fig = all_det_on_modified_fig
 
 
-@st.cache(suppress_st_warning=True, ttl=3600, max_entries=10)
+@st.cache(suppress_st_warning=True)
 def initializations():
     st.session_state.old_object_index = None
     st.session_state.old_decision = 'Classification'
