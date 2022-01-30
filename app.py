@@ -40,7 +40,7 @@ def run_interactions():
     st.session_state.all_det_on_modified_fig = all_det_on_modified_fig
 
 
-@st.cache(suppress_st_warning=True)
+@st.cache(suppress_st_warning=True, ttl=3600, max_entries=10)
 def initializations():
     st.session_state.old_object_index = None
     st.session_state.old_decision = 'Classification'
@@ -169,8 +169,6 @@ with col1:
     buf = BytesIO()
     st.session_state.changed_det_fig.savefig(buf, format='png')
     st.image(buf, use_column_width=True)
-    st.markdown(st.session_state.box_values, unsafe_allow_html=True)
-    st.markdown(st.session_state.conf_values, unsafe_allow_html=True)
 with col2:
     st.subheader('Realistic Detection Change')
     buf = BytesIO()
