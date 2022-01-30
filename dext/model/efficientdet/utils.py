@@ -8,6 +8,14 @@ from paz.abstract import SequentialProcessor, Processor
 from dext.model.utils import ResizeImage
 
 
+B_IMAGENET_MEAN, G_IMAGENET_MEAN, R_IMAGENET_MEAN = 104, 117, 123
+BGR_IMAGENET_MEAN = (B_IMAGENET_MEAN, G_IMAGENET_MEAN, R_IMAGENET_MEAN)
+RGB_IMAGENET_MEAN = (R_IMAGENET_MEAN, G_IMAGENET_MEAN, B_IMAGENET_MEAN)
+B_IMAGENET_STDEV, G_IMAGENET_STDEV, R_IMAGENET_STDEV = 57.3 , 57.1, 58.4
+BGR_IMAGENET_STDEV = (B_IMAGENET_STDEV, G_IMAGENET_STDEV, R_IMAGENET_STDEV)
+RGB_IMAGENET_STDEV = (R_IMAGENET_STDEV, G_IMAGENET_STDEV, B_IMAGENET_STDEV)
+
+
 class DivideStandardDeviationImage(Processor):
     """Divide channel-wise standard deviation to image.
 
@@ -82,9 +90,9 @@ def efficientdet_preprocess(image, image_size, only_resize=False):
     else:
         preprocessing = SequentialProcessor([
             ResizeImage(image_size),
-            pr.SubtractMeanImage(mean=pr.RGB_IMAGENET_MEAN),
+            pr.SubtractMeanImage(mean=RGB_IMAGENET_MEAN),
             DivideStandardDeviationImage(
-                standard_deviation=pr.RGB_IMAGENET_STDEV),
+                standard_deviation=RGB_IMAGENET_STDEV),
             pr.CastImage(float),
             pr.ExpandDims(axis=0)
             ])
