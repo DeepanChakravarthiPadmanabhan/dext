@@ -11,7 +11,7 @@ else:
 
 dependencies = [
     "numpy",
-    "opencv-python",
+    "opencv-python-headless",
     "tensorflow_gpu==2.3.0",
     "pypaz",
     "click",
