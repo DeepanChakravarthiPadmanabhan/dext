@@ -75,6 +75,9 @@ st.set_page_config(page_title=apptitle, page_icon="🔍", layout="wide")
 title = "Detector Explanation Toolkit: Interactive Analysis of Detectors"
 st.title(title)
 
+disclaimer = '<div style="color: Gray; font-size: 20pxx; font-family:sans-serif"> Generating explanations is a time consuming process depending on the method and detector chosen. SmoothGrad-based methods take upto 10 minutes at the maximum. </div>'
+st.markdown(disclaimer, unsafe_allow_html=True)
+
 image_size = 512
 box_offset_mapping_idx = {'x_min': 0, 'y_min': 1, 'x_max': 2, 'y_max': 3,
                           'None': 'None'}
