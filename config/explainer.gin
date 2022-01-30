@@ -11,13 +11,6 @@ SHAP_GradientExplainer.dataset_path = %COCO_DATASET_PATH
 COCO_VAL_ANNOTATION_FILE = "/scratch/dpadma2s/coco/annotations/instances_val2017.json"
 COCO_VAL_ANNOTATION_FILE_DFKI = "/gluster/home/dcpadmanabhan/SCRATCH/coco/annotations/instances_val2017.json"
 
-EFFICIENTDET_WEIGHT_PATH = "/scratch/dpadma2s/paz_efficientdet_weights/"
-FASTER_RCNN_WEIGHT_PATH = "/scratch/dpadma2s/paz_faster_rcnn_weights/"
-EFFICIENTDET_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz_efficientdet_weights/'
-FASTER_RCNN_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz_faster_rcnn_weights/'
-EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH
-faster_rcnn_detection.weight_path = %FASTER_RCNN_WEIGHT_PATH
-
 RESULT_DIR = '/scratch/dpadma2s/thesis/results'
 RESULT_DIR_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/results/'
 filter_image_ids.results_dir = %RESULT_DIR

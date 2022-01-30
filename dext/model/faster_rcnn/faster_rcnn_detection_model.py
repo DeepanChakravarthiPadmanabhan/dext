@@ -1,4 +1,5 @@
-import gin
+import os
+from tensorflow.keras.utils import get_file
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Add, Conv2D, Concatenate
@@ -9,6 +10,10 @@ from dext.model.faster_rcnn.utils import generate_pyramid_anchors, norm_boxes
 from dext.model.faster_rcnn.utils import fpn_classifier_graph
 from dext.model.faster_rcnn.utils import compute_backbone_shapes
 from dext.model.faster_rcnn.layers import ProposalLayer
+
+
+WEIGHTS_PATH = ('https://github.com/DeepanChakravarthiPadmanabhan/'
+                'model-weights/releases/download/v1.0.0/')
 
 
 def get_anchors(image_shape, backbone='resnet101', batch_size=1,
@@ -58,7 +63,6 @@ def create_multibox_head(classes, frcnn_bbox, proposals):
     return outputs
 
 
-@gin.configurable
 def faster_rcnn_detection(image_size=(512, 512, 3), weights='COCO',
                           train_bn=False, backbone="resnet101",
                           top_down_pyramid_size=256,
@@ -70,8 +74,7 @@ def faster_rcnn_detection(image_size=(512, 512, 3), weights='COCO',
                           rpn_anchor_stride=1,
                           rpn_bbox_std_dev=np.array([0.1, 0.1, 0.2, 0.2]),
                           pre_nms_limit=6000, images_per_gpu=1, pool_size=7,
-                          num_classes=81, image_max_dim=1024,
-                          weight_path=None):
+                          num_classes=81, image_max_dim=1024):
     input_image = tf.keras.layers.Input(shape=image_size,
                                         name='input_image')
     _, C2, C3, C4, C5 = get_resnet_features(
@@ -121,5 +124,8 @@ def faster_rcnn_detection(image_size=(512, 512, 3), weights='COCO',
     detections = create_multibox_head(classes, frcnn_bbox, rpn_rois)
     model = tf.keras.models.Model(
         inputs=input_image, outputs=detections, name='faster_rcnn')
-    model.load_weights(weight_path + 'faster_rcnn.h5')
+    weights_url = WEIGHTS_PATH + 'faster_rcnn.h5'
+    weights_path = get_file(os.path.basename(weights_url), weights_url,
+                            cache_subdir='dext/models')
+    model.load_weights(weights_path)
     return model

@@ -1,4 +1,5 @@
-import gin
+import os
+from tensorflow.keras.utils import get_file
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 import dext.model.efficientdet.efficientnet_builder as efficientnet_builder
@@ -9,7 +10,10 @@ from dext.model.efficientdet.efficientdet_blocks import ClassNet, BoxNet
 from dext.model.efficientdet.utils import create_multibox_head
 
 
-@gin.configurable
+WEIGHTS_PATH = ('https://github.com/DeepanChakravarthiPadmanabhan/'
+                'model-weights/releases/download/v1.0.0/')
+
+
 def EfficientDet(num_classes, base_weights, head_weights, input_shape,
                  fpn_num_filters, fpn_cell_repeats, box_class_repeats,
                  anchor_scale, min_level, max_level, fpn_weight_method,
@@ -115,7 +119,9 @@ def EfficientDet(num_classes, base_weights, head_weights, input_shape,
     model = Model(inputs=image, outputs=outputs, name=model_name)
 
     if (base_weights == 'COCO') and (head_weights == 'COCO'):
-        weights_path = weights_path + model_name + '.h5'
+        weights_url = WEIGHTS_PATH + model_name + '.h5'
+        weights_path = get_file(os.path.basename(weights_url), weights_url,
+                                cache_subdir='dext/models')
         model.load_weights(weights_path)
     model.prior_boxes = get_prior_boxes(
         min_level, max_level, num_scales, aspect_ratios, anchor_scale,

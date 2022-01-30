@@ -12,8 +12,8 @@ else:
 dependencies = [
     "numpy",
     "opencv-python",
-    #"tensorflow_gpu==2.3.0",
-    #"pypaz",
+    "tensorflow_gpu==2.3.0",
+    "pypaz",
     "click",
     "pandas",
     "pycocotools",
@@ -26,6 +26,7 @@ dependencies = [
     "jupyter",
     "psutil",
     "memory_profiler",
+    "streamlit==1.3.1",
 ]
 
 setup(
