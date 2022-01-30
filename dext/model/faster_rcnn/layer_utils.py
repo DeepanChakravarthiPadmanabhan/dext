@@ -108,8 +108,8 @@ def clip_boxes_graph(boxes, window):
         boxes: [N, (y_min, x_min, y_max, x_max)]
         window: [4] in the form y_min, x_min, y_max, x_max
     """
-    window_y_min, window_x_min, window_y_max, window_x_max = \
-        tf.split(window, 4)
+    (window_y_min, window_x_min,
+     window_y_max, window_x_max) = tf.split(window, 4)
     y_min, x_min, y_max, x_max = tf.split(boxes, 4, axis=1)
     y_min = tf.maximum(tf.minimum(y_min, window_y_max), window_y_min)
     x_min = tf.maximum(tf.minimum(x_min, window_x_max), window_x_min)

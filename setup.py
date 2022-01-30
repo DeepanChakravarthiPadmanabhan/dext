@@ -12,8 +12,8 @@ else:
 dependencies = [
     "numpy",
     "opencv-python",
-    #"tensorflow_gpu==2.3.0",
-    #"pypaz",
+    "tensorflow_gpu==2.3.0",
+    "pypaz",
     "click",
     "pandas",
     "pycocotools",
@@ -26,6 +26,7 @@ dependencies = [
     "jupyter",
     "psutil",
     "memory_profiler",
+    "streamlit==1.3.1",
 ]
 
 setup(
@@ -40,6 +41,11 @@ setup(
         console_scripts=[
             "dext_explainer=dext.explainer.explainer:explainer",
             "dext_evaluator=dext.evaluator.evaluator:evaluator",
+            "dext_error_analyzer="
+            "dext.error_analyzer.error_analyzer:error_analyzer",
+            "dext_visualizer=dext.visualizer.visualizer:visualizer",
+            "dext_trust_analyzer="
+            "dext.trust_analyzer.trust_analyzer:trust_analyzer",
         ]
     ),
     data_files=[
@@ -48,6 +54,8 @@ setup(
             [
                 "config/explainer.gin",
                 "config/evaluator.gin",
+                "config/error_analyzer.gin",
+                "config/trust_analyzer.gin",
             ],
         )
     ],

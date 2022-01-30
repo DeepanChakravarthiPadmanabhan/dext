@@ -16,6 +16,7 @@ from dext.utils.class_names import voc_to_coco
 from paz.backend.boxes import compute_iou
 from dext.postprocessing.saliency_visualization import (
     visualize_saliency_grayscale)
+from paz.abstract import Box2D
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,15 +31,28 @@ def get_scaled_gt(gt, width, height, model_name):
     return scaled_gt_list
 
 
-def get_detection_list(detections, model_name):
-    class_names = get_classes('VOC', model_name)
-    det_list = []
-    for det in detections:
-        coordinates = list(det.coordinates)
-        class_id = [class_names.index(coco_to_voc[det.class_name])
-                    if det.class_name in coco_to_voc else
-                    class_names.index(det.class_name), ]
-        det_list.append(coordinates + class_id)
+def get_detection_list(detections, model_name, dataset_name='COCO'):
+    if dataset_name == 'MarineDebris':
+        det_list = []
+        for det in detections:
+            coordinates = list(det.coordinates)
+            class_names = get_classes(dataset_name, model_name)
+            class_id = [class_names.index(det.class_name)]
+            det_list.append(coordinates + class_id)
+    else:
+        class_names = get_classes('VOC', model_name)
+        det_list = []
+        for det in detections:
+            coordinates = list(det.coordinates)
+            if det.class_name in coco_to_voc:
+                class_id = [class_names.index(coco_to_voc[det.class_name])]
+            else:
+                if det.class_name in class_names:
+                    class_id = [class_names.index(det.class_name)]
+                else:
+                    raise ValueError('Cannot perform analysis as detection '
+                                     'has classes not in VOC.')
+            det_list.append(coordinates + class_id)
     return det_list
 
 
@@ -100,6 +114,11 @@ def get_output_boxes(outputs, prior_boxes, image_size, detection_image,
                                                 only_resize=True)
         out_boxes = get_fasterrcnn_boxes(outputs, original_image_shape,
                                          image_size, image_scale, True)
+    elif 'MarineDebris' in model_name:
+        image_scale = get_image_scale(detection_image, image_size)
+        out_boxes = get_ssd_boxes(outputs, prior_boxes, image_size,
+                                  image_scale, True)
+
     else:
         raise ValueError('Model name not in prior box processing.')
     return out_boxes
@@ -107,49 +126,89 @@ def get_output_boxes(outputs, prior_boxes, image_size, detection_image,
 
 def get_closest_outbox_to_fn(prior_boxes, fn_list, gt_list, model_name,
                              detection_image, outputs, image_size,
-                             raw_image_path):
-    image = get_image(raw_image_path)
+                             raw_image_path, dataset_name, load_type):
+    image = get_image(raw_image_path, load_type=load_type)
     out_boxes = get_output_boxes(outputs, prior_boxes, image_size,
                                  detection_image, model_name)
-    class_names_voc = get_classes('VOC', model_name)
-    class_names_coco = get_classes('COCO', model_name)
 
-    fn_box_index_pred = []
-    fn_box_index_gt = []
-    for i in range(len(fn_list)):
-        # find output box closest with gt box
-        iou = compute_iou(gt_list[fn_list[i]][:4], out_boxes)
-        idx = np.argmax(iou)
-        print("IoU of box closest: ", iou[idx], idx)
-        # output box closest with gt box
-        closest_output_box = out_boxes[idx, :4]
-        gt_box = gt_list[fn_list[i]][:4]
-        print('Closest output box and gt box: ',
-              closest_output_box.numpy(), gt_box)
+    if dataset_name == 'MarineDebris':
+        class_names = get_classes(dataset_name, model_name)
+        fn_box_index_pred = []
+        fn_box_index_gt = []
+        pred_boxes = []
+        for i in range(len(fn_list)):
+            # find output box closest with gt box
+            iou = compute_iou(gt_list[fn_list[i]][:4], out_boxes)
+            idx = np.argmax(iou)
+            print("IoU of box closest: ", iou[idx], idx)
+            # output box closest with gt box
+            closest_output_box = out_boxes[idx, :4]
+            gt_box = gt_list[fn_list[i]][:4]
+            print('Closest output box and gt box: ',
+                  closest_output_box.numpy(), gt_box)
 
-        class_id_pred = np.argmax(outputs[0][idx][4:])
-        fn_box_index_pred.append([0, idx, class_id_pred])
+            class_id_pred = np.argmax(outputs[0][idx][4:])
+            fn_box_index_pred.append([0, idx, class_id_pred])
 
-        class_name_gt = class_names_voc[gt_list[fn_list[i]][-1]]
-        if class_name_gt in voc_to_coco:
-            class_name_gt = voc_to_coco[class_name_gt]
-        class_id_gt = class_names_coco.index(class_name_gt)
-        fn_box_index_gt.append([0, idx, class_id_gt])
+            box_pred_formed = Box2D(
+                closest_output_box.numpy(), outputs[0][idx][class_id_pred + 4],
+                class_names[class_id_pred])
+            pred_boxes.append(box_pred_formed)
 
-        print('Closest output box and gt box class: ',
-              class_id_pred, class_id_gt)
+            class_name_gt = class_names[gt_list[fn_list[i]][-1]]
 
-        # draw gt (red) and closest box (blue) on image
-        image = cv2.rectangle(
-            image, (int(gt_box[0]), int(gt_box[1])),
-            (int(gt_box[2]), int(gt_box[3])), (255, 0, 0), 1, cv2.LINE_AA)
-        image = cv2.rectangle(
-            image, (int(closest_output_box[0]), int(closest_output_box[1])),
-            (int(closest_output_box[2]), int(closest_output_box[3])),
-            (0, 0, 255), 1, cv2.LINE_AA)
+            class_id_gt = class_names.index(class_name_gt)
+            fn_box_index_gt.append([0, idx, class_id_gt])
+
+            print('Closest output box and gt box class: ',
+                  class_id_pred, class_id_gt)
+
+    else:
+        class_names_voc = get_classes('VOC', model_name)
+        class_names_coco = get_classes('COCO', model_name)
+        fn_box_index_pred = []
+        fn_box_index_gt = []
+        pred_boxes = []
+        for i in range(len(fn_list)):
+            # find output box closest with gt box
+            iou = compute_iou(gt_list[fn_list[i]][:4], out_boxes)
+            idx = np.argmax(iou)
+            print("IoU of box closest: ", iou[idx], idx)
+            # output box closest with gt box
+            closest_output_box = out_boxes[idx, :4]
+            gt_box = gt_list[fn_list[i]][:4]
+            print('Closest output box and gt box: ',
+                  closest_output_box.numpy(), gt_box)
+
+            class_id_pred = np.argmax(outputs[0][idx][4:])
+            fn_box_index_pred.append([0, idx, class_id_pred])
+
+            box_pred_formed = Box2D(
+                closest_output_box.numpy(), outputs[0][idx][class_id_pred + 4],
+                class_names_coco[class_id_pred])
+            pred_boxes.append(box_pred_formed)
+
+            class_name_gt = class_names_voc[gt_list[fn_list[i]][-1]]
+            if class_name_gt in voc_to_coco:
+                class_name_gt = voc_to_coco[class_name_gt]
+            class_id_gt = class_names_coco.index(class_name_gt)
+            fn_box_index_gt.append([0, idx, class_id_gt])
+
+            print('Closest output box and gt box class: ',
+                  class_id_pred, class_id_gt)
+
+            # draw gt (red) and closest box (blue) on image
+            # image = cv2.rectangle(
+            #     image, (int(gt_box[0]), int(gt_box[1])),
+            #     (int(gt_box[2]), int(gt_box[3])), (255, 0, 0), 1, cv2.LINE_AA)
+            # image = cv2.rectangle(
+            #     image, (int(closest_output_box[0]), int(closest_output_box[1])),
+            #     (int(closest_output_box[2]), int(closest_output_box[3])),
+            #     (0, 0, 255), 1, cv2.LINE_AA)
+    # import matplotlib.pyplot as plt
     # plt.imsave('gt_drawn.jpg', image)
 
-    return fn_box_index_pred, fn_box_index_gt
+    return fn_box_index_pred, fn_box_index_gt, pred_boxes
 
 
 def get_interest_neuron(explaining, neuron, visualize_box_offset,
@@ -165,7 +224,7 @@ def get_interest_neuron(explaining, neuron, visualize_box_offset,
 
 
 def get_poor_localization(tp_list):
-    poor_localization_tp = [i for i in tp_list if i < 0.7]
+    poor_localization_tp = [n for n, i in enumerate(tp_list) if i < 0.8]
     return poor_localization_tp
 
 

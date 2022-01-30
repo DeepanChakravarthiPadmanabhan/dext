@@ -58,7 +58,8 @@ def get_fasterrcnn_boxes(conv_outs, original_image_shape, image_size,
     # Normalized window of image on the resized image size.
     config_window = norm_boxes_graph(image_scale, (image_size, image_size))
     # Clip ROI boxes to the resized window size
-    refined_rois = clip_boxes_graph(refined_rois, config_window)
+    # Clipping is commented as it obstructs the gradient flow
+    # refined_rois = clip_boxes_graph(refined_rois, config_window)
     # detections = tf.concat([refined_rois, class_confidences], axis=1)
     conv_outs = scale_boxes(refined_rois, config_window, original_image_shape,
                             to_ic)

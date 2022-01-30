@@ -60,6 +60,7 @@ def get_random_model(model_name, percent_alter):
                 (conv, non_conv, total_weights))
     return model
 
+
 @gin.configurable
 def randomization_test(
         model_name, explain_mode, dataset_name, data_split, data_split_name,
@@ -68,7 +69,7 @@ def randomization_test(
         visualize_box_offset, cascade_study, randomize_weights_percent,
         random_linspace, num_images, save_saliency_images,
         save_explanation_images, continuous_run, explain_top5_backgrounds,
-        result_dir):
+        load_type, result_dir):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     test_gpus()
@@ -76,6 +77,10 @@ def randomization_test(
     postprocessor_fn = PostprocessorFactory(model_name).factory()
     inference_fn = InferenceFactory(model_name).factory()
     pure_model = get_model(model_name)
+    if model_name != 'FasterRCNN':
+        prior_boxes = pure_model.prior_boxes
+    else:
+        prior_boxes = None
     to_be_explained = None
     if cascade_study:
         randomize_weights_percent = np.linspace(0, 1, random_linspace)
@@ -121,7 +126,7 @@ def randomization_test(
                     out_result_dir, class_layer_name, reg_layer_name,
                     visualize_box_offset, model_name, image_index,
                     save_saliency_images, save_explanation_images,
-                    custom_model)
+                    custom_model, prior_boxes, dataset_name, load_type)
             else:
                 LOGGER.info("No detections to analyze.")
         end_time = time.time()
@@ -129,4 +134,4 @@ def randomization_test(
         LOGGER.info('Memory profiler: %s' % memory_profile_in_mb)
         LOGGER.info('Time taken: %s' % (end_time - start_time))
         LOGGER.info('%%% INTERPRETATION DONE %%%')
-
+    LOGGER.info('%%%%% RANDOMIZATION TEST DONE %%%%%')

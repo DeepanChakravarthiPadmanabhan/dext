@@ -16,3 +16,6 @@ EFFICIENTDET_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz
 FASTER_RCNN_WEIGHT_PATH_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/weights/paz_faster_rcnn_weights/'
 EfficientDet.weights_path = %EFFICIENTDET_WEIGHT_PATH
 faster_rcnn_detection.weight_path = %FASTER_RCNN_WEIGHT_PATH
+
+MARINE_DEBRIS_SSD = '/scratch/dpadma2s/marine_od/weights.hdf5'
+marine_debris_ssd.weight_path = %MARINE_DEBRIS_SSD

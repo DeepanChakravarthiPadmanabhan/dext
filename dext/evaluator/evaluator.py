@@ -14,22 +14,25 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--model_name", "-m", help="Model name to explain.",
               default="EFFICIENTDETD0")
 @click.option("--interpretation_method", "-i", default="IntegratedGradients",
-              type=click.Choice(["IntegratedGradients", "SmoothGrad", "LRP",
-                                 "GuidedBackpropagation", "GradCAM"]))
+              type=click.Choice(["IntegratedGradients", "GradCAM", "LRP",
+                                 "GuidedBackpropagation",
+                                 "SmoothGrad_IntegratedGradients",
+                                 "SmoothGrad_GuidedBackpropagation", ]))
 @click.option("--image_size", default=512)
 @click.option("--results_dir", default="images/results/")
 @click.option("--num_images", default=100)  # 1 <
 @click.option("--ap_curve_linspace", default=100)
-@click.option("--eval_flip", default=True)
+@click.option("--eval_deletion", default=True)
+@click.option("--eval_insertion", default=True)
 @click.option("--eval_ap_explain", default=False)
 @click.option("--merge_saliency_maps", default=True)
-@click.option("--merge_method", default='pca',
-              type=click.Choice(["pca", "tsne", "and_add", "and_average",
-                                 "or_add", "or_average"]))
+@click.option("--merge_method", default='all',
+              type=click.Choice(["all", "pca", "tsne", "and_add",
+                                 "and_average", "or_add", "or_average"]))
 @click.option("--save_modified_images", default=False)
 @click.option("--coco_result_file", default="evaluation_result.json")
-@click.option("--image_adulteration_method", default='inpainting',
-              type=click.Choice(["inpainting", "zeroing"]))
+@click.option("--image_adulteration_method", default='constant_graying',
+              type=click.Choice(["inpainting", "zeroing", "constant_graying"]))
 @click.option("--explain_top5_backgrounds", default=False)
 @click.option("--continuous_run", default=False)
 @click.option("--save_all_map_metrics", default=True)
@@ -38,9 +41,9 @@ LOGGER = logging.getLogger(__name__)
                                  "WARNING", "INFO", "DEBUG"]))
 @click.option("--log-dir", default="")
 def evaluator(config, mode, model_name, interpretation_method, image_size,
-              results_dir, num_images, ap_curve_linspace, eval_flip,
-              eval_ap_explain, merge_saliency_maps, merge_method,
-              save_modified_images, coco_result_file,
+              results_dir, num_images, ap_curve_linspace, eval_deletion,
+              eval_insertion, eval_ap_explain, merge_saliency_maps,
+              merge_method, save_modified_images, coco_result_file,
               image_adulteration_method, explain_top5_backgrounds,
               continuous_run, save_all_map_metrics, log_level, log_dir):
     setup_logging(log_level=log_level, log_dir=log_dir)
@@ -49,9 +52,9 @@ def evaluator(config, mode, model_name, interpretation_method, image_size,
     if mode == "explainer":
         evaluate_explainer(
             model_name, interpretation_method, image_size, results_dir,
-            num_images, ap_curve_linspace, eval_flip, eval_ap_explain,
-            merge_saliency_maps, merge_method, save_modified_images,
-            coco_result_file, image_adulteration_method,
+            num_images, ap_curve_linspace, eval_deletion, eval_insertion,
+            eval_ap_explain, merge_saliency_maps, merge_method,
+            save_modified_images, coco_result_file, image_adulteration_method,
             explain_top5_backgrounds, continuous_run, save_all_map_metrics)
     else:
         evaluate_model(model_name, image_size, coco_result_file)

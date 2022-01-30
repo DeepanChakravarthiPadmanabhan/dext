@@ -23,3 +23,7 @@ def convert_to_image_coordinates(model_name, convouts, prior_boxes,
         return fasterrcnn_convert_coordinates(
             convouts, original_image_shape, visualize_index, image_size,
             image_scale, to_ic)
+
+    elif 'MarineDebris' in model_name:
+        return ssd_convert_coordinates(convouts, prior_boxes, visualize_index,
+                                       image_size, image_scale, to_ic)

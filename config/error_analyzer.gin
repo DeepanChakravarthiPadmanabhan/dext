@@ -26,3 +26,6 @@ explain_model.result_dir = %RESULT_DIR
 RANDOM_RESULT_DIR = '/scratch/dpadma2s/thesis/results_random'
 RANDOM_RESULT_DIR_DFKI = '/gluster/home/dcpadmanabhan/SCRATCH/results_random/'
 randomization_test.result_dir = %RANDOM_RESULT_DIR
+
+MARINE_DEBRIS_SSD = '/scratch/dpadma2s/marine_od/weights.hdf5'
+marine_debris_ssd.weight_path = %MARINE_DEBRIS_SSD

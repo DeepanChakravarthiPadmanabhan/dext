@@ -12,7 +12,7 @@ from dext.factory.preprocess_factory import PreprocessorFactory
 from dext.factory.postprocess_factory import PostprocessorFactory
 from dext.factory.interpretation_method_factory import ExplainerFactory
 from dext.factory.inference_factory import InferenceFactory
-from dext.postprocessing.saliency_visualization import plot_all
+from dext.postprocessing.saliency_visualization import plot_all_matplotlib
 from dext.postprocessing.detection_visualization import plot_gt_on_detection
 from dext.explainer.utils import get_box_feature_index
 from dext.explainer.utils import get_explaining_info
@@ -27,7 +27,8 @@ LOGGER = logging.getLogger(__name__)
 def get_single_saliency(
         interpretation_method, box_index, explaining, visualize_object_index,
         visualize_box_offset, model_name, raw_image_path, layer_name,
-        preprocessor_fn, image_size, custom_model, prior_boxes):
+        preprocessor_fn, image_size, custom_model, prior_boxes, load_type,
+        use_pil=False):
     # select - get index to visualize saliency input image
     box_features = get_box_feature_index(
         box_index, explaining, visualize_object_index, model_name,
@@ -35,10 +36,15 @@ def get_single_saliency(
     # interpret - apply interpretation method
     interpretation_method_fn = ExplainerFactory(
         interpretation_method).factory()
+    # Model trained for data randomization test
+    # model = get_model('MarineDebris_SSD_VGG16_Random')
+    # custom_model = build_general_custom_model(
+    #     model, layer_name, layer_name)
     saliency = interpretation_method_fn(
         custom_model, model_name, raw_image_path, interpretation_method,
         layer_name, box_features, preprocessor_fn, image_size,
-        prior_boxes=prior_boxes, explaining=explaining)
+        prior_boxes=prior_boxes, explaining=explaining, load_type=load_type,
+        use_pil=use_pil)
     return saliency
 
 
@@ -54,7 +60,7 @@ def explain_single_object(raw_image_path, image_size, preprocessor_fn,
                           detections, interpretation_method, box_index,
                           result_dir, explaining_info, model_name, image_index,
                           class_name, class_confidence, save_saliency_images,
-                          custom_model, prior_boxes):
+                          custom_model, prior_boxes, load_type):
     saliency_list = []
     saliency_stat_list = []
     for info in zip(*explaining_info):
@@ -67,7 +73,7 @@ def explain_single_object(raw_image_path, image_size, preprocessor_fn,
         saliency, saliency_stat = get_single_saliency(
             interpretation_method, box_index, explaining, object_index,
             box_offset, model_name, raw_image_path, layer_name,
-            preprocessor_fn, image_size, custom_model, prior_boxes)
+            preprocessor_fn, image_size, custom_model, prior_boxes, load_type)
         if save_saliency_images:
             save_name = str(image_index) + "_" + str(object_index) + "_" + (
                 explaining) + "_" + str(box_offset) + "_" + (
@@ -94,13 +100,13 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
                         result_dir, class_layer_name, reg_layer_name,
                         visualize_box_offset, model_name, image_index,
                         save_saliency_images, save_explanation_images,
-                        custom_model, prior_boxes):
+                        custom_model, prior_boxes, dataset_name, load_type):
     for object_arg in objects_to_analyze:
         explaining_info = get_explaining_info(
             object_arg, box_index, to_explain, class_layer_name,
             reg_layer_name,
             visualize_box_offset, model_name)
-        class_name = get_classes('COCO', model_name)[
+        class_name = get_classes(dataset_name, model_name)[
             box_index[explaining_info[0][0]][1]]
         class_confidence = box_index[explaining_info[0][0]][2]
         LOGGER.info('Explaining - image index: %s, confidence: %s, class: %s'
@@ -110,15 +116,16 @@ def explain_all_objects(objects_to_analyze, raw_image_path, image_size,
             raw_image_path, image_size, preprocessor_fn, detections,
             interpretation_method, box_index, result_dir, explaining_info,
             model_name, image_index, class_name, class_confidence,
-            save_saliency_images, custom_model, prior_boxes)
+            save_saliency_images, custom_model, prior_boxes, load_type)
         if save_explanation_images:
             explanation_images_dir = os.path.join(
                 result_dir, 'explanation_images')
-            plot_all(detection_image, raw_image_path, saliency_list,
-                     saliency_stat_list, class_confidence, class_name,
-                     explaining_info[1], explaining_info[3], to_explain,
-                     interpretation_method, model_name,
-                     explanation_images_dir, image_index, object_arg)
+            plot_all_matplotlib(
+                detections, raw_image_path, explaining_info[0][0],
+                saliency_list, saliency_stat_list, class_confidence,
+                class_name, explaining_info[1], explaining_info[3],
+                to_explain, interpretation_method, model_name,
+                explanation_images_dir, image_index, object_arg, load_type)
         del saliency_list
         del saliency_stat_list
         gc.collect()
@@ -134,8 +141,9 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
                   visualize_object_index=None, visualize_box_offset=None,
                   num_images=2, save_saliency_images=False,
                   save_explanation_images=False, continuous_run=False,
-                  explain_top5_backgrounds=True, plot_gt=False,
-                  result_dir='images/results/', save_modified_images=True):
+                  explain_top5_backgrounds=False, plot_gt=False,
+                  load_type='rgb', result_dir='images/results/',
+                  save_modified_images=True):
     start_time = time.time()
     process = psutil.Process(os.getpid())
     test_gpus()
@@ -166,7 +174,7 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
         # forward pass - get model outputs for input image
         forward_pass_outs = inference_fn(
             model, raw_image_path, preprocessor_fn, postprocessor_fn,
-            image_size, explain_top5_backgrounds)
+            image_size, explain_top5_backgrounds, load_type)
         detection_image = forward_pass_outs[0]
         detections = forward_pass_outs[1]
         box_index = forward_pass_outs[2]
@@ -186,7 +194,8 @@ def explain_model(model_name, explain_mode,  dataset_name, data_split,
                 interpretation_method, box_index, to_explain, result_dir,
                 class_layer_name, reg_layer_name, visualize_box_offset,
                 model_name, image_index, save_saliency_images,
-                save_explanation_images, custom_model, prior_boxes)
+                save_explanation_images, custom_model, prior_boxes,
+                dataset_name, load_type)
         else:
             LOGGER.info("No detections to analyze.")
     end_time = time.time()
