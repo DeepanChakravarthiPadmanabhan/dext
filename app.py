@@ -1,3 +1,4 @@
+import gin
 import streamlit as st
 from PIL import Image
 import numpy as np
@@ -42,6 +43,7 @@ def run_interactions():
 
 @st.cache(suppress_st_warning=True)
 def initializations():
+    gin.enter_interactive_mode()
     st.session_state.old_object_index = None
     st.session_state.old_decision = 'Classification'
     st.session_state.old_bb = 'None'
@@ -74,9 +76,6 @@ st.set_page_config(page_title=apptitle, page_icon="🔍", layout="wide")
 
 title = "Detector Explanation Toolkit: Interactive Analysis of Detectors"
 st.title(title)
-
-disclaimer = '<div style="color: Gray; font-size: 20pxx; font-family:sans-serif"> Generating explanations is a time consuming process depending on the method and detector chosen. SmoothGrad-based methods take upto 10 minutes at the maximum. </div>'
-st.markdown(disclaimer, unsafe_allow_html=True)
 
 image_size = 512
 box_offset_mapping_idx = {'x_min': 0, 'y_min': 1, 'x_max': 2, 'y_max': 3,
@@ -168,7 +167,7 @@ run_interactions()
 
 col1, col2 = st.columns(2)
 with col1:
-    st.subheader('Primal Box Change')
+    st.subheader('Single-box Change')
     buf = BytesIO()
     st.session_state.changed_det_fig.savefig(buf, format='png')
     st.image(buf, use_column_width=True)
@@ -187,6 +186,9 @@ with col1:
     st.image(buf, use_column_width=True)
 with col2:
     st.subheader('Notes')
-    st.markdown('Primal Box Details')
+    st.markdown('Changed Single-box Details')
     st.markdown(st.session_state.box_values, unsafe_allow_html=True)
     st.markdown(st.session_state.conf_values, unsafe_allow_html=True)
+
+disclaimer = '<div style="color: Gray; font-size: 20pxx; font-family:sans-serif"> Generating explanations is a time consuming process depending on the method and detector chosen. SmoothGrad-based methods take upto 10 minutes at the maximum. </div>'
+st.markdown(disclaimer, unsafe_allow_html=True)

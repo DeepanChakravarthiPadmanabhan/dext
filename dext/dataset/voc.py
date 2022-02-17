@@ -137,7 +137,7 @@ class VOCParser(object):
     def _preprocess_XML(self):
         filenames = self._load_filenames()
         # Uncomment below line to run on single image index alone
-        filenames = ['2010_005511.xml']
+        filenames = ['2010_001212.xml']
         for filename in filenames:
             image_index = filename.split('.')[0].replace('_', '')
             if self.check_availability(image_index) == 'available':

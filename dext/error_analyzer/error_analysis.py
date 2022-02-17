@@ -69,7 +69,7 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
                    continuous_run=False, plot_gt=False, load_type='rgb',
                    analyze_error_type='missed', use_own_class=False,
                    saliency_threshold=None, grad_times_input=False,
-                   missed_with_gt=True, result_dir='images/error_analysis/',
+                   missed_with_gt=False, result_dir='images/error_analysis/',
                    save_modified_images=False):
     start_time = time.time()
     process = psutil.Process(os.getpid())
@@ -87,7 +87,10 @@ def analyze_errors(model_name, explain_mode, dataset_name, data_split,
     custom_model = build_general_custom_model(model, class_layer_name,
                                               reg_layer_name)
 
-    class_names = get_classes(dataset_name, model_name)
+    if dataset_name == 'MarineDebris':
+        class_names = get_classes(dataset_name, model_name)
+    else:
+        class_names = get_classes('COCO', model_name)
 
     if model_name != 'FasterRCNN':
         prior_boxes = model.prior_boxes

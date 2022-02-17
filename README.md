@@ -9,12 +9,6 @@ A poster with preliminary results can be found [here](https://github.com/DeepanC
 The toolkit is a part of the thesis work supervised by [Professor. Dr. Paul G Plöger](https://www.h-brs.de/en/inf/prof-dr-paul-g-ploeger), [Prof. Dr. Matias Valdenegro-Toro](https://mvaldenegro.github.io/), [Professor. Dr. Nico Hochgeschwender](https://www.h-brs.de/en/inf/nico-hochgeschwender) and [Octavio Arriaga](https://github.com/oarriaga).
 The thesis proposal can be found [here](https://github.com/DeepanChakravarthiPadmanabhan/mtdocuments/blob/master/PadmanabhanDC-MTProposal/PadmanabhanDC-MTProposal.pdf).
 
-
-# Interactive Application
-
-A streamlit application with limited resources
-
-
 ## Installation
 ```
 pip install -e .
@@ -73,6 +67,17 @@ All above detectors are available with COCO weights. The weights are ported from
 6. LIME, Local Interpretable Model-agnostic Explanations (LIME)
 7. DeepExplainer, SHapley Additive exPlanations (SHAP) + DeepLIFT
 8. GradientExplainer, SHapley Additive exPlanations (SHAP) + Integrated Gradients (IG) + SmoothGrad (SG)
+
+# Interactive Application
+A streamlit application to interactively visualize the explanations and deletion evaluation metrics is available [here](https://share.streamlit.io/deepanchakravarthipadmanabhan/dext/app.py).
+
+The application is currently hosting all the models discussed in the thesis. However, due to **limited resources**, if the application is down, please E-mail me to reboot the server. 
+
+This interactive application can be run **locally (recommended due to limited resources)** by installing DExT repository and running the below command.
+```
+streamlit run app.py
+```
+
 
 ## References
 

@@ -98,7 +98,7 @@ def generate_model_questions(num_question=50):
 
     # Select model and method
     selected_models = [random.randint(0, 2) for _ in range(num_models)]
-    selected_methods = [random.sample(range(0, 3), 2)
+    selected_methods = [random.sample(range(0, 4), 2)
                          for _ in selected_models]
 
     # Get text data
