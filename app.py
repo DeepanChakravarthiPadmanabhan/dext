@@ -167,7 +167,7 @@ run_interactions()
 
 col1, col2 = st.columns(2)
 with col1:
-    st.subheader('Primal Box Change')
+    st.subheader('Single-box Change')
     buf = BytesIO()
     st.session_state.changed_det_fig.savefig(buf, format='png')
     st.image(buf, use_column_width=True)
@@ -186,7 +186,7 @@ with col1:
     st.image(buf, use_column_width=True)
 with col2:
     st.subheader('Notes')
-    st.markdown('Primal Box Details')
+    st.markdown('Changed Single-box Details')
     st.markdown(st.session_state.box_values, unsafe_allow_html=True)
     st.markdown(st.session_state.conf_values, unsafe_allow_html=True)
 

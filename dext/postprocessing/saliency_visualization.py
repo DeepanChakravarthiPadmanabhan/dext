@@ -76,7 +76,7 @@ def plot_saliency(saliency, ax, title='Saliency map', saliency_stat=[0, 1]):
         '0.2', '0.4', '0.6', '0.8',
         '1.0, max:\n' + "{:.1e}".format(saliency_stat[1])])
     ax.axis('off')
-    ax.set_title(title)
+    ax.set_title('Decision: ' + title, fontweight='bold', fontsize=14)
 
 
 def plot_detection_human(raw_image_path, detection, use_pil=False):
@@ -398,8 +398,8 @@ def plot_detections_matplotlib(detections, image, ax, det_id, colors,
     for i in range(len(detections)):
         if detections[i]:
             if i == det_id:
-                color = 'black'
-                text_color = 'black'
+                color = 'red'
+                text_color = 'red'
                 text = detections[i].class_name.upper()
             else:
                 color = colors[i]
@@ -411,7 +411,7 @@ def plot_detections_matplotlib(detections, image, ax, det_id, colors,
     ax.imshow(image)
     ax.axis('off')
     if title_on:
-        ax.set_title('Detection')
+        ax.set_title('Detection', fontweight='bold', fontsize=14)
     # To match the size of detection image and saliency image in the output
     divider = make_axes_locatable(ax)
     caz = divider.append_axes("right", size="5%", pad=0.1)
@@ -487,8 +487,8 @@ def plot_gts_matplotlib(gts, image, ax, gt_id, colors, dataset_name='VOC',
         text_colors = colors
     for i in range(len(gts)):
         if i == gt_id:
-            color = 'black'
-            text_color = 'black'
+            color = 'red'
+            text_color = 'red'
             text = class_names_list[int(gts[i][-1])].upper()
         else:
             color = colors[i]
@@ -498,7 +498,7 @@ def plot_gts_matplotlib(gts, image, ax, gt_id, colors, dataset_name='VOC',
         plot_text_matplotlib(gts[i][:4], text_color, ax, text, fontsize)
     ax.imshow(image)
     ax.axis('off')
-    ax.set_title('Ground truth')
+    ax.set_title('Ground Truth', fontweight='bold', fontsize=14)
     # To match the size of detection image and saliency image in the output
     divider = make_axes_locatable(ax)
     caz = divider.append_axes("right", size="5%", pad=0.1)
@@ -552,14 +552,16 @@ def plot_error_analyzer(
     saliency_title = get_saliency_title(explaining, box_offset)
     plot_saliency(saliency, ax3, saliency_title, saliency_stat)
     ax3.imshow(image, alpha=0.5)
-    text = 'Explaining: {:0.2f}, {}'.format(confidence, class_name)
-    ax3.text(0.5, -0.1, text, size=12, ha="center", transform=ax3.transAxes)
+    text = 'Detection: {:0.2f}, {}'.format(confidence, class_name)
+    ax3.text(0.5, -0.1, text, size=14, ha="center", transform=ax3.transAxes,
+             fontweight='bold')
 
     if explaining == 'Boxoffset':
         explaining = 'Bounding box coordinate'
 
-    fig.suptitle('%s explanation using %s on %s' % (
-        explaining, interpretation_method, model_name))
+    fig.suptitle('%s Explanation Using %s on %s' % (
+        explaining, interpretation_method, model_name),
+                 fontweight="bold", fontsize=16)
     # plot_and_save_saliency(image, saliency)
     # plot_and_save_detection(detection_image)
     return fig
