@@ -70,6 +70,8 @@ All above detectors are available with COCO weights. The weights are ported from
 7. DeepExplainer, SHapley Additive exPlanations (SHAP) + DeepLIFT
 8. GradientExplainer, SHapley Additive exPlanations (SHAP) + Integrated Gradients (IG) + SmoothGrad (SG)
 
+Note: Methods 5 - 8 are still in progress.
+
 # Interactive Application
 A streamlit application to interactively visualize the explanations and deletion evaluation metrics is available [here](https://share.streamlit.io/deepanchakravarthipadmanabhan/dext/app.py).
 
