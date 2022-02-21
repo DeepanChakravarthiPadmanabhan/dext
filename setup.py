@@ -12,7 +12,7 @@ else:
 dependencies = [
     "numpy",
     "opencv-python-headless",
-    "tensorflow"
+    "tensorflow",
     "pypaz",
     "click",
     "pandas",
