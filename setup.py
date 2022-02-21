@@ -12,7 +12,7 @@ else:
 dependencies = [
     "numpy",
     "opencv-python-headless",
-    "tensorflow_gpu==2.3.0",
+    "tensorflow==2.5.1"
     "pypaz",
     "click",
     "pandas",
@@ -23,11 +23,12 @@ dependencies = [
     "lime",
     "shap",
     "gin-config==0.3.0",
-    "jupyter",
     "psutil",
     "memory_profiler",
-    "kneed",
     "streamlit==1.3.1",
+    #"tensorflow_gpu==2.3.0",
+    #"jupyter",
+    #"kneed",
 ]
 
 setup(
