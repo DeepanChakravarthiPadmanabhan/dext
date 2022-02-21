@@ -14,6 +14,8 @@ The thesis proposal can be found [here](https://github.com/DeepanChakravarthiPad
 pip install -e .
 ```
 
+Note: The code is tested using tensorflow==2.5.1 and tensorflow_gpu==2.3.0. 
+
 ## Generate explanations for a single image
 ```
 dext_explainer -c config/explainer.gin -i <interpretation_method> -m <model_name> --explain_mode single_image --input_image_path <image_path>
