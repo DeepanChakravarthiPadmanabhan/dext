@@ -36,8 +36,8 @@ class GuidedBackpropagation(Explainer):
         self.visualize_index = visualize_index
         self.preprocessor_fn = preprocessor_fn
         self.image_size = image_size
-        self.image, self.image_scale = self.check_image_size(self.image,
-                                                             self.image_size)
+        self.image, self.image_scale = self.check_image_size(
+            self.image, self.image_size)
         self.image = self.preprocess_image(self.image, self.image_size)
         self.layer_name = layer_name
         self.prior_boxes = prior_boxes
@@ -46,8 +46,8 @@ class GuidedBackpropagation(Explainer):
             self.custom_model = model
             self.clean_custom_model()
         else:
-            self.custom_model = build_layer_custom_model(self.model_name,
-                                                         self.layer_name)
+            self.custom_model = build_layer_custom_model(
+                self.model_name, self.layer_name)
             self.clean_custom_model()
 
     def check_image_size(self, image, image_size):
