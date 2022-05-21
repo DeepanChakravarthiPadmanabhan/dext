@@ -36,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 @click.option("--visualize_box_offset", default='x_max',
               type=click.Choice(["y_min", "x_min", "y_max", "x_max"]))
 @click.option("--cascade_study", default=False)  # 1 <
-@click.option("--randomize_weights_percent", default=0.5)  # 0<=
+@click.option("--randomize_weights_percent", default=0.5)  # 0<=x<=1
 @click.option("--random_linspace", default=5)  # 1
 @click.option("--num_images", default=1)  # 1 <
 @click.option("--save_saliency_images", default=True)
